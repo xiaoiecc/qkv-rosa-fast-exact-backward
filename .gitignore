@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# C++ extension JIT build artifacts
+conv_rosa_transformer/build/
+*.pyd
+*.o
+*.obj
+*.lib
+*.exp
+.ninja_deps
+.ninja_log
+build.ninja
