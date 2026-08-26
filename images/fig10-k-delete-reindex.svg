@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1139.84" height="220.62" viewBox="0 0 1139.84 220.62" role="img" aria-label="Figure 10 — delete K[2] and re-answer t = 3: re-index and re-match">
+<title>Figure 10 — delete K[2] and re-answer t = 3: re-index and re-match</title>
+<desc>Deleting K[2]: windows avoid the hole, positions to the right sit one step closer.</desc>
+<defs><marker id="arr-dc2626" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker><marker id="arr-374151" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#374151"/></marker></defs>
+<rect x="0" y="0" width="1139.84" height="220.62" fill="#ffffff"/>
+<rect x="19" y="74.88" width="112" height="40" rx="6" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="6,3"/>
+<rect x="14" y="29.88" width="362.24" height="155.12" rx="6" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="6,3"/>
+<rect x="441.24" y="74.88" width="78" height="40" rx="6" fill="none" stroke="#16a34a" stroke-width="1.5"/>
+<rect x="509.24" y="74.88" width="44" height="40" rx="6" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+<rect x="431.92" y="29.88" width="693.92" height="176.74" rx="6" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+<path d="M 376.24 107.44 L 431.92 118.25" fill="none" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arr-dc2626)"/>
+<rect x="24" y="79.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="41" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="58" y="79.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="75" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="92" y="79.88" width="34" height="30" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+<text x="109" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="126" y="79.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="143" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="160" y="79.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="177" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">1</text>
+<rect x="194" y="79.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="211" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">1</text>
+<rect x="228" y="79.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="245" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">1</text>
+<rect x="262" y="79.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="279" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="446.24" y="79.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="463.24" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="480.24" y="79.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="497.24" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="514.24" y="79.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="531.24" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="548.24" y="79.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="565.24" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">1</text>
+<rect x="582.24" y="79.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="599.24" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">1</text>
+<rect x="616.24" y="79.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="633.24" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">1</text>
+<rect x="650.24" y="79.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="667.24" y="99.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="88.76" y="39.88" width="142.48" height="20" rx="4" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+<text x="160" y="53.72" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="middle">BEFORE (baseline)</text>
+<rect x="441.92" y="39.88" width="246.64" height="20" rx="4" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+<text x="565.24" y="53.72" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="middle">AFTER (K[2] treated as deleted)</text>
+<text x="24" y="28" font-family="Consolas,Menlo,monospace" font-size="14" fill="#111827" text-anchor="start" font-weight="bold">Figure 10 — delete K[2] and re-answer t = 3: re-index and re-match</text>
+<text x="41" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">0</text>
+<text x="75" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">1</text>
+<text x="109" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">2</text>
+<text x="143" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">3</text>
+<text x="177" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">4</text>
+<text x="211" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">5</text>
+<text x="245" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">6</text>
+<text x="279" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">7</text>
+<text x="24" y="129.88" font-family="Consolas,Menlo,monospace" font-size="12" fill="#dc2626" text-anchor="start">hole at s = 2: no window may contain it</text>
+<text x="24" y="149.92" font-family="Consolas,Menlo,monospace" font-size="12" fill="#dc2626" text-anchor="start">baseline window [0,2] contains s = 2 -&gt; broken</text>
+<text x="24" y="169.96" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">Q[:4] = [0,0,0,0];  baseline route(3) = (3, 2)</text>
+<text x="463.24" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">0</text>
+<text x="497.24" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">1</text>
+<text x="531.24" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">3</text>
+<text x="565.24" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">4</text>
+<text x="599.24" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">5</text>
+<text x="633.24" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">6</text>
+<text x="667.24" y="72.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">7</text>
+<text x="446.24" y="128.88" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="start">cells keep their original K indices</text>
+<text x="446.24" y="148.5" font-family="Consolas,Menlo,monospace" font-size="12" fill="#16a34a" text-anchor="start">window [0,1]: L = 2, endpoint r = 1  &lt;- wins</text>
+<text x="446.24" y="168.54" font-family="Consolas,Menlo,monospace" font-size="12" fill="#2563eb" text-anchor="start">window [3,3]: L = 1, endpoint r = 3</text>
+<text x="446.24" y="191.58" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">post-delete route(3, s=2) = (2, 1)   — matches the brute-force flip (ell 3-&gt;2, route 2-&gt;1)</text>
+</svg>

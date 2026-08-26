@@ -104,10 +104,12 @@ identifiers, letter for letter:
 
 ### 0.3 Legend: how to read every figure in this document
 
-All figures are monospaced ASCII drawn on **one fixed running instance**
+All figures are drawn on **one fixed running instance**
 (defined in §1, never switched; a single T=6 instance is additionally allowed
-in §8 for certificate mechanics, and is clearly marked). One visual
-vocabulary is used throughout:
+in §8 for certificate mechanics, and is clearly marked). Structural and
+geometric figures are generated SVG (regeneration: §12); each keeps its
+original monospaced ASCII as a foldable fallback, and the data/trace figures
+remain plain ASCII. One visual vocabulary is used throughout:
 
 ```
   digits / letters   actual data values from the running instance
@@ -117,7 +119,17 @@ vocabulary is used throughout:
    ->                direction of credit flow
 ```
 
+The generated SVG figures additionally use one fixed color semantics,
+declared once here (blue = forward/baseline data, red = credit flow or
+changed objects, gray = frozen content, green = match/hit):
+
+![Legend of the SVG figures: blue boxes hold forward/baseline data, red boxes mark credit flow or changed objects, dashed gray boxes are frozen content, green boxes mark matches or hits, and red arrows show credit flow or dependency](images/fig00-legend.svg)
+
 Figure 1 pins every symbol of the document to one picture:
+
+![Figure 1 — the running instance (T = 8, D = 1): grids of q, k and v_bits per position, with ell[t], route[t] and payload source rows below; a green arrow shows that t = 7 reuses V[4] because route[7]+1 = 4.](images/fig01-running-instance.svg)
+
+<details><summary>ASCII fallback</summary>
 
 ```
 position t      0   1   2   3   4   5   6   7          (T = 8, D = 1)
@@ -138,6 +150,8 @@ payload src     .   1   2   3   4   5   6   4    <- reads V[route[t]+1]
 the backward asks, for every bit position u of q, k, v_bits:
    flip [u]  ->  how do ell, route, and y change?  ->  credit[u]
 ```
+
+</details>
 
 Reading the figure: the top three rows are the input data; `ell`/`route` are
 the retrieval result per position; the payload row shows which `V` entry each
@@ -206,12 +220,18 @@ retrieval reads "what came next" the last time this context was seen — the
 architecture's whole point — and the `+1` has three consequences we will use
 repeatedly (Figure 3):
 
+![Figure 3 — the three structural zeros of the payload rule on the running instance: q[0] never matters, K[T-1] is never an endpoint, and V[0] is never read; the dead cells are drawn frozen-gray.](images/fig03-structural-zeros.svg)
+
+<details><summary>ASCII fallback</summary>
+
 ```
 V[0]  is never read:   route[t] >= 0  =>  payload index = route[t]+1 >= 1
 K[T-1] is never an endpoint:  an endpoint r must satisfy r < t <= T-1
 q[0]  never matters:  it can only participate in a length-(t+1) match
                       ending at r = t, but r = t is not a legal endpoint
 ```
+
+</details>
 
 ```
 credit table of the running instance (all values verified in §12):
@@ -405,6 +425,10 @@ learned object.
 Figure 6 is the required side-by-side: what the naive method recomputes, and
 what the algorithm merges into surfaces. Same running instance, same 24 bits.
 
+![Figure 6 — side by side on the same 24 bits: the naive method re-runs a full forward per flip (24 x 8^3 = 12288 suffix steps), while the algorithm compiles 12 + 12 affine deletion runs, 12 repair terms from 11 one-bit pairs, and 7 closed-form V adds — 36 terms reproducing all 24 flipped forwards exactly.](images/fig06-naive-vs-fast.svg)
+
+<details><summary>ASCII fallback</summary>
+
 ```
 NAIVE (backward_bruteforce)                    THIS ALGORITHM
 24 bit flips × full forward O(T^3)             one baseline forward (fast, Part 2)
@@ -427,6 +451,8 @@ each forward re-derives ALL of:                     +
   baseline in only 51 (t, flip) cells          range sum
 ```
 
+</details>
+
 The middle column of Figure 6 is the whole algorithm: 24 deletion segments +
 12 repair terms + 7 payload adds reproduce all 24 flipped forwards exactly
 (max abs error `3.0e-8`, float32 summation-order noise; §12). The counts are
@@ -434,6 +460,10 @@ not illustrative — they are the `RepairStats` counters of this exact instance
 (`q_delete_runs=12`, `k_delete_runs=12`, `final_surface_terms=36`; §10).
 
 Figure 7 is the pipeline every following section hangs on:
+
+![Figure 7 — the pipeline: symbol streams q, k flow through the fast forward, the workbench rebuild, and the four surface compilers into the RepairIR; numerical contraction merges the baseline ell/route (rail on the right) and grad_y into credit_q/k/v, and Part 11 maps credit to grad_z.](images/fig07-pipeline.svg)
+
+<details><summary>ASCII fallback</summary>
 
 ```
 q, k  (symbol streams)
@@ -462,6 +492,8 @@ credit_q, credit_k, credit_v  <------------------------------- grad_y
  v
 grad_z  (identity / bernoulli)
 ```
+
+</details>
 
 Costs, stated where they occur and collected in §11: the fast forward is
 `O(T·log²T)`; the workbench rebuild is `O(T·log²T)`; each surface family is
@@ -579,6 +611,10 @@ costs `O(heads_t · log T)`; the whole Q side is `O(Σ_t heads_t · log T)`.
 Figure 9 shows the real heads of the running instance and their conversion
 for `t = 6`:
 
+![Figure 9 — the single latest-occurrence head of t = 6: cutting the match to any length L in 1..5 leaves endpoint 5 in charge, so five owner positions collapse into one affine run AffineDeleteRun(t=6, s in [1,5], len_a=-1, len_b=6, end_a=0, end_b=5), plus the unmatched last-bit segment at s = 6.](images/fig09-q-latest-heads.svg)
+
+<details><summary>ASCII fallback</summary>
+
 ```
 heads for t = 6 (ell[6] = 6):   one head covers L_lo=1 .. L_hi=5, endpoint=5
 
@@ -595,6 +631,8 @@ conversion to owner axis (s = deleted Q position, L(s) = t - s):
    => AffineDeleteRun(t=6, s in [1,5], len_a=-1, len_b=6, end_a=0, end_b=5)
       AffineDeleteRun(t=6, s in [6,6], 0, 0, 0, -1)      (unmatched)
 ```
+
+</details>
 
 Read Figure 9 as two views of one fact: in this instance, cutting the `t=6`
 match anywhere above the last bit leaves a shorter match *at the same endpoint
@@ -668,6 +706,10 @@ surface is exactly `KDeleteCutOracle.runs` (L1422): `route(t, s)` answers
 Figure 10 makes "re-index and re-match" concrete — deleting `K[2]` and
 re-answering `t=3`:
 
+![Figure 10 — deleting K[2] and re-answering t = 3: the baseline window [0,2] contains the hole and breaks; in the re-indexed stream the legal windows [0,1] (L = 2, endpoint r = 1) and [3,3] (L = 1, r = 3) compete, and the post-delete route is (2, 1).](images/fig10-k-delete-reindex.svg)
+
+<details><summary>ASCII fallback</summary>
+
 ```
 BEFORE (baseline):                        AFTER (K[2] treated as deleted):
 index:   0  1  2  3  4  5  6  7           no match window may contain position 2;
@@ -681,6 +723,8 @@ window [0,2] contains s=2 -> broken       endpoint is legal iff its re-indexed
                                           window [3,3]: L=1, endpoint r=3
                                           post-delete route(3, s=2) = (2, 1)
 ```
+
+</details>
 
 The merged owner-axis surface for `t=3` (exact `AffineDeleteRun` tuples from
 the oracle):
@@ -728,6 +772,10 @@ preserved through the A/H merge (`_merge_A_H_surface_runs` docstring,
 L1363-1367). Figure 11 shows the threshold surface at `t=7`, where the
 baseline window is the single position `[3,3]` and both polarities appear:
 
+![Figure 11 — repair threshold surface at t = 7 (window [3,3]): left of the window a repair must be strictly longer (len >= 2, red), while at or right of route = 3 an equal length already wins the tie (len >= 1 inclusive, green).](images/fig11-repair-thresholds.svg)
+
+<details><summary>ASCII fallback</summary>
+
 ```
 t = 7, baseline: ell=1, route=3, window = [3,3]
 
@@ -739,6 +787,8 @@ threshold:  len >= 2 (strict)     | len >= 1 (inclusive)
             ends before r0=3, LOSES the tie       equal-length repair ends at or
                                                   after r0, WINS the tie
 ```
+
+</details>
 
 In other words: the threshold surface is a one-dimensional array of
 "how good must a repair be to win here", and the tie-break makes it a
@@ -790,6 +840,10 @@ creates the *same* window — hence "shared".
 
 Figure 12 shows the real bridge behind the `k[2]` flip of §2:
 
+![Figure 12 — the shared bridge of pair (q_pos=5, k_pos=2, bit=0): two equal context bits on the left (green), the differing bit to flip (red), empty right context (gray); the flip creates the match q[3..5] == k'[0..2] with route_at(5) = (3, 2) and payload shift -2.](images/fig12-shared-bridge.svg)
+
+<details><summary>ASCII fallback</summary>
+
 ```
 pair (q_pos=5, k_pos=2, bit=0):  q[5]=1, k[2]=0, differ in bit 0 only
 
@@ -806,6 +860,8 @@ after flipping k[2] to 1:  window q[3..5] == k'[0..2] == [0,0,1]
    route_at(5) = (left+1+0, k_pos+0) = (3, 2)
    shift = 2 - 5 + 1 = -2   ->  candidate payload V[t-2] = V[3]
 ```
+
+</details>
 
 Compare with the brute-force flip in §2: `t=5: ell 5→3, route 4→2`, payload
 `V[5]→V[3]`, output flips sign. The bridge predicted all of it. The whole
@@ -836,6 +892,10 @@ instance produces `k_shared_envelope_segments=8`). Each output segment becomes
 one repair term `RepairTrackTerm(shift, lo, hi)` per owner and bit
 (`_k_shared_terms`, L2697). Figure 13 shows the real terms of owner `s=2`:
 
+![Figure 13 — owner s=2, bit 0 owns two bridges on the t axis: bridge A (lifetime [5,5]) wins at t = 5, bridge B (lifetime [6,7]) loses at t = 6 but wins at t = 7, giving k_terms[2][0] = [(shift=-2, [5,5]), (shift=-3, [7,7])].](images/fig13-bridge-envelope.svg)
+
+<details><summary>ASCII fallback</summary>
+
 ```
 owner s=2, bit 0 owns two bridges:
    bridge A: (q_pos=5, k_pos=2, left=2, right=0)  lifetime t in [5,5]  shift=-2
@@ -849,6 +909,8 @@ first-win against the deletion baseline:
 k_terms[2][0] = [RepairTrackTerm(shift=-2, lo=5, hi=5),
                  RepairTrackTerm(shift=-3, lo=7, hi=7)]
 ```
+
+</details>
 
 Read the two surviving terms against the §2 census: the `[5,5]` term is the
 payload flip `V[5]→V[3]` (the `−0.248592` credit's `t=5` part); the `[7,7]`
@@ -946,6 +1008,10 @@ physical bridges.
 
 Figure 14 walks our T=6 instance through all four steps:
 
+![Figure 14 — the T = 6 certificate instance k = [0,0,1,0,0,0]: two maximal runs [0,1] and [3,5] of period 1; run [0,1] is broken at position 2 by exactly one bit, yielding the certificate (owner=1, period=1, bit=0, M in [2,2]); run [3,5] reaches the end of the stream and yields none.](images/fig14-run-certificates.svg)
+
+<details><summary>ASCII fallback</summary>
+
 ```
 k = [0, 0, 1, 0, 0, 0]         ell = [0,1,2,2,3,4]   route = [-1,0,1,1,2,3]
 
@@ -964,7 +1030,13 @@ step 4:  t=4 has baseline route (3, 2): anchor M = 2 == route[4], owner
          fallback owner queries=2)
 ```
 
+</details>
+
 Figure 15 shows the repair itself, end to end, on `t=4`:
+
+![Figure 15 — the certificate repair on t = 4 end to end: flipping k[1] makes Q[3..4] equal to K'[0..1] — the baseline match Q[2..4] == K[0..2] casts its shadow one period left; the repair route (2, 1) beats the deletion route (1, 2), but the payload V[2] equals the baseline V[3], so y[4] is unchanged and the term is later skipped by the payload LCE.](images/fig15-shadow-repair.svg)
+
+<details><summary>ASCII fallback</summary>
 
 ```
 baseline t=4:  Q[:5] = [0,0,0,0,1]  matches K[0..2] = [0,0,1]   (ell=3, r=2)
@@ -991,6 +1063,8 @@ payload:   candidate V[M-p+1] = V[2] = 1;  baseline payload V[3] = 1
 compiled term:  owner 1, bit 0: RepairTrackTerm(shift=-2, lo=4, hi=4)
                 (shift -2: candidate payload is V[t-2] = V[2])
 ```
+
+</details>
 
 The full certificate path on this instance produces
 `k_terms: owner1: [shift −2, t∈[4,4]]; owner2: [shift 0, t∈[3,3]]; owner3:
@@ -1346,6 +1420,17 @@ The D=2 packing example of §2's Figure 5 is reproducible with
 `H._pack_group_bits_to_python_ints` (L1540; symbol `= Σ_j bit_j·2^j`) on
 `torch.manual_seed(21)` bit planes — symbols `q=[3,0,0,2,0,3,0,2]`,
 `k=[2,3,1,0,0,0,1,1]`, fast vs brute max err `2.38e-07`.
+
+**Figure regeneration.** Every SVG figure referenced above is generated by
+[`images/generate_figures.py`](images/generate_figures.py), which imports
+`hard_qkv_rosa_explained.py` and recomputes both the running instance and the
+T=6 certificate instance on the spot — no number in any figure is transcribed
+by hand, and every figure carries a machine-checked layout (the generator's
+validator aborts on any connector crossing an unrelated box, any enclosure
+that does not strictly contain its children, or any overlap between cells and
+labels). After changing code or figures, regenerate with
+`python images/generate_figures.py` (`--lang en|zh` selects one language; the
+Chinese strings live in the `STRINGS` table in the same script).
 
 ## 13. Code map
 

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1003.2" height="155.96" viewBox="0 0 1003.2 155.96" role="img" aria-label="Figure 11 — repair threshold surface at t = 7 (ell = 1, route = 3, window = [3,3])">
+<title>Figure 11 — repair threshold surface at t = 7 (ell = 1, route = 3, window = [3,3])</title>
+<desc>Threshold surface at t=7: strict left of the baseline window, inclusive at and right of it.</desc>
+<defs><marker id="arr-374151" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#374151"/></marker></defs>
+<rect x="0" y="0" width="1003.2" height="155.96" fill="#ffffff"/>
+<rect x="69.08" y="58.88" width="130" height="40" rx="6" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="6,3"/>
+<rect x="189.08" y="58.88" width="170" height="40" rx="6" fill="none" stroke="#16a34a" stroke-width="1.5"/>
+<rect x="74.08" y="63.88" width="40" height="30" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+<text x="94.08" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="114.08" y="63.88" width="40" height="30" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+<text x="134.08" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">1</text>
+<rect x="154.08" y="63.88" width="40" height="30" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+<text x="174.08" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">2</text>
+<rect x="194.08" y="63.88" width="40" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="214.08" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">3</text>
+<rect x="234.08" y="63.88" width="40" height="30" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+<text x="254.08" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">4</text>
+<rect x="274.08" y="63.88" width="40" height="30" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+<text x="294.08" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">5</text>
+<rect x="314.08" y="63.88" width="40" height="30" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+<text x="334.08" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">6</text>
+<text x="74.08" y="28" font-family="Consolas,Menlo,monospace" font-size="14" fill="#111827" text-anchor="start" font-weight="bold">Figure 11 — repair threshold surface at t = 7 (ell = 1, route = 3, window = [3,3])</text>
+<text x="66.08" y="82.36" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="end">owner s</text>
+<text x="214.08" y="54.84" font-family="Consolas,Menlo,monospace" font-size="12" fill="#2563eb" text-anchor="middle">baseline window [3,3]</text>
+<text x="74.08" y="115.88" font-family="Consolas,Menlo,monospace" font-size="12" fill="#dc2626" text-anchor="start">s in [0,2] (left of window): repair must be len &gt;= 2 (strict) — an equal-length repair ends before r0 = 3 and LOSES the tie</text>
+<text x="74.08" y="136.92" font-family="Consolas,Menlo,monospace" font-size="12" fill="#16a34a" text-anchor="start">s in [3,6] (window + right): len &gt;= 1 suffices (inclusive) — an equal-length repair ends at or after r0 and WINS the tie</text>
+</svg>
