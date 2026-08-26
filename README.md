@@ -1,7 +1,7 @@
-# Fast Exact Backpropagation for ROSA-QKV
+# Fast Exact Backpropagation for QKV-ROSA
 
 A single-file PyTorch reference implementation of an **exact** backpropagation
-algorithm for the **ROSA-QKV** discrete retrieval architecture — not an STE, not
+algorithm for the **QKV-ROSA** discrete retrieval architecture — not an STE, not
 a soft relaxation, but the exact single-bit counterfactual VJP of the hard
 routing, at a computationally acceptable cost.
 
@@ -73,7 +73,7 @@ agreement by the self-test at the end of the file.
 Every open-source approach we are aware of either does not backpropagate through
 the discrete routing at all, or uses a surrogate/approximate gradient, or only
 handles a truncated variant. This repository is, to our knowledge, the first
-**exact, untruncated, bit-level** backpropagation for the full ROSA-QKV semantics
+**exact, untruncated, bit-level** backpropagation for the full QKV-ROSA semantics
 with an acceptable (`~O(T log²T)`) cost:
 
 | Project | Backward approach | Exact for the hard forward? | Cost |
@@ -215,12 +215,13 @@ word, and we want to be honest about that:
   `log²T` factor nor the `Λ`-dependent term is obviously optimal, and the
   pure-Python reference carries large constants (the C++ port in
   `conv_rosa_transformer/` exists precisely to bring them down).
-- A different algorithm with **worst-case `O(T·log³T)`** total complexity also
-  exists locally. It is deliberately *not* published here: its constant factors
-  and memory requirements are so large that in practice it runs far slower than
-  the algorithm in this repository and exhausts memory long before any
-  asymptotic advantage could show. We mention it only as evidence that the
-  complexity frontier for this problem has not settled.
+- I (Xiaoiec) also have a different algorithm locally on my own machine with
+  **worst-case `O(T·log³T)`** total complexity. It is deliberately *not*
+  published here: its constant factors and memory requirements are so large
+  that in practice it runs far slower than the algorithm in this repository
+  and exhausts memory long before any asymptotic advantage could show. It is
+  mentioned only as evidence that the complexity frontier for this problem has
+  not settled.
 
 If you can design a backward algorithm for this architecture that is cheaper in
 compute or memory — exact, or with a principled error bound — that would be a
@@ -251,7 +252,7 @@ Community ROSA projects listed by the
 Copyright 2026 xiaoiecc. Licensed under the Apache License, Version 2.0 — see
 [LICENSE](LICENSE) for the full text.
 
-ROSA and the ROSA-QKV forward architecture are due to Bo Peng (BlinkDL) for
+ROSA and the QKV-ROSA forward architecture are due to Bo Peng (BlinkDL) for
 RWKV-8; this repository implements that architecture and contributes the exact
 backward algorithm, and claims no authorship of ROSA itself. It is an
 independent implementation, not an official RWKV distribution.

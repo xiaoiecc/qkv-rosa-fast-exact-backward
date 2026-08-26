@@ -1,4 +1,4 @@
-# Exact backpropagation for the ROSA-QKV discrete retrieval architecture.
+# Exact backpropagation for the QKV-ROSA discrete retrieval architecture.
 # The forward architecture follows the RWKV-8 ROSA examples by Bo Peng (BlinkDL);
 # the exact backward algorithm is this repository's contribution.
 # Copyright 2026 xiaoiecc
