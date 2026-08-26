@@ -1,35 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1119.08" height="308.88" viewBox="0 0 1119.08 308.88" role="img" aria-label="Figure 6 — same 24 bits, same answers: naive recomputation vs compiled surfaces (running instance)">
-<title>Figure 6 — same 24 bits, same answers: naive recomputation vs compiled surfaces (running instance)</title>
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="893.4" height="308.88" viewBox="0 0 893.4 308.88" role="img" aria-label="图 6 —— 同样的 24 个比特、同样的答案：朴素重算 vs 编译曲面（贯穿实例）">
+<title>图 6 —— 同样的 24 个比特、同样的答案：朴素重算 vs 编译曲面（贯穿实例）</title>
 <desc>Side-by-side of naive recomputation and compiled surfaces.</desc>
 <defs><marker id="arr-16a34a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/></marker><marker id="arr-374151" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#374151"/></marker></defs>
-<rect x="0" y="0" width="1119.08" height="308.88" fill="#ffffff"/>
-<rect x="14" y="37.88" width="330.16" height="207.38" rx="6" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="6,3"/>
-<rect x="404.16" y="37.88" width="700.92" height="257" rx="6" fill="none" stroke="#2563eb" stroke-width="1.5"/>
-<path d="M 344.16 141.57 L 404.16 166.38" fill="none" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr-16a34a)"/>
-<rect x="24" y="47.88" width="237.62" height="27" rx="4" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
-<text x="142.81" y="65.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle" font-weight="bold">NAIVE (backward_bruteforce)</text>
-<rect x="24" y="82.88" width="294.04" height="27" rx="4" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
-<text x="171.02" y="100.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">24 bit flips x full forward O(T^3)</text>
-<rect x="24" y="117.88" width="269.86" height="82.38" rx="4" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
-<text x="158.93" y="135.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">each forward re-derives ALL of:</text>
-<text x="158.93" y="154" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">  every suffix comparison</text>
-<text x="158.93" y="172.46" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">  every tie-break</text>
-<text x="158.93" y="190.92" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">  every payload read</text>
-<rect x="24" y="208.26" width="310.16" height="27" rx="4" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
-<text x="179.08" y="225.92" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">total: 24 x 8^3 = 12288 suffix steps</text>
-<rect x="414.16" y="47.88" width="132.84" height="27" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-<text x="480.58" y="65.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle" font-weight="bold">THIS ALGORITHM</text>
-<rect x="414.16" y="82.88" width="302.1" height="27" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-<text x="565.21" y="100.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">one baseline forward (fast, Part 2)</text>
-<rect x="414.16" y="117.88" width="680.92" height="27" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-<text x="754.62" y="135.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">Q-side deletion surfaces: 12 affine runs cover all 22 owner-output deletion events</text>
-<rect x="414.16" y="152.88" width="680.92" height="27" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-<text x="754.62" y="170.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">K-side deletion surfaces: 12 affine runs cover all 22 owner-output deletion events</text>
-<rect x="414.16" y="187.88" width="471.36" height="27" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
-<text x="649.84" y="205.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">11 one-bit (q,k) pairs -&gt; 12 repair terms on t-intervals</text>
-<rect x="414.16" y="222.88" width="253.74" height="27" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-<text x="541.03" y="240.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">closed-form V credit (7 adds)</text>
-<rect x="414.16" y="257.88" width="560.02" height="27" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
-<text x="694.17" y="275.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">total: 36 compiled terms, each carrying a grad_y-weighted range sum</text>
-<text x="24" y="28" font-family="Consolas,Menlo,monospace" font-size="14" fill="#111827" text-anchor="start" font-weight="bold">Figure 6 — same 24 bits, same answers: naive recomputation vs compiled surfaces (running instance)</text>
+<rect x="0" y="0" width="893.4" height="308.88" fill="#ffffff"/>
+<rect x="14" y="37.88" width="289.86" height="207.38" rx="6" fill="none" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="6,3"/>
+<rect x="363.86" y="37.88" width="515.54" height="257" rx="6" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+<path d="M 303.86 141.57 L 363.86 166.38" fill="none" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arr-16a34a)"/>
+<rect x="24" y="47.88" width="253.74" height="27" rx="4" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+<text x="150.87" y="65.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle" font-weight="bold">朴素法（backward_bruteforce）</text>
+<rect x="24" y="82.88" width="269.86" height="27" rx="4" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
+<text x="158.93" y="100.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">24 次比特翻转 x 完整前向 O(T^3)</text>
+<rect x="24" y="117.88" width="213.44" height="82.38" rx="4" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
+<text x="130.72" y="135.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">每次前向都重新推导全部：</text>
+<text x="130.72" y="154" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">  每一次后缀比较</text>
+<text x="130.72" y="172.46" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">  每一次平局决胜</text>
+<text x="130.72" y="190.92" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">  每一次负载读取</text>
+<rect x="24" y="208.26" width="269.86" height="27" rx="4" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+<text x="158.93" y="225.92" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">合计：24 x 8^3 = 12288 次后缀步</text>
+<rect x="373.86" y="47.88" width="68.36" height="27" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="408.04" y="65.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle" font-weight="bold">本算法</text>
+<rect x="373.86" y="82.88" width="245.68" height="27" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="496.7" y="100.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">一次基线前向（快速，Part 2）</text>
+<rect x="373.86" y="117.88" width="495.54" height="27" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="621.63" y="135.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">Q 侧删除曲面：12 条仿射 run 覆盖全部 22 个属主-输出删除事件</text>
+<rect x="373.86" y="152.88" width="495.54" height="27" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="621.63" y="170.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">K 侧删除曲面：12 条仿射 run 覆盖全部 22 个属主-输出删除事件</text>
+<rect x="373.86" y="187.88" width="390.76" height="27" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+<text x="569.24" y="205.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">11 个单比特 (q,k) 对 -&gt; 12 个 t 区间上的修复项</text>
+<rect x="373.86" y="222.88" width="221.5" height="27" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="484.61" y="240.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">闭式 V credit（7 次累加）</text>
+<rect x="373.86" y="257.88" width="431.06" height="27" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+<text x="589.39" y="275.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">合计：36 个编译项，各自携带一个 grad_y 加权的区间和</text>
+<text x="24" y="28" font-family="Consolas,Menlo,monospace" font-size="14" fill="#111827" text-anchor="start" font-weight="bold">图 6 —— 同样的 24 个比特、同样的答案：朴素重算 vs 编译曲面（贯穿实例）</text>
 </svg>

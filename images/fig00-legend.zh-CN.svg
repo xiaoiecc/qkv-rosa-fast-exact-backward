@@ -1,21 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="768.56" height="139.88" viewBox="0 0 768.56 139.88" role="img" aria-label="图例：所有图中使用的颜色与连线语义">
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="623.48" height="139.88" viewBox="0 0 623.48 139.88" role="img" aria-label="图例：所有图中使用的颜色与连线语义">
 <title>图例：所有图中使用的颜色与连线语义</title>
 <desc>图例：所有图中使用的颜色与连线语义</desc>
 <defs><marker id="arr-dc2626" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#dc2626"/></marker><marker id="arr-374151" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#374151"/></marker></defs>
-<rect x="0" y="0" width="768.56" height="139.88" fill="#ffffff"/>
+<rect x="0" y="0" width="623.48" height="139.88" fill="#ffffff"/>
 <path d="M 66.24 112.38 L 276.24 112.38" fill="none" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arr-dc2626)"/>
-<rect x="14" y="45.88" width="205.38" height="27" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-<text x="116.69" y="63.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">forward / baseline data</text>
-<rect x="235.38" y="45.88" width="245.68" height="27" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
-<text x="358.22" y="63.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">credit flow / changed object</text>
-<rect x="497.06" y="45.88" width="132.84" height="27" rx="4" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="5,3"/>
-<text x="563.48" y="63.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">frozen content</text>
-<rect x="645.9" y="45.88" width="108.66" height="27" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
-<text x="700.23" y="63.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">match / hit</text>
+<rect x="14" y="45.88" width="140.9" height="27" rx="4" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="84.45" y="63.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">前向 / 基线数据</text>
+<rect x="170.9" y="45.88" width="213.44" height="27" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+<text x="277.62" y="63.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">credit 流 / 被改变的对象</text>
+<rect x="400.34" y="45.88" width="84.48" height="27" rx="4" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="5,3"/>
+<text x="442.58" y="63.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">冻结内容</text>
+<rect x="500.82" y="45.88" width="108.66" height="27" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+<text x="555.15" y="63.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">匹配 / 命中</text>
 <rect x="14" y="98.88" width="52.24" height="27" rx="4" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
-<text x="40.12" y="116.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">from</text>
-<rect x="276.24" y="98.88" width="36.12" height="27" rx="4" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
-<text x="294.3" y="116.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">to</text>
+<text x="40.12" y="116.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">来源</text>
+<rect x="276.24" y="98.88" width="52.24" height="27" rx="4" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
+<text x="302.36" y="116.54" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">去向</text>
 <text x="14" y="28" font-family="Consolas,Menlo,monospace" font-size="14" fill="#111827" text-anchor="start" font-weight="bold">图例：所有图中使用的颜色与连线语义</text>
-<text x="171.24" y="102.34" font-family="Consolas,Menlo,monospace" font-size="12" fill="#dc2626" text-anchor="middle">credit flow / dependency</text>
+<text x="171.24" y="102.34" font-family="Consolas,Menlo,monospace" font-size="12" fill="#dc2626" text-anchor="middle">credit 流 / 依赖</text>
 </svg>

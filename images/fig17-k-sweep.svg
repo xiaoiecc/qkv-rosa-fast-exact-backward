@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="652.96" height="291.2" viewBox="0 0 652.96 291.2" role="img" aria-label="Figure 17 — the K-side sweep at owner s = 2 (the real runs of section 6)">
+<title>Figure 17 — the K-side sweep at owner s = 2 (the real runs of section 6)</title>
+<desc>The K-side deletion sweep at owner s = 2, checked against the brute-force credit table.</desc>
+<defs><marker id="arr-374151" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#374151"/></marker></defs>
+<rect x="0" y="0" width="652.96" height="291.2" fill="#ffffff"/>
+<rect x="14" y="251.2" width="585.44" height="26" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+<text x="306.72" y="268.04" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="middle">credit_k[2] = −0.3135 + 0.0649 = −0.2486   ✓ (matches the brute-force table)</text>
+<text x="14" y="28" font-family="Consolas,Menlo,monospace" font-size="14" fill="#111827" text-anchor="start" font-weight="bold">Figure 17 — the K-side sweep at owner s = 2 (the real runs of section 6)</text>
+<text x="14" y="61.88" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start" font-weight="bold">deletion runs touching owner s=2 (from section 6):</text>
+<text x="14" y="85.92" font-family="Consolas,Menlo,monospace" font-size="12" fill="#2563eb" text-anchor="start">   t=3: [s in 2..2]  route (2,1):  payload V[2]=1 vs baseline V[3]=0</text>
+<text x="14" y="109.96" font-family="Consolas,Menlo,monospace" font-size="12" fill="#2563eb" text-anchor="start">         -&gt; score delta = grad_y[3] · (+emb1 − (−emb1)) = −1.302297 × 0.240726</text>
+<text x="14" y="134" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">   t=4: [s in 2..3]  route (2,1):  payload V[2]=1 vs baseline V[4]=1 -&gt; 0</text>
+<text x="14" y="158.04" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">   t=5: [s in 0..3]  route (2,4):  payload V[5]=1 vs baseline V[5]=1 -&gt; 0</text>
+<text x="14" y="182.08" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">sweep at owner 2: total = −0.3135  (only t=3 moves)</text>
+<text x="14" y="206.12" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">overlay: + DRS term [5,5] shift=-2: +0.0649 − sweep.range_sum(5,5)=0</text>
+<text x="14" y="230.16" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">         + DRS term [7,7] shift=-3:  0 (skipped: equal sign)</text>
+</svg>

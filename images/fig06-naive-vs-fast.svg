@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1119.08" height="308.88" viewBox="0 0 1119.08 308.88" role="img" aria-label="Figure 6 — same 24 bits, same answers: naive recomputation vs compiled surfaces (running instance)">
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="1119.08" height="308.88" viewBox="0 0 1119.08 308.88" role="img" aria-label="Figure 6 — same 24 bits, same answers: naive recomputation vs compiled surfaces (running instance)">
 <title>Figure 6 — same 24 bits, same answers: naive recomputation vs compiled surfaces (running instance)</title>
 <desc>Side-by-side of naive recomputation and compiled surfaces.</desc>
 <defs><marker id="arr-16a34a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#16a34a"/></marker><marker id="arr-374151" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#374151"/></marker></defs>

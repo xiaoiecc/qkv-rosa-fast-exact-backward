@@ -1,5 +1,7 @@
 # The Exact Backward for QKV-ROSA — A Derivation-Grade Walkthrough
 
+[中文版](ALGORITHM.zh-CN.md)
+
 This document is the companion guide to
 [`hard_qkv_rosa_explained.py`](hard_qkv_rosa_explained.py). It does not replace
 that file; it walks alongside it. Every mechanism below ends with a pointer of
@@ -193,6 +195,10 @@ an earlier one of equal length.
 Figure 2 walks the running instance position by position. The last row
 (`t = 7`) is the tie-break made visible:
 
+![Figure 2 — the running instance walked position by position: q[t], ell[t], route[t], payload source and y[t] for each t, with the t = 7 tie-break shown below as a common-suffix-length strip where r = 0..3 tie and the latest wins.](images/fig02-position-trace.svg)
+
+<details><summary>ASCII fallback</summary>
+
 ```
 t   q[t]  ell[t]  route[t]  payload   y[t]        what happened
 0    0      0       -1      emb0    -0.111467    K[:0] is empty: no match possible
@@ -209,6 +215,8 @@ tie at t=7 (q[7]=0):  common-suffix length of Q[:8] with K[:r+1]:
    all of r=0,1,2,3 tie at length 1  ->  latest wins  ->  route[7] = 3
    (note the match is *truncated*: it never reaches back to K[0])
 ```
+
+</details>
 
 Two positions in this figure will do heavy lifting later: `t=0` is the only
 unmatched position (its flip behavior is a separate, simpler family, §8.4);
@@ -311,6 +319,10 @@ re-simulation.
 Figure 4 shows the full census of what the 24 bits of the running instance
 do, with one representative flip per side worked out:
 
+![Figure 4 — the flip census: three panels listing, for each q/k/v bit, the positions whose (ell, route) change and its credit; below, the worked examples for v[1] (pure payload flip) and q[2] (one match broken, four shortened, but only t = 2 moves y).](images/fig04-flip-census.svg)
+
+<details><summary>ASCII fallback</summary>
+
 ```
 flip census (positions whose (ell, route) change; credit):
 
@@ -334,6 +346,8 @@ worked example, q[2] (credit +0.162175): the flip breaks one match and shortens 
   5    5 -> 3      4 ->  4      unchanged
   6    6 -> 4      5 ->  5      unchanged
 ```
+
+</details>
 
 Read Figure 4 bottom-up once: the `q[2]` flip moves five positions' routes,
 yet only `t=2` contributes to credit, because at `t=3..6` the old and new
@@ -364,6 +378,10 @@ sign convention is the one place where an off-by-sign error is easy to make:
 geometry with measured numbers (D=2 demo, `z` from seed 23, `τ=0.5`; full
 setup in §12):
 
+![Figure 5 — the orient map: a bit-0 cell left of the threshold with an arrow pushing z upward across it (orient = +1), a bit-1 cell right of it with an arrow pushing z downward (orient = −1); below, the measured identity and bernoulli gradients for position 1, bit-plane 1.](images/fig05-logit-map.svg)
+
+<details><summary>ASCII fallback</summary>
+
 ```
 bit = 0  ->  orient = +1  (the flip direction in z-space is upward
                            across the threshold)
@@ -374,6 +392,8 @@ position 1, bit-plane 1:  credit = +0.049447, bit = 0 -> orient = +1
    identity : grad = +1 × 0.049447                    = +0.049447
    bernoulli: grad = 0.8178 × 0.1822 / 0.5 × 0.049447 = +0.014737
 ```
+
+</details>
 
 **Now read the code:** `backward_bruteforce`,
 `hard_qkv_rosa_explained.py:189-214` — 25 lines, and the definition is the
@@ -538,6 +558,10 @@ position is an independent `O(log²T)` query.
 Figure 8 shows the real query for `t=6` of the running instance (symbols
 remapped: 0→2, 1→3; sentinels 0 and 1):
 
+![Figure 8 — the packed text array with the reverse(Q) and reverse(K) regions enclosed, then the two static queries for t = 6: the neighbor-rank step finding length 6 at rank 15, and the winner-endpoint step picking p* = 2 inside the rank interval [15, 17], yielding ell[6] = 6, route[6] = 5.](images/fig08-forward-query.svg)
+
+<details><summary>ASCII fallback</summary>
+
 ```
 text   = [2,3,3,2,2,2,2,2, 0, 2,3,3,3,2,2,2,2, 1]     (len 18)
            \_________/      \_____________/
@@ -556,6 +580,8 @@ step 2 (winner endpoint inside the rank interval of length-6 matches):
 
 =>  ell[6] = 6, route[6] = 5      (matches Figure 2)
 ```
+
+</details>
 
 Read Figure 8 as: the entire forward for one position is two static queries
 plus an `O(1)` LCP. The backward reuses this index — and adds its mirror image
@@ -643,7 +669,7 @@ owner positions collapse into a single segment. The full instance compiles to
 **Cross-check against a real flip.** Figure 4's `q[2]` flip: at `t=6`, owner
 `s=2` lies in the `[1,5]` segment, so the deletion surface predicts
 `L = 6−2 = 4`, `r = 5`. The brute-force flip measured exactly `ell: 6→4`,
-`route: 5→5` (§3.3 census). At `t=2`, owner `s=2` is the last-bit segment →
+`route: 5→5` (§2 census). At `t=2`, owner `s=2` is the last-bit segment →
 unmatched, and indeed `ell[2]: 2→0` in the flip. The deletion surface *is* the
 flipped baseline wherever the flipped bit creates no new match; where it does,
 a repair term (§7) overrides — e.g. `q[5]` and `q[6]` own repair terms
@@ -736,7 +762,7 @@ t=3:  s in [0,1]:  L(s) = 2 - s,  r(s) = 2     <- H ramp: window right of hole,
       =====                                      the hole, endpoint s-1
 ```
 
-Check against the real flip of `k[2]` (§3.3): brute force measured
+Check against the real flip of `k[2]` (§2): brute force measured
 `t=3: ell 3→2, route 2→1` — exactly `route(3, 2) = (2, 1)` from the surface.
 The full merged surfaces of the instance (`k_delete_runs=12` segments covering
 `k_delete_pair_equiv=22` pairs):
@@ -1155,6 +1181,10 @@ payload LCE skips 8 of them in 5 jumps, and only **2 points** are materialized
 (`drs_requested_points=14`, `drs_semantic_equal_skips=8`,
 `drs_materialized_mismatches=2`). Figure 16 shows the scan:
 
+![Figure 16 — the DRS scan: the shift=−2 group with one mismatch materialized at t = 5 and an LCE jump over t = 6,7; the shift=−1 group skipping three points at once; the four singleton groups below; and the summary box: 8 skipped, 2 materialized.](images/fig16-drs-scan.svg)
+
+<details><summary>ASCII fallback</summary>
+
 ```
 shift=-2 group: terms [5,5] (owner k=2), [6,6] (owner q=6), [7,7] (owner k=4)
 merged interval: [5,7];  candidate payload V[t-2];  baseline label[t] = v[route[t]+1]
@@ -1172,6 +1202,8 @@ shift=-3: [7,7]  V[4]=1 == 1           skip    shift= 0: [7,7]  V[7]=1 == 1  ski
 total: 8 skipped, 2 materialized  ->  two prefix-sum arrays answer all 12
 owner queries (drs_queries=12 = q_overlay 4 + k_overlay 8)
 ```
+
+</details>
 
 The skipped points are exactly the zero-credit flips of the §2 census (`q[5]`,
 `q[6]`, `q[7]`): their routes move, their payloads do not, and the contraction
@@ -1192,6 +1224,10 @@ owner `s` advances `0 .. T−1`, each interval switches on at `s_lo` and off at
 Each owner then costs `O(log T)` per overlay query; Figure 17 sketches the K
 sweep on the real `t=3` runs of §6:
 
+![Figure 17 — the K-side sweep at owner s = 2: the three deletion runs touching it, only t = 3 moving the total to −0.3135, the overlay adding +0.0649, and the final check credit_k[2] = −0.2486 against the brute-force table.](images/fig17-k-sweep.svg)
+
+<details><summary>ASCII fallback</summary>
+
 ```
 deletion runs touching owner s=2 (from section 6):
    t=3: [s in 2..2]  route (2,1):  payload V[2]=1 vs baseline V[3]=0
@@ -1204,6 +1240,8 @@ overlay: + DRS term [5,5] shift=-2: +0.0649 − sweep.range_sum(5,5)=0
          + DRS term [7,7] shift=-3:  0 (skipped: equal sign)
 credit_k[2] = −0.3135 + 0.0649 = −0.2486   ✓ (matches the brute-force table)
 ```
+
+</details>
 
 **Piece 3: V credit is closed form.** Flipping `v_bits[u, j]` never changes
 `ell` or `route`; it flips the sign of `y[t]` exactly when `route[t]+1 == u`.

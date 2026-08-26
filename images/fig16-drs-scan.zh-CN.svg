@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="639.76" height="350.28" viewBox="0 0 639.76 350.28" role="img" aria-label="图 16 —— DRS 扫描：14 个被请求的点，负载 LCE 跳过 8 个，物化 2 个">
+<title>图 16 —— DRS 扫描：14 个被请求的点，负载 LCE 跳过 8 个，物化 2 个</title>
+<desc>The difference-range scan: payload LCE skips the points where candidate and baseline payloads agree.</desc>
+<defs><marker id="arr-374151" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#374151"/></marker></defs>
+<rect x="0" y="0" width="639.76" height="350.28" fill="#ffffff"/>
+<rect x="14" y="293.24" width="525.92" height="43.04" rx="4" fill="#ffffff" stroke="#111827" stroke-width="1.5"/>
+<text x="276.96" y="310.08" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="middle">合计：跳过 8 个，物化 2 个  -&gt;  两个前缀和数组回答全部 12 次属主查询</text>
+<text x="276.96" y="327.12" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="middle">（drs_queries=12 = q_overlay 4 + k_overlay 8）</text>
+<text x="14" y="28" font-family="Consolas,Menlo,monospace" font-size="14" fill="#111827" text-anchor="start" font-weight="bold">图 16 —— DRS 扫描：14 个被请求的点，负载 LCE 跳过 8 个，物化 2 个</text>
+<text x="14" y="61.88" font-family="Consolas,Menlo,monospace" font-size="12" fill="#2563eb" text-anchor="start">shift=-2 组：terms [5,5]（属主 k=2）、[6,6]（属主 q=6）、[7,7]（属主 k=4）</text>
+<text x="14" y="85.92" font-family="Consolas,Menlo,monospace" font-size="12" fill="#2563eb" text-anchor="start">合并区间：[5,7]；候选负载 V[t-2]；基线 label[t] = v[route[t]+1]</text>
+<text x="14" y="109.96" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start" font-weight="bold">   t       候选 V[t-2]         基线 label     判定</text>
+<text x="14" y="134" font-family="Consolas,Menlo,monospace" font-size="12" fill="#dc2626" text-anchor="start">   5       V[3] = 0            V[6] = 1       不匹配    -&gt; 物化</text>
+<text x="14" y="158.04" font-family="Consolas,Menlo,monospace" font-size="12" fill="#16a34a" text-anchor="start">   6,7     V[4],V[5] = 1,1     V[7],V[4] = 1,1 相等      -&gt; 一次 LCE 跳过 2 个点</text>
+<text x="14" y="191.08" font-family="Consolas,Menlo,monospace" font-size="12" fill="#2563eb" text-anchor="start">shift=-1 组：合并 [5,7]；t=5: V[4] = label[5] = 1,  LCE = 3</text>
+<text x="14" y="215.12" font-family="Consolas,Menlo,monospace" font-size="12" fill="#16a34a" text-anchor="start">   -&gt; 一次跳跃跳过 t = 5,6,7（一次 3 个点）</text>
+<text x="14" y="248.16" font-family="Consolas,Menlo,monospace" font-size="12" fill="#16a34a" text-anchor="start">shift=-5: [7,7]  V[2]=1 == label[7]=1  跳过</text>
+<text x="357.92" y="248.16" font-family="Consolas,Menlo,monospace" font-size="12" fill="#dc2626" text-anchor="start">shift=-4: [7,7]  V[3]=0 != 1  不匹配</text>
+<text x="14" y="272.2" font-family="Consolas,Menlo,monospace" font-size="12" fill="#16a34a" text-anchor="start">shift=-3: [7,7]  V[4]=1 == 1           跳过</text>
+<text x="357.92" y="272.2" font-family="Consolas,Menlo,monospace" font-size="12" fill="#16a34a" text-anchor="start">shift= 0: [7,7]  V[7]=1 == 1  跳过</text>
+</svg>

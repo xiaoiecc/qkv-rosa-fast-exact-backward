@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="710.64" height="503.6" viewBox="0 0 710.64 503.6" role="img" aria-label="图 4 —— 翻转普查：24 个比特各自的作用（(ell, route) 发生变化的位置；credit）">
+<title>图 4 —— 翻转普查：24 个比特各自的作用（(ell, route) 发生变化的位置；credit）</title>
+<desc>Census of all 24 bit flips of the running instance, plus one worked example per side.</desc>
+<defs><marker id="arr-374151" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#374151"/></marker></defs>
+<rect x="0" y="0" width="710.64" height="503.6" fill="#ffffff"/>
+<text x="14" y="28" font-family="Consolas,Menlo,monospace" font-size="14" fill="#111827" text-anchor="start" font-weight="bold">图 4 —— 翻转普查：24 个比特各自的作用（(ell, route) 发生变化的位置；credit）</text>
+<text x="14" y="77.88" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start" font-weight="bold">q 翻转</text>
+<text x="14" y="102.92" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">q[0]:  {}         0.0</text>
+<text x="14" y="124.96" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">q[1]:  {1..6}     +0.017311</text>
+<text x="14" y="147" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">q[2]:  {2..6}     +0.162175</text>
+<text x="14" y="169.04" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">q[3]:  {3..6}     -0.011585</text>
+<text x="14" y="191.08" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">q[4]:  {4..6}     +0.118990</text>
+<text x="14" y="213.12" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">q[5]:  {5,6}      0.0</text>
+<text x="14" y="235.16" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">q[6]:  {6,7}      0.0</text>
+<text x="14" y="257.2" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">q[7]:  {7}        0.0</text>
+<text x="254.88" y="77.88" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start" font-weight="bold">k 翻转</text>
+<text x="254.88" y="102.92" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">k[0]:  {1..7}     +0.017311</text>
+<text x="254.88" y="124.96" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">k[1]:  {2..7}     +0.051904</text>
+<text x="254.88" y="147" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">k[2]:  {3..7}     -0.248592</text>
+<text x="254.88" y="169.04" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">k[3]:  {4..7}     +0.007062</text>
+<text x="254.88" y="191.08" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">k[4]:  {5..7}     +0.062506</text>
+<text x="254.88" y="213.12" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">k[5]:  {6,7}      0.0</text>
+<text x="254.88" y="235.16" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">k[6]:  {7}        0.0</text>
+<text x="254.88" y="257.2" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">k[7]:  {}         0.0</text>
+<text x="495.76" y="77.88" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start" font-weight="bold">v 翻转</text>
+<text x="495.76" y="102.92" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">v[0]:  {}         0.0</text>
+<text x="495.76" y="124.96" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">v[1]:  {}         +0.468436</text>
+<text x="495.76" y="147" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">v[2]:  {}         +0.168398</text>
+<text x="495.76" y="169.04" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">v[3]:  {}         -0.313497</text>
+<text x="495.76" y="191.08" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">v[4]:  {}         +0.007062</text>
+<text x="495.76" y="213.12" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">v[5]:  {}         +0.064904</text>
+<text x="495.76" y="235.16" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">v[6]:  {}         -0.059263</text>
+<text x="495.76" y="257.2" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">v[7]:  {}         0.0</text>
+<text x="14" y="296.24" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">演算示例 v[1]：翻转 v[1] 不改变任何 ell/route；只有 y[1] 变号</text>
+<text x="14" y="319.28" font-family="Consolas,Menlo,monospace" font-size="12" fill="#16a34a" text-anchor="start">credit_v[1] = grad_y[1] · ((+emb1) − (−emb1)) = 1.945929 × 0.240726 = 0.468436  ✓</text>
+<text x="14" y="352.32" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">演算示例 q[2]（credit +0.162175）：这次翻转打断 1 个匹配、缩短 4 个匹配</text>
+<text x="14" y="374.36" font-family="Consolas,Menlo,monospace" font-size="12" fill="#6b7280" text-anchor="start">  t   ell-&gt;ell&#x27;  route-&gt;route&#x27;   y -&gt; y&#x27;</text>
+<text x="14" y="396.4" font-family="Consolas,Menlo,monospace" font-size="12" fill="#dc2626" text-anchor="start">  2    2 -&gt; 0      1 -&gt; -1     +0.120363 -&gt; -0.111467    输出变为 emb0</text>
+<text x="14" y="418.44" font-family="Consolas,Menlo,monospace" font-size="12" fill="#6b7280" text-anchor="start">  3    3 -&gt; 1      2 -&gt;  2     -0.120363 -&gt; -0.120363    route 变了，y 没有</text>
+<text x="14" y="440.48" font-family="Consolas,Menlo,monospace" font-size="12" fill="#6b7280" text-anchor="start">  4    4 -&gt; 2      3 -&gt;  3      不变                     （负载 V[3] 相同）</text>
+<text x="14" y="462.52" font-family="Consolas,Menlo,monospace" font-size="12" fill="#6b7280" text-anchor="start">  5    5 -&gt; 3      4 -&gt;  4      不变</text>
+<text x="14" y="484.56" font-family="Consolas,Menlo,monospace" font-size="12" fill="#6b7280" text-anchor="start">  6    6 -&gt; 4      5 -&gt;  5      不变</text>
+</svg>

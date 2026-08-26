@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="571.12" height="291.2" viewBox="0 0 571.12 291.2" role="img" aria-label="图 17 —— 属主 s = 2 处的 K 侧扫描线（第 6 节的真实 run）">
+<title>图 17 —— 属主 s = 2 处的 K 侧扫描线（第 6 节的真实 run）</title>
+<desc>The K-side deletion sweep at owner s = 2, checked against the brute-force credit table.</desc>
+<defs><marker id="arr-374151" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#374151"/></marker></defs>
+<rect x="0" y="0" width="571.12" height="291.2" fill="#ffffff"/>
+<rect x="14" y="251.2" width="466.4" height="26" rx="4" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+<text x="247.2" y="268.04" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="middle">credit_k[2] = −0.3135 + 0.0649 = −0.2486   ✓（与暴力表一致）</text>
+<text x="14" y="28" font-family="Consolas,Menlo,monospace" font-size="14" fill="#111827" text-anchor="start" font-weight="bold">图 17 —— 属主 s = 2 处的 K 侧扫描线（第 6 节的真实 run）</text>
+<text x="14" y="61.88" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start" font-weight="bold">触及属主 s=2 的删除 run（来自第 6 节）：</text>
+<text x="14" y="85.92" font-family="Consolas,Menlo,monospace" font-size="12" fill="#2563eb" text-anchor="start">   t=3: [s in 2..2]  route (2,1):  负载 V[2]=1 对基线 V[3]=0</text>
+<text x="14" y="109.96" font-family="Consolas,Menlo,monospace" font-size="12" fill="#2563eb" text-anchor="start">         -&gt; 得分差 = grad_y[3] · (+emb1 − (−emb1)) = −1.302297 × 0.240726</text>
+<text x="14" y="134" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">   t=4: [s in 2..3]  route (2,1):  负载 V[2]=1 对基线 V[4]=1 -&gt; 0</text>
+<text x="14" y="158.04" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">   t=5: [s in 0..3]  route (2,4):  负载 V[5]=1 对基线 V[5]=1 -&gt; 0</text>
+<text x="14" y="182.08" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">属主 2 处的扫描线：total = −0.3135（仅 t=3 有变化）</text>
+<text x="14" y="206.12" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">覆盖：+ DRS 项 [5,5] shift=-2：+0.0649 − sweep.range_sum(5,5)=0</text>
+<text x="14" y="230.16" font-family="Consolas,Menlo,monospace" font-size="12" fill="#9ca3af" text-anchor="start">         + DRS 项 [7,7] shift=-3：0（跳过：符号相同）</text>
+</svg>

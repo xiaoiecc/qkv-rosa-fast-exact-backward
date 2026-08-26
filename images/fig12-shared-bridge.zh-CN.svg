@@ -1,46 +1,46 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="973.44" height="307.08" viewBox="0 0 973.44 307.08" role="img" aria-label="Figure 12 — the bridge behind the k[2] flip: pair (q_pos=5, k_pos=2, bit=0)">
-<title>Figure 12 — the bridge behind the k[2] flip: pair (q_pos=5, k_pos=2, bit=0)</title>
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="854.4" height="307.08" viewBox="0 0 854.4 307.08" role="img" aria-label="图 12 —— k[2] 翻转背后的修复桥：对 (q_pos=5, k_pos=2, bit=0)">
+<title>图 12 —— k[2] 翻转背后的修复桥：对 (q_pos=5, k_pos=2, bit=0)</title>
 <desc>Bridge geometry: q row and k row paired column-wise, left=2 context, the flipped bit, right=0.</desc>
 <defs><marker id="arr-374151" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#374151"/></marker></defs>
-<rect x="0" y="0" width="973.44" height="307.08" fill="#ffffff"/>
-<rect x="150.92" y="58.88" width="78" height="40" rx="6" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="6,3"/>
-<rect x="155.92" y="63.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-<text x="172.92" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
-<rect x="189.92" y="63.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-<text x="206.92" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
-<rect x="223.92" y="63.88" width="34" height="30" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
-<text x="240.92" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">1</text>
-<rect x="257.92" y="63.88" width="34" height="30" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
-<text x="274.92" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">1</text>
-<rect x="291.92" y="63.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-<text x="308.92" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
-<rect x="155.92" y="135.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-<text x="172.92" y="155.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
-<rect x="189.92" y="135.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-<text x="206.92" y="155.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
-<rect x="223.92" y="135.88" width="34" height="30" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
-<text x="240.92" y="155.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
-<rect x="257.92" y="135.88" width="34" height="30" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
-<text x="274.92" y="155.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
-<rect x="291.92" y="135.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
-<text x="308.92" y="155.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">1</text>
-<text x="155.92" y="28" font-family="Consolas,Menlo,monospace" font-size="14" fill="#111827" text-anchor="start" font-weight="bold">Figure 12 — the bridge behind the k[2] flip: pair (q_pos=5, k_pos=2, bit=0)</text>
-<text x="172.92" y="56.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">3</text>
-<text x="206.92" y="56.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">4</text>
-<text x="240.92" y="56.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">5</text>
-<text x="274.92" y="56.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">6</text>
-<text x="308.92" y="56.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">7</text>
-<text x="147.92" y="82.36" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="end">q (positions 3..7)</text>
-<text x="172.92" y="179.88" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">0</text>
-<text x="206.92" y="179.88" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">1</text>
-<text x="240.92" y="179.88" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">2</text>
-<text x="274.92" y="179.88" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">3</text>
-<text x="308.92" y="179.88" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">4</text>
-<text x="147.92" y="154.36" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="end">k (positions 0..4)</text>
-<text x="240.92" y="118.36" font-family="Consolas,Menlo,monospace" font-size="12" fill="#dc2626" text-anchor="middle">differ in bit 0 — flip me</text>
-<text x="155.92" y="203.88" font-family="Consolas,Menlo,monospace" font-size="12" fill="#16a34a" text-anchor="start">left = 2: equal context q[3..4] == k[0..1]</text>
-<text x="155.92" y="224.92" font-family="Consolas,Menlo,monospace" font-size="12" fill="#6b7280" text-anchor="start">right = 0: q[6] != k[3]</text>
-<text x="155.92" y="245.96" font-family="Consolas,Menlo,monospace" font-size="12" fill="#16a34a" text-anchor="start">after the flip: created match window q[3..5] == k&#x27;[0..2] == [0,0,1]</text>
-<text x="155.92" y="267" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">d = t - 5;  lifetime t in [5, 5+right] = [5,5];  route_at(5) = (left+1+0, k_pos+0) = (3, 2)</text>
-<text x="155.92" y="288.04" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">shift = k_pos - q_pos + 1 = -2  -&gt;  candidate payload V[t-2] = V[3]  (brute force: t=5 ell 5-&gt;3, route 4-&gt;2)</text>
+<rect x="0" y="0" width="854.4" height="307.08" fill="#ffffff"/>
+<rect x="121.16" y="58.88" width="78" height="40" rx="6" fill="none" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="6,3"/>
+<rect x="126.16" y="63.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="143.16" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="160.16" y="63.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="177.16" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="194.16" y="63.88" width="34" height="30" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+<text x="211.16" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">1</text>
+<rect x="228.16" y="63.88" width="34" height="30" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+<text x="245.16" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">1</text>
+<rect x="262.16" y="63.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="279.16" y="83.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="126.16" y="135.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="143.16" y="155.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="160.16" y="135.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="177.16" y="155.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="194.16" y="135.88" width="34" height="30" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+<text x="211.16" y="155.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="228.16" y="135.88" width="34" height="30" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+<text x="245.16" y="155.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">0</text>
+<rect x="262.16" y="135.88" width="34" height="30" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="279.16" y="155.43" font-family="Consolas,Menlo,monospace" font-size="13" fill="#111827" text-anchor="middle">1</text>
+<text x="126.16" y="28" font-family="Consolas,Menlo,monospace" font-size="14" fill="#111827" text-anchor="start" font-weight="bold">图 12 —— k[2] 翻转背后的修复桥：对 (q_pos=5, k_pos=2, bit=0)</text>
+<text x="143.16" y="56.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">3</text>
+<text x="177.16" y="56.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">4</text>
+<text x="211.16" y="56.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">5</text>
+<text x="245.16" y="56.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">6</text>
+<text x="279.16" y="56.26" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">7</text>
+<text x="118.16" y="82.36" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="end">q（位置 3..7）</text>
+<text x="143.16" y="179.88" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">0</text>
+<text x="177.16" y="179.88" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">1</text>
+<text x="211.16" y="179.88" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">2</text>
+<text x="245.16" y="179.88" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">3</text>
+<text x="279.16" y="179.88" font-family="Consolas,Menlo,monospace" font-size="11" fill="#9ca3af" text-anchor="middle">4</text>
+<text x="118.16" y="154.36" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="end">k（位置 0..4）</text>
+<text x="211.16" y="118.36" font-family="Consolas,Menlo,monospace" font-size="12" fill="#dc2626" text-anchor="middle">仅在 bit 0 不同 —— 翻转我</text>
+<text x="126.16" y="203.88" font-family="Consolas,Menlo,monospace" font-size="12" fill="#16a34a" text-anchor="start">left = 2：相等上下文 q[3..4] == k[0..1]</text>
+<text x="126.16" y="224.92" font-family="Consolas,Menlo,monospace" font-size="12" fill="#6b7280" text-anchor="start">right = 0：q[6] != k[3]</text>
+<text x="126.16" y="245.96" font-family="Consolas,Menlo,monospace" font-size="12" fill="#16a34a" text-anchor="start">翻转后：新建匹配窗口 q[3..5] == k&#x27;[0..2] == [0,0,1]</text>
+<text x="126.16" y="267" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">d = t - 5；存活期 t in [5, 5+right] = [5,5]；route_at(5) = (left+1+0, k_pos+0) = (3, 2)</text>
+<text x="126.16" y="288.04" font-family="Consolas,Menlo,monospace" font-size="12" fill="#111827" text-anchor="start">shift = k_pos - q_pos + 1 = -2  -&gt;  候选负载 V[t-2] = V[3]（暴力验证：t=5 ell 5-&gt;3，route 4-&gt;2）</text>
 </svg>
