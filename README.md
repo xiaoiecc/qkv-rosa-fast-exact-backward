@@ -1,4 +1,4 @@
-# Exact Backpropagation for ROSA-QKV
+# Fast Exact Backpropagation for ROSA-QKV
 
 A single-file PyTorch reference implementation of an **exact** backpropagation
 algorithm for the **ROSA-QKV** discrete retrieval architecture — not an STE, not
