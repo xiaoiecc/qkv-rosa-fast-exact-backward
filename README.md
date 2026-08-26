@@ -206,7 +206,7 @@ The single file is organized into numbered parts (banner comments inside):
 - **Part 16** — `autograd.Function` and `nn.Module`
 - **Part 17** — self-test and measurement utilities
 
-## Limitations, and a call for better algorithms
+## Limitations and future work
 
 The algorithm published here is exact and practical, but it is not the last
 word, and we want to be honest about that:
@@ -215,13 +215,12 @@ word, and we want to be honest about that:
   `log²T` factor nor the `Λ`-dependent term is obviously optimal, and the
   pure-Python reference carries large constants (the C++ port in
   `conv_rosa_transformer/` exists precisely to bring them down).
-- The author (Xiaoiec — see the note below) has also developed, locally, a
-  different algorithm with **worst-case `O(T·log³T)`** total complexity. It is
-  deliberately *not* published here: its constant factors and memory
-  requirements are so large that in practice it runs far slower than the
-  algorithm in this repository and exhausts memory long before any asymptotic
-  advantage could show. We mention it only as evidence that the complexity
-  frontier for this problem has not settled.
+- A different algorithm with **worst-case `O(T·log³T)`** total complexity also
+  exists locally. It is deliberately *not* published here: its constant factors
+  and memory requirements are so large that in practice it runs far slower than
+  the algorithm in this repository and exhausts memory long before any
+  asymptotic advantage could show. We mention it only as evidence that the
+  complexity frontier for this problem has not settled.
 
 If you can design a backward algorithm for this architecture that is cheaper in
 compute or memory — exact, or with a principled error bound — that would be a
@@ -246,12 +245,6 @@ Community ROSA projects listed by the
 - [x-0D/RASP](https://github.com/x-0D/RASP).
 - [KakaruHayate/RWKV8-ROSA-FPGA](https://github.com/KakaruHayate/RWKV8-ROSA-FPGA) —
   native ROSA on FPGA; [Juste-Leo2/ROSA-GPU-RWKV8](https://github.com/Juste-Leo2/ROSA-GPU-RWKV8) — GPU implementation.
-
-## A note from the author
-
-I usually go by **Xiaoiec**. My original GitHub account under that name was lost
-to a forgotten, unrecoverable password, so this account has an extra "c" —
-[@xiaoiecc](https://github.com/xiaoiecc) is me.
 
 ## License
 
