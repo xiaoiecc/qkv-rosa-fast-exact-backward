@@ -208,6 +208,9 @@ The single file is organized into numbered parts (banner comments inside):
 
 ## Limitations and future work
 
+For a derivation-grade walkthrough of the algorithm — the companion guide to
+`hard_qkv_rosa_explained.py` — see [ALGORITHM.md](ALGORITHM.md).
+
 The algorithm published here is exact and practical, but it is not the last
 word, and we want to be honest about that:
 
