@@ -63,11 +63,11 @@ cheap.
 
 - The file is self-contained and depends only on `torch`. Run
   `python hard_qkv_rosa_explained.py` now: it executes `self_test()`
-  (`hard_qkv_rosa_explained.py:2964`), which checks the fast forward and the
+  ([`hard_qkv_rosa_explained.py:2964`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2964)), which checks the fast forward and the
   fast backward against the brute-force definitions elementwise, then prints a
   timing demo. Everything in this document is checked by that test or by the
   short scripts reproduced in §12.
-- Read Part 0 first (L148–214). It is ~60 lines and states the complete
+- Read Part 0 first ([L148](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L148)–214). It is ~60 lines and states the complete
   semantics; the remaining ~2900 lines are an exact acceleration of those 60
   lines.
 - Each section below ends with a **"Now read the code"** pointer. The reading
@@ -85,24 +85,24 @@ identifiers, letter for letter:
 | plain description | code identifier | defined at |
 | --- | --- | --- |
 | stream length, bit width | `T`, `D` | everywhere |
-| symbol streams (packed integers) | `q`, `k` | L154 |
-| payload bits | `v_bits` | L154 |
-| no-match / matched payload vectors | `emb0`, `emb1` | L154 |
-| match length at position `t` | `ell[t]` | L154–178 |
-| match endpoint at position `t` (`-1` = unmatched) | `route[t]` | L154–178 |
-| the pair `(ell[t], route[t])` | `Route` | L145 |
-| flipped position, flipped bit index | `u`, `j` | L206–207 |
-| per-bit counterfactual credit | `credit` (`credit_q/k/v`) | L203–214 |
-| deleted K/Q position ("owner") | `s` | L242–255 |
-| affine deletion segment `L(s)=len_a·s+len_b`, `r(s)=end_a·s+end_b` | `AffineDeleteRun` | L242 |
-| K-side repair threshold segment (with `strict` polarity) | `KRepairThresholdRun` | L258 |
-| repair term: candidate payload `V[t+shift]` on `t∈[lo,hi]` | `RepairTrackTerm` | L281 |
-| compiled intermediate representation | `RepairIR` | L291 |
-| causal one-bit (q,k) pair with left/right context | `_SharedRepairBridge` | L2290 |
-| maximal-run repair certificate | `_KRunRepairCertificate` | L2333 |
-| number of causal one-bit symbol pairs | `P` (`onebit_pair_count`) | L2234 |
-| total number of compiled terms/surfaces | `Λ` (`final_surface_terms`) | L2275 |
-| alphabet size | `σ` | header L67 |
+| symbol streams (packed integers) | `q`, `k` | [L154](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L154) |
+| payload bits | `v_bits` | [L154](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L154) |
+| no-match / matched payload vectors | `emb0`, `emb1` | [L154](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L154) |
+| match length at position `t` | `ell[t]` | [L154](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L154)–178 |
+| match endpoint at position `t` (`-1` = unmatched) | `route[t]` | [L154](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L154)–178 |
+| the pair `(ell[t], route[t])` | `Route` | [L145](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L145) |
+| flipped position, flipped bit index | `u`, `j` | [L206](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L206)–207 |
+| per-bit counterfactual credit | `credit` (`credit_q/k/v`) | [L203](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L203)–214 |
+| deleted K/Q position ("owner") | `s` | [L242](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L242)–255 |
+| affine deletion segment `L(s)=len_a·s+len_b`, `r(s)=end_a·s+end_b` | `AffineDeleteRun` | [L242](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L242) |
+| K-side repair threshold segment (with `strict` polarity) | `KRepairThresholdRun` | [L258](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L258) |
+| repair term: candidate payload `V[t+shift]` on `t∈[lo,hi]` | `RepairTrackTerm` | [L281](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L281) |
+| compiled intermediate representation | `RepairIR` | [L291](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L291) |
+| causal one-bit (q,k) pair with left/right context | `_SharedRepairBridge` | [L2290](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2290) |
+| maximal-run repair certificate | `_KRunRepairCertificate` | [L2333](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2333) |
+| number of causal one-bit symbol pairs | `P` (`onebit_pair_count`) | [L2234](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2234) |
+| total number of compiled terms/surfaces | `Λ` (`final_surface_terms`) | [L2275](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2275) |
+| alphabet size | `σ` | header [L67](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L67) |
 
 ### 0.3 Legend: how to read every figure in this document
 
@@ -166,12 +166,12 @@ surfaces.
 
 ## 1. The forward semantics, exactly
 
-**The problem this section solves.** Everything the backward computes is a
+**The problem this section solves:** Everything the backward computes is a
 statement about "how the output would change", so we first need the output
 pinned down with zero ambiguity — including the tie-break, which turns out to
 steer the whole design.
 
-**Definition (hard forward).** For each output position `t`, look at all K
+**Definition (hard forward):** For each output position `t`, look at all K
 endpoints `r ∈ [0, t)`. For each, compute the length of the common suffix of
 `Q[:t+1]` and `K[:r+1]`. Take the longest; **among ties take the latest
 (largest) endpoint** `r`. Call the length `ell[t]` and the endpoint `route[t]`
@@ -188,8 +188,8 @@ recently occur?", and if the past answers, the position reads the payload bit
 the position emits a dedicated no-match vector.
 
 The reference implementation is deliberately the plainest possible statement
-of this — `forward_naive`, `hard_qkv_rosa_explained.py:154`. The tie-break
-lives in one comparison, `L >= best_len` at L176: a later endpoint overwrites
+of this — `forward_naive`, [`hard_qkv_rosa_explained.py:154`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L154). The tie-break
+lives in one comparison, `L >= best_len` at [L176](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L176): a later endpoint overwrites
 an earlier one of equal length.
 
 Figure 2 walks the running instance position by position. The last row
@@ -222,7 +222,7 @@ Two positions in this figure will do heavy lifting later: `t=0` is the only
 unmatched position (its flip behavior is a separate, simpler family, §8.4);
 `t=7` shows that the endpoint — not the length — is what the tie-break spends.
 
-**The payload rule and its structural zeros.** The sign at `t` comes from
+**The payload rule and its structural zeros:** The sign at `t` comes from
 `V[route[t]+1]`: the bit *after* the matched occurrence. In other words, ROSA
 retrieval reads "what came next" the last time this context was seen — the
 architecture's whole point — and the `+1` has three consequences we will use
@@ -271,13 +271,13 @@ print(ell, route)   # [0,1,2,3,4,5,6,1] [-1,0,1,2,3,4,5,3]
 ```
 
 **Now read the code:** Part 0, `forward_naive`,
-`hard_qkv_rosa_explained.py:154-186`. Read the `while` loop at L173 and the
-tie-break comparison at L176 until you can predict `route[7]` without running
+[`hard_qkv_rosa_explained.py:154-186`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L154). Read the `while` loop at [L173](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L173) and the
+tie-break comparison at [L176](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L176) until you can predict `route[7]` without running
 anything.
 
 ## 2. Credit: the only informative gradient object
 
-**The problem.** The forward is a composition of a step function
+**The problem:** The forward is a composition of a step function
 (quantization) and an argmax (longest match + tie-break). Both are piecewise
 constant in the continuous pre-threshold logits `z`, so the ordinary gradient
 `∂y/∂z` is zero almost everywhere and undefined on a measure-zero set of
@@ -285,7 +285,7 @@ boundaries. Backpropagating through it literally gives nothing. We need an
 object that (a) is nonzero, (b) is a faithful statement about the *hard*
 function, and (c) is computable.
 
-**Definition (single-bit counterfactual credit).** For every bit `(u, j)` of
+**Definition (single-bit counterfactual credit):** For every bit `(u, j)` of
 Q, K, or V:
 
 ```
@@ -300,7 +300,7 @@ axis of that grid. Since `y` is piecewise constant and `L` is linear in `y`,
 this finite difference is not an approximation of anything — it *is* the exact
 change of the linearized loss under the flip.
 
-**Why this and not a surrogate.** A straight-through estimator differentiates
+**Why this and not a surrogate:** A straight-through estimator differentiates
 a *different function* (it pretends the step was identity on the backward
 pass); a soft relaxation differentiates a softened architecture. Both produce
 gradients that are cheap but answer a question about a model you are not
@@ -308,7 +308,7 @@ running. Credit answers the question about the model you are running: "if
 this bit were the other value, the whole hard routing downstream would change
 by exactly this much." The price is that credit is a combinatorial object —
 one full forward per bit if computed naively (`backward_bruteforce`,
-`hard_qkv_rosa_explained.py:189`, `O(D·T⁴)`). The rest of this document is
+[`hard_qkv_rosa_explained.py:189`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L189), `O(D·T⁴)`). The rest of this document is
 about paying that price once, not `T·D` times.
 
 This definition is also a perturbation/finite-difference method in the
@@ -357,10 +357,10 @@ endpoint from 3 to 6 — a routing earthquake — and `y` does not move at all
 (both `V[4]` and `V[7]` are 1), so `credit_q[7] = 0`. Keep this example in
 mind; §9 turns it into a data structure.
 
-**From credit to logit gradients — the only mapping layer.** Credit lives on
+**From credit to logit gradients — the only mapping layer:** Credit lives on
 the bit grid. To hand autograd a gradient w.r.t. the continuous logit `z`
 that produced the bit, exactly one explicit map is applied at the boundary
-(`_flip_credit_to_logit_grad`, `hard_qkv_rosa_explained.py:2220`):
+(`_flip_credit_to_logit_grad`, [`hard_qkv_rosa_explained.py:2220`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2220)):
 
 ```
 orient = 1 − 2·bit            (bit=0 -> +1 "flipping raises z across the threshold";
@@ -396,20 +396,20 @@ position 1, bit-plane 1:  credit = +0.049447, bit = 0 -> orient = +1
 </details>
 
 **Now read the code:** `backward_bruteforce`,
-`hard_qkv_rosa_explained.py:189-214` — 25 lines, and the definition is the
-algorithm. Then `_flip_credit_to_logit_grad`, L2220-2229. Note what is *not*
+[`hard_qkv_rosa_explained.py:189-214`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L189) — 25 lines, and the definition is the
+algorithm. Then `_flip_credit_to_logit_grad`, [L2220-2229](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2220). Note what is *not*
 in Part 0: any mention of surfaces, bridges, or certificates. Those exist only
 to compute these 25 lines fast.
 
 ## 3. Why the naive `O(D·T⁴)` is compressible at all
 
-**The problem.** `backward_bruteforce` runs `3·T·D` full forwards. Almost all
+**The problem:** `backward_bruteforce` runs `3·T·D` full forwards. Almost all
 of that work is redundant, and this section locates the redundancy precisely:
 it is not that the flipped forwards are similar to the baseline (they are
 not), but that their *differences* from the baseline take only a handful of
 shapes.
 
-**The key observation: flip = delete + repair.** Take any matched window that
+**The key observation: flip = delete + repair:** Take any matched window that
 uses bit `(u, j)`. Flipping the bit has exactly two effects:
 
 1. **Deletion.** Every baseline match whose window contains position `u`
@@ -426,7 +426,7 @@ Both halves are highly structured:
 - Deletion responses, as a function of the deleted position `s`, are
   **piecewise affine**: along the owner axis, the post-deletion route is
   `(L(s), r(s)) = (len_a·s + len_b, end_a·s + end_b)` on contiguous intervals
-  of `s` (the code stores each interval as an `AffineDeleteRun`, L242).
+  of `s` (the code stores each interval as an `AffineDeleteRun`, [L242](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L242)).
 - Repair candidates come from **one-bit neighborhoods**: a flipped bit can
   only create matches whose pattern differs from an existing one in that
   single position, and the number of such causal one-bit Q/K symbol pairs `P`
@@ -522,32 +522,32 @@ compiled in `O(· log T)` per piece; contraction is `O(log T)` per piece plus
 bit — that is the invariant the whole design maintains.
 
 **Now read the code:** the header reading map,
-`hard_qkv_rosa_explained.py:41-61`, then skim the Part 1 data structures
-L217-365 — every structure there is one line or plateau of Figure 6's middle
+[`hard_qkv_rosa_explained.py:41-61`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L41), then skim the Part 1 data structures
+[L217-365](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L217) — every structure there is one line or plateau of Figure 6's middle
 column. Do not read Part 2 yet; §4 gives you the vocabulary first.
 
 ## 4. The fast forward, in the vocabulary the backward reuses
 
-**The problem.** The backward constantly asks two questions — "how long is the
+**The problem:** The backward constantly asks two questions — "how long is the
 common suffix of `Q[:t+1]` and `K[:r+1]`?" and "what is the latest endpoint at
 which a given suffix of `Q` occurs in `K` before position `t`?" — and needs
 each answered in `O(log T)`-ish, not by scanning. The fast forward
-(`rosa_qk_matching_stats_static_certificates_symbols`, L582) is where these
+(`rosa_qk_matching_stats_static_certificates_symbols`, [L582](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L582)) is where these
 primitives are built; the backward reuses the same index, so we recap exactly
 the pieces that reappear.
 
-**Construction.** Reverse both streams and concatenate them with sentinels:
+**Construction:** Reverse both streams and concatenate them with sentinels:
 `text = reverse(Q) + [0] + reverse(K) + [1]`. Build one suffix array over
 `text`, with Kasai LCP and a sparse table for range-minimum queries — this is
-`_SuffixArrayLCE` (L503), giving longest-common-prefix of any two positions in
+`_SuffixArrayLCE` ([L503](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L503)), giving longest-common-prefix of any two positions in
 `O(1)`, hence longest-common-*suffix* of any `Q[:t+1]`, `K[:r+1]` pair in
 `O(1)` (reversal turns suffixes into prefixes). Then, per output position
 `t`, the longest match is found by a two-sided query in a 2D space —
 (suffix-array rank × reversed position) — where the causality constraint
 `r < t` becomes a *value* constraint `p > x` on reversed positions
 (`x = T−1−t`, `p = T−1−r`). Two static structures answer "latest position with
-value > x in a rank interval": `_StaticMaxPByRank` (L374) and
-`_StaticRangeSuccessorP` (L444). Queries for different `t` are independent —
+value > x in a rank interval": `_StaticMaxPByRank` ([L374](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L374)) and
+`_StaticRangeSuccessorP` ([L444](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L444)). Queries for different `t` are independent —
 this is what the header calls the *static certificate* version of the forward.
 
 In other words: suffix arrays turn string questions into interval questions on
@@ -586,11 +586,11 @@ step 2 (winner endpoint inside the rank interval of length-6 matches):
 Read Figure 8 as: the entire forward for one position is two static queries
 plus an `O(1)` LCP. The backward reuses this index — and adds its mirror image
 on both streams in both directions, the bidirectional workbench
-(`BiPositionSuffixIndex`, L946, extended with causal-cut primitives as
-`CausalCutSuffixIndex`, L1134). The primitives §5–§8 call by name —
-`lcs_end` (L1137, common suffix length of `Q[:t+1]`, `K[:e+1]`),
-`latest_endpoint_for_suffix` (L1144), `next_endpoint_at_least` (L1153),
-`one_bit_occurrences_filtered` (L1060, two-phase seed-then-verify enumeration
+(`BiPositionSuffixIndex`, [L946](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L946), extended with causal-cut primitives as
+`CausalCutSuffixIndex`, [L1134](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1134)). The primitives §5–§8 call by name —
+`lcs_end` ([L1137](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1137), common suffix length of `Q[:t+1]`, `K[:e+1]`),
+`latest_endpoint_for_suffix` ([L1144](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1144)), `next_endpoint_at_least` ([L1153](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1153)),
+`one_bit_occurrences_filtered` ([L1060](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1060), two-phase seed-then-verify enumeration
 of one-bit-mismatch occurrences) — are all `O(log T)`-class wrappers over the
 same suffix arrays.
 
@@ -598,20 +598,20 @@ One honest caveat: the `log²T` factor of the forward comes from these static
 2D queries, and it is not obviously optimal (§14).
 
 **Now read the code:** `rosa_qk_matching_stats_static_certificates_symbols`,
-`hard_qkv_rosa_explained.py:582-629` — match Figure 8's steps to L611-628.
-Then the `CausalCutSuffixIndex` method bodies at L1137-1185; each is a few
+[`hard_qkv_rosa_explained.py:582-629`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L582) — match Figure 8's steps to [L611-628](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L611).
+Then the `CausalCutSuffixIndex` method bodies at [L1137-1185](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1137); each is a few
 lines over the workbench.
 
 ## 5. The Q side: latest-occurrence heads become affine deletion runs
 
-**The problem.** Consider flipping Q bit `q[u]`. By §3, effect one is
+**The problem:** Consider flipping Q bit `q[u]`. By §3, effect one is
 deletion: every baseline match whose window contains `u` breaks there. The
 post-deletion route of position `t` is "the longest suffix of `Q[:t+1]` that
 avoids position `u`, matched at its latest endpoint". Computing that from
 scratch per `(t, u)` pair is `O(T)` work each, `O(T³)` total. We need the
 whole family at once.
 
-**The ladder, first rung (insufficient).** The most direct approach: for each
+**The ladder, first rung (insufficient):** The most direct approach: for each
 `t`, for each `u` in the matched window `[t−ell[t]+1, t]`, compute the new
 route. On the running instance that is `1+2+3+4+5+6+1 = 22` owner-output
 pairs (the counter `q_delete_pair_equiv=22` counts exactly these). The
@@ -619,17 +619,17 @@ observation that kills this: cutting the match at position `u` leaves the
 suffix `Q[u+1..t]` intact, and *its* latest endpoint is a string property that
 does not depend on `u` beyond the cut length `L = t − u`.
 
-**The structure actually used.** Walk down the hypothetical match lengths
+**The structure actually used:** Walk down the hypothetical match lengths
 `L = 1 .. ell[t]−1`. For each `L`, ask the index: *latest endpoint of the
 length-`L` suffix of `Q[:t+1]` in `K` before `t`* (`latest_endpoint_for_suffix`,
-L1144). As `L` grows, the answer is constant on intervals `[L_lo, L_hi]` — the
+[L1144](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1144)). As `L` grows, the answer is constant on intervals `[L_lo, L_hi]` — the
 lifetime of one "latest occurrence" — then jumps. You may read the head table
 cell `(t, L)` as: "if the match at `t` is cut down to length `L`, this
 endpoint takes over". The code records each maximal constant interval as one
-`LatestOccurrenceHead(output_t, L_lo, L_hi, endpoint)` (L221), compiled by
-`_compile_q_latest_heads` (L1494). Each head then converts into one owner-axis
+`LatestOccurrenceHead(output_t, L_lo, L_hi, endpoint)` ([L221](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L221)), compiled by
+`_compile_q_latest_heads` ([L1494](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1494)). Each head then converts into one owner-axis
 affine segment with `L(s) = t − s`, `r(s) = endpoint` on `s ∈ [t−L_hi, t−L_lo]`
-(`_build_q_delete_from_latest_heads`, L1517), plus one segment for cutting
+(`_build_q_delete_from_latest_heads`, [L1517](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1517)), plus one segment for cutting
 the last bit itself (`s = t` → unmatched). Cost: each head is one `O(log T)`
 index query, and heads tile `1..ell[t]−1` without overlap, so position `t`
 costs `O(heads_t · log T)`; the whole Q side is `O(Σ_t heads_t · log T)`.
@@ -666,7 +666,7 @@ match anywhere above the last bit leaves a shorter match *at the same endpoint
 owner positions collapse into a single segment. The full instance compiles to
 12 such segments covering all 22 deletion pairs — Figure 6's "12 affine runs".
 
-**Cross-check against a real flip.** Figure 4's `q[2]` flip: at `t=6`, owner
+**Cross-check against a real flip:** Figure 4's `q[2]` flip: at `t=6`, owner
 `s=2` lies in the `[1,5]` segment, so the deletion surface predicts
 `L = 6−2 = 4`, `r = 5`. The brute-force flip measured exactly `ell: 6→4`,
 `route: 5→5` (§2 census). At `t=2`, owner `s=2` is the last-bit segment →
@@ -685,14 +685,14 @@ the backend switch of §10 is what keeps the constants sane; the README's
 complexity table states `Λ` explicitly instead of hiding it.
 
 **Now read the code:** `_compile_q_latest_heads`,
-`hard_qkv_rosa_explained.py:1494-1513` (the `while L <= maxL` loop *is* the
-lifetime walk — `H = min(maxL, index.lcs_end(t, e))` at L1504 is where the
-lifetime ends), then `_build_q_delete_from_latest_heads`, L1517-1531. Compare
+[`hard_qkv_rosa_explained.py:1494-1513`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1494) (the `while L <= maxL` loop *is* the
+lifetime walk — `H = min(maxL, index.lcs_end(t, e))` at [L1504](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1504) is where the
+lifetime ends), then `_build_q_delete_from_latest_heads`, [L1517-1531](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1517). Compare
 the printed `AffineDeleteRun` tuples with Figure 9.
 
 ## 6. The K side I: deletion as re-indexing, and the A/H oracles
 
-**The problem.** Flipping a K bit is subtler than flipping a Q bit. Deleting
+**The problem:** Flipping a K bit is subtler than flipping a Q bit. Deleting
 `Q[u]` shortens matches but leaves positions in place; deleting `K[s]` removes
 a position *from the memory itself* — every matched window that crossed `s`
 breaks, and every position to the right of `s` effectively shifts one step
@@ -702,20 +702,20 @@ longest match of `Q[:t+1]` in the stream `K` *with position `s` removed*,
 reported back in original coordinates. This section builds that oracle; §7
 handles what the flipped bit's new value creates.
 
-**The ladder, first rung (insufficient).** For each `(t, s)`, remove `K[s]`
+**The ladder, first rung (insufficient):** For each `(t, s)`, remove `K[s]`
 and re-run the match: `O(T)` per pair, `O(T³)` per stream. The redundancy:
 once the hole at `s` is fixed, only matches whose window contains `s` change,
 and the replacement match is always one of two shapes.
 
-**The two shapes.** A post-deletion match cannot use position `s`, so its
+**The two shapes:** A post-deletion match cannot use position `s`, so its
 window lies entirely left of `s` or entirely right of `s`:
 
-- **Left of the hole** (the code's `MostRecentSuffixMatchOracle`, "A", L1194):
+- **Left of the hole** (the code's `MostRecentSuffixMatchOracle`, "A", [L1194](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1194)):
   the latest suffix match whose endpoint is `< s`. As the hole walks right,
   more endpoints become available, so this endpoint typically walks right with
   `s` — in this instance `r(s) = s−1`, an affine segment of slope 1 (the
   counter `a_affine_runs=10` for the instance).
-- **Right of the hole** (the code's `TruncatedRightMatchOracle`, "H", L1257):
+- **Right of the hole** (the code's `TruncatedRightMatchOracle`, "H", [L1257](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1257)):
   matches whose whole window lies in `[s+1, r]` for a fixed endpoint `r`. As
   the hole `s` walks right toward `r`, the surviving window `[s+1, r]` gets
   *shorter by one per step*: `L(s) = r − s`. This is the **ramp** (slope
@@ -724,10 +724,10 @@ window lies entirely left of `s` or entirely right of `s`:
   instance has `h_ramp_runs=6`, `h_plateau_runs=1`.
 
 The two families are merged by taking the route-wise max under the same
-longest-then-latest rule (`_merge_A_H_surface_runs`, L1355), and the merged
-surface is exactly `KDeleteCutOracle.runs` (L1422): `route(t, s)` answers
+longest-then-latest rule (`_merge_A_H_surface_runs`, [L1355](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1355)), and the merged
+surface is exactly `KDeleteCutOracle.runs` ([L1422](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1422)): `route(t, s)` answers
 "the baseline route at `t` after deleting `K[s]`" in `O(log)` per query
-(L1477-1482) after `O(Σ_t (a_t + h_t) · log T)` compilation.
+([L1477-1482](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1477)) after `O(Σ_t (a_t + h_t) · log T)` compilation.
 
 Figure 10 makes "re-index and re-match" concrete — deleting `K[2]` and
 re-answering `t=3`:
@@ -778,11 +778,11 @@ t=7: [s=3: L=1, r=2]                          <- only deleting the current
                                                  endpoint itself moves t=7
 ```
 
-**Repair thresholds and polarity.** Deleting is only half the story: the
+**Repair thresholds and polarity:** Deleting is only half the story: the
 flipped bit's *new* symbol may create a repair match (§7), and to know whether
 a repair wins we must compare it against the post-deletion route — under the
 tie-break, which now cuts both ways. For each `t` the oracle also emits
-**threshold segments** (`KRepairThresholdRun`, L258): on each owner interval,
+**threshold segments** (`KRepairThresholdRun`, [L258](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L258)): on each owner interval,
 the length a repair must reach. The polarity is where the tie-break of §1
 re-enters:
 
@@ -793,9 +793,9 @@ re-enters:
   later → it *wins* the tie → length `>=` suffices (`strict=False`).
 
 This is implemented in `KDeleteCutOracle.__init__` (the comment at
-`hard_qkv_rosa_explained.py:1452-1455` states it verbatim) and the polarity is
+[`hard_qkv_rosa_explained.py:1452-1455`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1452) states it verbatim) and the polarity is
 preserved through the A/H merge (`_merge_A_H_surface_runs` docstring,
-L1363-1367). Figure 11 shows the threshold surface at `t=7`, where the
+[L1363-1367](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1363)). Figure 11 shows the threshold surface at `t=7`, where the
 baseline window is the single position `[3,3]` and both polarities appear:
 
 ![Figure 11 — repair threshold surface at t = 7 (window [3,3]): left of the window a repair must be strictly longer (len >= 2, red), while at or right of route = 3 an equal length already wins the tie (len >= 1 inclusive, green).](images/fig11-repair-thresholds.svg)
@@ -821,16 +821,16 @@ In other words: the threshold surface is a one-dimensional array of
 two-valued polarity rather than a single number. The `t=7` row is the exact
 `repair_runs` output: `[(s∈[0,2], L=1, strict), (s∈[3,6], L=1, inclusive)]`.
 
-**Now read the code:** `MostRecentSuffixMatchOracle.compile` (L1209) and
-`TruncatedRightMatchOracle.compile` (L1272) — watch where the ramp slope
-`−1` is written; then `_merge_A_H_surface_runs` (L1355) for the polarity-
-preserving merge, and `KDeleteCutOracle.__init__` (L1425-1475). The
-`AssertionError` at L1466-1470 is an invariant worth stealing: the threshold
+**Now read the code:** `MostRecentSuffixMatchOracle.compile` ([L1209](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1209)) and
+`TruncatedRightMatchOracle.compile` ([L1272](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1272)) — watch where the ramp slope
+`−1` is written; then `_merge_A_H_surface_runs` ([L1355](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1355)) for the polarity-
+preserving merge, and `KDeleteCutOracle.__init__` ([L1425-1475](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1425)). The
+`AssertionError` at [L1466-1470](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1466) is an invariant worth stealing: the threshold
 segments must tile `[0, t−1]` with no gaps.
 
 ## 7. The K side II: shared one-bit repair bridges
 
-**The problem.** §6 tells us the post-deletion baseline. But flipping `K[s]`
+**The problem:** §6 tells us the post-deletion baseline. But flipping `K[s]`
 also *writes a new symbol* at `s`, and that new symbol may create matches that
 beat the deletion baseline — e.g. flipping `k[2]` from 0 to 1 creates the
 match `Q[3..5] = [0,0,1] = K'[0..2]` at `t=5`, which the deletion surface
@@ -838,14 +838,14 @@ knows nothing about. We must enumerate every match a one-bit flip can create,
 decide where each one wins, and hand the winners to contraction — without
 enumerating `(q_pos, k_pos)` pairs quadratically.
 
-**The ladder, first rung (insufficient).** Enumerate all causal pairs
+**The ladder, first rung (insufficient):** Enumerate all causal pairs
 `(q_pos, k_pos)` whose symbols differ in exactly one bit — there are `P` of
 them (`P=11` in the instance) — and for each, for each `t`, simulate whether
 the new match wins. That is `O(P·T)` work at least. The redundancy: a flipped
 pair creates a usable match only while its *context* aligns, and context
 equality is again a suffix/LCP fact, hence compressible.
 
-**The structure actually used.** For a pair `(q_pos, k_pos)` differing in
+**The structure actually used:** For a pair `(q_pos, k_pos)` differing in
 exactly bit `j`, let `left` = length of the common context immediately before
 both positions, `right` = length of the common context immediately after. If
 we flip the bit, the two positions become equal, so the flipped streams agree
@@ -859,7 +859,7 @@ route_at(t) = (left + 1 + d,  k_pos + d),        d = t − q_pos
 
 —the endpoint slides diagonally with `t`. The code packs these five numbers
 into one immutable record, `_SharedRepairBridge(q_pos, k_pos, bit, left,
-right)` (L2290; `route_at` at L2313, and `shift = k_pos − q_pos + 1` at L2310
+right)` ([L2290](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2290); `route_at` at [L2313](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2313), and `shift = k_pos − q_pos + 1` at [L2310](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2310)
 is the payload offset: the created match at `t` reads `V[t + shift]`). Both
 sides share the same bridge: flipping the Q side or the K side of the pair
 creates the *same* window — hence "shared".
@@ -893,8 +893,8 @@ Compare with the brute-force flip in §2: `t=5: ell 5→3, route 4→2`, payload
 `V[5]→V[3]`, output flips sign. The bridge predicted all of it. The whole
 instance has 11 such bridges (`shared_bridges=11`, one per one-bit pair), and
 they are enumerated in `O(P·log T)` by the sparse materialization
-(`_build_shared_bridges_sparse`, L2530) or in `O(T²)` time / `O(T+P)` space by
-the diagonal one (`_build_shared_bridges_diagonal`, L2556) — same bridges,
+(`_build_shared_bridges_sparse`, [L2530](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2530)) or in `O(T²)` time / `O(T+P)` space by
+the diagonal one (`_build_shared_bridges_diagonal`, [L2556](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2556)) — same bridges,
 different loop order; §10 gives the cost model and the switch.
 
 **Where does a bridge win?** A bridge competes with the post-deletion
@@ -903,20 +903,20 @@ baseline of §6. On the K side, for owner `s` and bridge `b`, define
 longest-then-latest order. The predicate is *binary-searchable*: the
 post-deletion normalized route is nonincreasing in `t` while the bridge's
 normalized priority is constant, so `wins` is `false*true*` and the first
-winning `t` is found in `O(log²T)` (`_first_win_shared_bridge`, L2620 — the
-docstring at L2621-2624 states the monotonicity argument). This is the subtle
+winning `t` is found in `O(log²T)` (`_first_win_shared_bridge`, [L2620](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2620) — the
+docstring at [L2621-2624](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2621) states the monotonicity argument). This is the subtle
 part of the section: the monotonicity is a theorem about the deletion
 surfaces, and the code simply bets a binary search on it. The instance issues
 `k_shared_first_win_queries=11` with 19 probes and 3 immediate prunes
 (bridge never wins → skipped).
 
-**Many bridges per owner: the envelope.** One owner `(s, j)` may own several
+**Many bridges per owner: the envelope:** One owner `(s, j)` may own several
 bridges whose lifetimes overlap. At each `t` only the best one matters, so the
 overlapping lifetime intervals are swept with a max-priority heap into
-maximal constant-winner segments (`_bridge_envelope_segments`, L2648; the
+maximal constant-winner segments (`_bridge_envelope_segments`, [L2648](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2648); the
 instance produces `k_shared_envelope_segments=8`). Each output segment becomes
 one repair term `RepairTrackTerm(shift, lo, hi)` per owner and bit
-(`_k_shared_terms`, L2697). Figure 13 shows the real terms of owner `s=2`:
+(`_k_shared_terms`, [L2697](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2697)). Figure 13 shows the real terms of owner `s=2`:
 
 ![Figure 13 — owner s=2, bit 0 owns two bridges on the t axis: bridge A (lifetime [5,5]) wins at t = 5, bridge B (lifetime [6,7]) loses at t = 6 but wins at t = 7, giving k_terms[2][0] = [(shift=-2, [5,5]), (shift=-3, [7,7])].](images/fig13-bridge-envelope.svg)
 
@@ -944,13 +944,13 @@ term's candidate payload `V[4]` equals the baseline payload `V[4]`, so it will
 be *skipped by the contraction* (§9) — route change, no credit, exactly the
 `q[7]` lesson of §2 now arriving in data-structure form. The Q side of the
 same bridges goes through a skyline over `q_priority` instead
-(`_q_shared_terms`, L2591; 4 segments here), same idea, one dimension
+(`_q_shared_terms`, [L2591](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2591); 4 segments here), same idea, one dimension
 simpler.
 
 **Now read the code:** `_SharedRepairBridge`,
-`hard_qkv_rosa_explained.py:2290-2315` (13 lines, all semantics); then
-`_first_win_shared_bridge` L2620-2644 and `_bridge_envelope_segments`
-L2648-2693; finally `_k_shared_terms` L2697-2710 to see terms being born.
+[`hard_qkv_rosa_explained.py:2290-2315`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2290) (13 lines, all semantics); then
+`_first_win_shared_bridge` [L2620-2644](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2620) and `_bridge_envelope_segments`
+[L2648-2693](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2648); finally `_k_shared_terms` [L2697-2710](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2697) to see terms being born.
 
 ## 8. The K side III: square certificates (the equality-shadow argument)
 
@@ -963,14 +963,14 @@ sparse backend of §7 — the certificate machinery exists for large, repetitive
 streams, so we call it by hand here. This is the subtlest section of the
 document; take it slowly.
 
-**The problem.** The bridges of §7 are *physical*: one record per one-bit
+**The problem:** The bridges of §7 are *physical*: one record per one-bit
 symbol pair. On highly repetitive streams — think `k = 01010101…` — the number
 of one-bit pairs explodes toward `D·T²/2`, because almost every position pair
 differs in one bit. Materializing `Θ(T²)` bridges is exactly the cost we
 refuse to pay. We need an *implicit* representation of the repair terms in the
 regime where K is made of repeats.
 
-**The observation.** Look at where the H-side ramps of §6 come from on a
+**The observation:** Look at where the H-side ramps of §6 come from on a
 repetitive stream. If `K` contains a long run of period `p` (a "square"
 region: the string reads the same one period to the left), then flipping the
 single bit one period before the run's right edge — owner `s = hi − p + 1` —
@@ -981,47 +981,47 @@ along the H-ramp `L(s) = M − s` can be *repaired by the shadow of itself,
 shifted left by one period*: the flipped owner creates a match ending at
 `M − p`. The run structure *guarantees the equality of the two windows* — no
 per-pair check needed. The code calls the record of one such guaranteed
-repair a `_KRunRepairCertificate` (L2333); the stage as a whole is named
-Equality-Shadow in the Part banners (L2084, L2330).
+repair a `_KRunRepairCertificate` ([L2333](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2333)); the stage as a whole is named
+Equality-Shadow in the Part banners ([L2084](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2084), [L2330](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2330)).
 
 In other words: on repetitive streams, repairs are not pairwise accidents but
 shadows cast by periodicity — one certificate replaces a whole interval of
 physical bridges.
 
-**The construction, in four steps.**
+**The construction, in four steps:**
 
 1. **Enumerate maximal runs** of `K`: intervals `[lo, hi]` with minimal period
    `p_min`, length `≥ 2·p_min`, that cannot be extended. This is the classical
    "runs" theorem machinery done with the suffix array we already have: two
    Lyndon orientations via next-smaller/next-greater suffix ranks (one
-   monotone stack each, `_next_suffix_rank_index`, L2349), then one LCS and
+   monotone stack each, `_next_suffix_rank_index`, [L2349](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2349)), then one LCS and
    one LCP extension per candidate (`_enumerate_k_runs_from_existing_lce`,
-   L2369). Total `O(T)`; the number of runs in any string is `O(T)`, which is
+   [L2369](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2369)). Total `O(T)`; the number of runs in any string is `O(T)`, which is
    why this scales where pairs do not. Our instance has exactly two runs:
    `(0,1,1)` and `(3,5,1)` — the two `00` blocks.
 
 2. **Certificates from run edges.** A run `[lo, hi]` with minimal period
    `p_min` contributes periods `p = m·p_min` with `2p ≤ run length`. If the
    run *breaks* at position `hi+1` — i.e. `K[hi+1]` differs from the run's
-   continuation in **exactly one trainable bit** (`_onebit_index`, L2319;
+   continuation in **exactly one trainable bit** (`_onebit_index`, [L2319](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2319);
    more than one bit of difference is not repairable by a single flip) — then
    owner `s = hi − p + 1` can repair every current-endpoint H-ramp anchor `M`
    in a computable interval `[m_lo, m_hi]`, selecting endpoint `M − p`
-   (L2428-2447). If the run reaches the end of the stream (`hi+1 >= T`) there
-   is no breaking bit and no certificate (the `continue` at L2431-2434).
+   ([L2428-2447](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2428)). If the run reaches the end of the stream (`hi+1 >= T`) there
+   is no breaking bit and no certificate (the `continue` at [L2431-2434](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2431)).
 
 3. **A static index over certificates.** Certificates are interval-decomposed
    along the anchor axis `M` into a segment tree; each node holds its
    certificates sorted by owner. A query "all certificates with `M = M*`,
    owner in `[s_lo, s_hi]`" is one root-to-leaf path plus owner-sorted bucket
-   scans: `O(log²T + output)` (`_KRunRepairCertificateIndex`, L2414; query at
-   L2488).
+   scans: `O(log²T + output)` (`_KRunRepairCertificateIndex`, [L2414](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2414); query at
+   [L2488](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2488)).
 
 4. **Conditioned compilation.** The K-side repair compiler
-   (`_compile_k_surface_conditioned`, L2088) walks the threshold surfaces of
+   (`_compile_k_surface_conditioned`, [L2088](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2088)) walks the threshold surfaces of
    §6 region by region. Constant-threshold regions are answered by one
    position-restricted one-bit query each (`one_bit_occurrences_filtered`,
-   L1060). Affine regions are essentially all H-ramps (`strict`, slope `−1`,
+   [L1060](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1060)). Affine regions are essentially all H-ramps (`strict`, slope `−1`,
    `L(s) = M − s`), and they split by where the anchor `M` sits:
    - `M > route[t]`: the equality-shadow argument proves only the `p = 0`
      boundary owner can repair — one boundary query (`k_h_ramp_boundary_*`
@@ -1098,7 +1098,7 @@ The full certificate path on this instance produces
 definition with max abs error `5.96e-08`
 (`credit_k = [−0.301911, −0.196970, 3.753650, 3.497010, 0, 0]`).
 
-**The boundary case that proves the rule.** Take `q = k = [0,1,0,1,0,1]`
+**The boundary case that proves the rule:** Take `q = k = [0,1,0,1,0,1]`
 (perfect alternation). K is one maximal run `(0,5,2)` — and the certificate
 count is **zero**, because the run reaches the end of the array: there is no
 breaking bit, hence nothing a single flip could repair *through* periodicity.
@@ -1106,11 +1106,11 @@ The compiler falls back (`k_run_certificate_queries=3, hits=0`), and the
 result still matches brute force (`err = 2.98e-08`). Certificates are a
 compression of repairs that provably exist, not an assumption that they do.
 
-**Why this is the hard section.** The claim "on a current-endpoint H-ramp,
+**Why this is the hard section:** The claim "on a current-endpoint H-ramp,
 *all* non-trivial repairs are square shadows" is a small theorem about
 periodicity and the tie-break, and its proof lives in the code as structure,
 not prose: the certificate fields (`owner = hi−p+1`, endpoint `M−p`, anchor
-interval `[m_lo, m_hi]` with its right-extension term `rho` at L2444-2447)
+interval `[m_lo, m_hi]` with its right-extension term `rho` at [L2444-2447](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2444))
 are exactly the theorem's quantifiers. If you intend to modify this part,
 read the fallback path first (`k_h_ramp_fallback_owner_queries`): it defines
 the semantics the fast paths must reproduce, and the exhaustive check of
@@ -1118,9 +1118,9 @@ the semantics the fast paths must reproduce, and the exhaustive check of
 failures) is the safety net you should re-run after any change.
 
 **Now read the code:** `_KRunRepairCertificate` and its docstring,
-`hard_qkv_rosa_explained.py:2333-2344`; `_enumerate_k_runs_from_existing_lce`
-L2369-2409; `_KRunRepairCertificateIndex.__init__` L2421-2470 (the `m_lo/m_hi`
-computation); then `_compile_k_surface_conditioned` L2088-2210 with Figure 14
+[`hard_qkv_rosa_explained.py:2333-2344`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2333); `_enumerate_k_runs_from_existing_lce`
+[L2369-2409](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2369); `_KRunRepairCertificateIndex.__init__` [L2421-2470](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2421) (the `m_lo/m_hi`
+computation); then `_compile_k_surface_conditioned` [L2088-2210](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2088) with Figure 14
 in hand.
 
 ### 8.4 The zero-baseline family (a short addendum)
@@ -1131,19 +1131,19 @@ holds symbol `c` and flipping bit `j` turns it into `c'`, then for every
 unmatched `t > s` with `Q[t] == c'` the repaired winner ends at `s` and reads
 `V[s+1]`. That is a triangular owner-output family, and it is contracted
 *indexed, never materialized*: one `ZeroBaselineSurface(bit, k_symbol,
-target_symbol)` record (L228) per distinct triple, summed by suffix
-accumulation over `t` (`_zero_baseline_surfaces` compiles them, L2038;
-`_contract_zero_surfaces` contracts, L1765). The running instance has exactly
+target_symbol)` record ([L228](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L228)) per distinct triple, summed by suffix
+accumulation over `t` (`_zero_baseline_surfaces` compiles them, [L2038](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2038);
+`_contract_zero_surfaces` contracts, [L1765](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1765)). The running instance has exactly
 one: `(bit=0, k_symbol=1, target_symbol=0)` — because `q[0] = 0` is unmatched,
 any K position holding symbol `1` can be flipped to `0` to serve `t=0`. Note a
 backend subtlety: under the shared backends of §7 this same repair is
 materialized as ordinary bridges instead, and `RepairIR.k_zero_surfaces` is
 left empty; the zero-surface form is used by the surface backend
-(`RepairIR` at L291-297). Both are exact; §10 says who chooses.
+(`RepairIR` at [L291-297](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L291)). Both are exact; §10 says who chooses.
 
 ## 9. Numerical contraction: summing credit without touching a string
 
-**The problem.** §5–§8 compile the flip response into a `RepairIR`: per owner
+**The problem:** §5–§8 compile the flip response into a `RepairIR`: per owner
 and bit, a handful of repair terms, plus the owner-axis deletion runs, plus
 zero-baseline surfaces. What remains is pure arithmetic: for each bit `(u,j)`,
 
@@ -1155,25 +1155,25 @@ credit[u,j] = Σ_t grad_y[t]·(y_flip[t] − y_base[t])
 
 (the overlay correction subtracts the deletion effect on each term's interval,
 because on `[lo,hi]` the flip follows the *repair* route, not the deletion
-route — see `SurfaceVJP.contract`, `hard_qkv_rosa_explained.py:2000-2017`).
-Everything in this stage is numbers; the docstring of `SurfaceVJP` (L1973)
+route — see `SurfaceVJP.contract`, [`hard_qkv_rosa_explained.py:2000-2017`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2000)).
+Everything in this stage is numbers; the docstring of `SurfaceVJP` ([L1973](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1973))
 states the invariant: no suffix/string/cut-envelope query is reachable from
 here. Three pieces do the work.
 
-**Piece 1: the difference-range structure (DRS).** All repair terms
-(`q_terms` and `k_terms` flattened, `_flatten_terms` L1798) are grouped by
-`shift` — the candidate payload offset (`_DifferenceRS`, L1675). Within one
+**Piece 1: the difference-range structure (DRS):** All repair terms
+(`q_terms` and `k_terms` flattened, `_flatten_terms` [L1798](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1798)) are grouped by
+`shift` — the candidate payload offset (`_DifferenceRS`, [L1675](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1675)). Within one
 shift group, intervals are merged, and the merged range is scanned once:
 
 - where the candidate payload symbol *equals* the baseline payload label at
   `t`, the point contributes exactly zero — and such points come in runs,
   because both sides are symbol streams: the longest-common-extension of the
-  baseline-label stream and the V-symbol stream (`_PayloadLCE`, L1651) tells
+  baseline-label stream and the V-symbol stream (`_PayloadLCE`, [L1651](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1651)) tells
   us how far the equality continues, so the scan jumps `z = min(lce, …)`
-  points at once (L1717-1721);
+  points at once ([L1717-1721](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1717));
 - only genuine sign mismatches are materialized, weighted
   `grad_y[t]·(cand − base)`, and prefix-summed, so each owner query
-  `query(shift, lo, hi)` is two binary searches and a subtraction (L1752-1761).
+  `query(shift, lo, hi)` is two binary searches and a subtraction ([L1752-1761](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1752)).
 
 This is the data-structure incarnation of §2's lesson *route change ≠ credit*:
 on the running instance, 12 raw terms expand to 14 requested points, the
@@ -1209,17 +1209,17 @@ The skipped points are exactly the zero-credit flips of the §2 census (`q[5]`,
 `q[6]`, `q[7]`): their routes move, their payloads do not, and the contraction
 never even prices them.
 
-**Piece 2: deletion contributions by sweep line.** Each side's deletion runs
+**Piece 2: deletion contributions by sweep line:** Each side's deletion runs
 are owner-axis intervals carrying a `grad_y`-weighted score difference
-(post-deletion payload vs baseline payload, `_route_score` L1806). As the
+(post-deletion payload vs baseline payload, `_route_score` [L1806](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1806)). As the
 owner `s` advances `0 .. T−1`, each interval switches on at `s_lo` and off at
 `s_hi`, so a scanline maintains the running total per owner:
 
 - Q side: deletion events are generated per owner (`_delete_affine_events`,
-  L1952) and accumulated in a Fenwick tree (`_Fenwick`, L1845) — total effect
+  [L1952](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1952)) and accumulated in a Fenwick tree (`_Fenwick`, [L1845](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1845)) — total effect
   plus range subtraction for the overlay;
-- K side: the same idea one dimension up, `_KDeleteSurfaceSweep` (L1874),
-  whose `advance(s)` (L1916) applies all run boundaries at owner `s`.
+- K side: the same idea one dimension up, `_KDeleteSurfaceSweep` ([L1874](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1874)),
+  whose `advance(s)` ([L1916](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1916)) applies all run boundaries at owner `s`.
 
 Each owner then costs `O(log T)` per overlay query; Figure 17 sketches the K
 sweep on the real `t=3` runs of §6:
@@ -1243,14 +1243,14 @@ credit_k[2] = −0.3135 + 0.0649 = −0.2486   ✓ (matches the brute-force tabl
 
 </details>
 
-**Piece 3: V credit is closed form.** Flipping `v_bits[u, j]` never changes
+**Piece 3: V credit is closed form:** Flipping `v_bits[u, j]` never changes
 `ell` or `route`; it flips the sign of `y[t]` exactly when `route[t]+1 == u`.
 So `credit_v[route[t]+1] += grad_y[t]·(−2·sign·emb1)` per matched `t`
-(L2021-2028) — `O(T·D)`, no structure at all. The instance's `credit_v` of
+([L2021-2028](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2021)) — `O(T·D)`, no structure at all. The instance's `credit_v` of
 Figure 3 is produced by exactly 7 such adds (V[4] collects two: `t=4` and
 `t=7`).
 
-**A note on the C++ port.** The production implementation in
+**A note on the C++ port:** The production implementation in
 `conv_rosa_transformer/csrc/contract.cpp` reproduces this contraction
 operation-for-operation — including using `double` prefix sums in the same
 accumulation order as the Python reference (its comment says "prefix sums
@@ -1260,21 +1260,21 @@ summation order with the same care you would give the math: `self_test`
 tolerates `1e-5`, the C++ cross-check tolerates nothing.
 
 **Now read the code:** `_DifferenceRS`,
-`hard_qkv_rosa_explained.py:1675-1761` (the scan at L1711-1724 *is* Figure
-16); `_KDeleteSurfaceSweep` L1874-1950; `SurfaceVJP.contract` L1972-2029 —
-read the owner loop at L2009-2017 next to Figure 17.
+[`hard_qkv_rosa_explained.py:1675-1761`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1675) (the scan at [L1711-1724](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1711) *is* Figure
+16); `_KDeleteSurfaceSweep` [L1874-1950](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1874); `SurfaceVJP.contract` [L1972-2029](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1972) —
+read the owner loop at [L2009-2017](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2009) next to Figure 17.
 
 ## 10. The IR, the statistics, and the adaptive backend switch
 
-**The problem.** §5–§8 describe two ways to produce K-side repair terms —
+**The problem:** §5–§8 describe two ways to produce K-side repair terms —
 physical bridges (§7) and surface-conditioned certificates (§8) — plus a
 degenerate all-unmatched case (§8.4). Which one should a given stream use?
 The answer is: any of them — they compute identical credits — so the choice
 is a *performance heuristic*, and the code treats it as exactly that.
 
-**The intermediate representation.** Everything the compilers produce is
+**The intermediate representation:** Everything the compilers produce is
 funnelled into one value type, `RepairIR`
-(`hard_qkv_rosa_explained.py:291-297`):
+([`hard_qkv_rosa_explained.py:291-297`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L291)):
 
 ```
 q_terms[u][j], k_terms[u][j]   repair terms  RepairTrackTerm(shift, lo, hi)
@@ -1286,14 +1286,14 @@ Contraction (§9) consumes *only* this IR. That is the modularity contract:
 if you invent a cheaper compiler for some regime, you may emit the same IR
 and inherit contraction, validation, and the autograd wrapper for free.
 
-**The counters.** `RepairStats` (L2232) is a flat dataclass of ~50 counters
+**The counters:** `RepairStats` ([L2232](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2232)) is a flat dataclass of ~50 counters
 that every stage increments. It exists so that complexity claims are
 *measurable on real inputs* rather than only provable on paper — every count
 quoted in this document (`q_delete_runs=12`, `drs_semantic_equal_skips=8`,
 …) is a `RepairStats` field read off a real run. When you profile a new
 regime, read these counters first; §11 shows how.
 
-**The switch.** `_select_repair_backend` (L2719) picks one of four regimes
+**The switch:** `_select_repair_backend` ([L2719](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2719)) picks one of four regimes
 from three cheap signals — `T`, `P` (the one-bit pair count), and
 `max(ell)`:
 
@@ -1310,7 +1310,7 @@ T < 352 (D<=2) / 448 (D>2)                -> shared_diagonal
 otherwise                                 -> surface_run_certified
 ```
 
-The code's own comment is the honest framing (L2742-2745): "These cutoffs are
+The code's own comment is the honest framing ([L2742-2745](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2742)): "These cutoffs are
 performance heuristics only; all backends are exact and interchangeable." The
 running instance takes `shared_sparse` (its `P=11` is far under the limit
 1024) — which is why §8 had to drive the certificate compiler by hand.
@@ -1328,12 +1328,12 @@ Read the table as: `P` grows roughly linearly in `T` here (`P/T` = 2.1, 3.9,
 small multiple of `T` — on random streams the "surfaces" stay sparse, and the
 whole backward stays near-linear. Dense small-alphabet streams push `λ` to
 ≈11–17, periodic long-match streams to ≈7–21 and growing with `T` (header,
-L95-96) — which is where the certificate backend earns its keep.
+[L95-96](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L95)) — which is where the certificate backend earns its keep.
 
 **Now read the code:** `_select_repair_backend`,
-`hard_qkv_rosa_explained.py:2719-2749`; `_compile_repair_ir` (L2753) for how
+[`hard_qkv_rosa_explained.py:2719-2749`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2719); `_compile_repair_ir` ([L2753](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2753)) for how
 the IR is assembled and `final_surface_terms` counted; and the single-stream
-entry `exact_stream_bit_credits` (L2806) — 60 lines that wire together every
+entry `exact_stream_bit_credits` ([L2806](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2806)) — 60 lines that wire together every
 section of this document.
 
 ## 11. The complexity ledger
@@ -1363,23 +1363,23 @@ streams like `D=1`, `q = 000…`, `k = 1010…`, where every causal `(q,k)` symb
 pair differs in exactly one bit — precisely the regime where physical bridge
 materialization is abandoned for certificates.
 
-**Measured, not just derived.** Two sets of numbers, and they must not be
+**Measured, not just derived:** Two sets of numbers, and they must not be
 mixed:
 
-- *C++ reference implementation* (the header table, L100-110, and the
+- *C++ reference implementation* (the header table, [L100-110](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L100), and the
   README): backward/forward ratio `R` around 38–57 on random streams, ~100 on
   dense ones, up to ~270 on long periodic ones at `T=4096`, with a visible
   step where the backend switches (`*` in that table).
 - *Pure-Python reference* (this file): same trend, much smaller ratios —
   measured `15.6×` at `T=256` and `22.1×` at `T=1024` (`D=4`, random,
-  `measure_backward_forward_ratio`, L3003 — reproduce with
+  `measure_backward_forward_ratio`, [L3003](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L3003) — reproduce with
   `H.measure_backward_forward_ratio(1024, 4, reps=3)`; single-run numbers,
   expect run-to-run noise at the ±10% level; the function's own docstring
   warns that pure-Python constants inflate the forward and deflate the
   ratio). The C++ port exists precisely because the reference's constants are
   large; the asymptotic claims above are implementation-independent.
 
-**Honest limitations.** The `log²T` factor and the `Λ`-dependent term are
+**Honest limitations:** The `log²T` factor and the `Λ`-dependent term are
 both unproven as lower bounds; nothing in this document shows either is
 necessary. The README's "Limitations and future work" section carries the
 stronger statement, and we repeat it rather than improve on it: the author
@@ -1394,7 +1394,7 @@ The repository's trust model is: the *definition* is 60 lines you can read
 (Part 0), and everything else must agree with it. Four independent layers:
 
 1. **Built-in self-test.** `python hard_qkv_rosa_explained.py` runs
-   `self_test()` (L2964): on randomized cases it checks the fast forward
+   `self_test()` ([L2964](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2964)): on randomized cases it checks the fast forward
    against `forward_naive` *elementwise*, and the fast backward against
    `backward_bruteforce` to `atol=1e-5` (float32 summation order; the
    algorithm is exact, the accumulator is not).
@@ -1450,16 +1450,16 @@ The repository's trust model is: the *definition* is 60 lines you can read
 
 4. **Bitwise C++ agreement.** The port in `conv_rosa_transformer/csrc/`
    agrees with this Python reference *bit-for-bit* on 25 streams × all
-   backends (header, L130-131). That is only possible because the port
+   backends (header, [L130-131](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L130)). That is only possible because the port
    replicates the reference's operation order (§9, "note on the C++ port").
    Run the C++ self-test via `conv_rosa_transformer/self_test.py`.
 
 The D=2 packing example of §2's Figure 5 is reproducible with
-`H._pack_group_bits_to_python_ints` (L1540; symbol `= Σ_j bit_j·2^j`) on
+`H._pack_group_bits_to_python_ints` ([L1540](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1540); symbol `= Σ_j bit_j·2^j`) on
 `torch.manual_seed(21)` bit planes — symbols `q=[3,0,0,2,0,3,0,2]`,
 `k=[2,3,1,0,0,0,1,1]`, fast vs brute max err `2.38e-07`.
 
-**Figure regeneration.** Every SVG figure referenced above is generated by
+**Figure regeneration:** Every SVG figure referenced above is generated by
 [`images/generate_figures.py`](images/generate_figures.py), which imports
 `hard_qkv_rosa_explained.py` and recomputes both the running instance and the
 T=6 certificate instance on the spot — no number in any figure is transcribed
@@ -1478,25 +1478,25 @@ Three columns: the concept as this document describes it → its home in
 
 | concept | Python reference | C++ port |
 | --- | --- | --- |
-| canonical forward definition | Part 0, `forward_naive`, L154 | — (the plain definition exists only in the reference file) |
-| brute-force credit definition | Part 0, `backward_bruteforce`, L189 | — (validation only, same file) |
-| surface data structures | Part 1, L217–365 (`AffineDeleteRun` L242, `KRepairThresholdRun` L258, `RepairTrackTerm` L281, `RepairIR` L291) | shared headers |
-| fast forward (suffix array + static certs) | Part 2, L582 (`_SuffixArrayLCE` L503, `_StaticMaxPByRank` L374, `_StaticRangeSuccessorP` L444) | `suffix.cpp` / `suffix.h` |
-| range-query toolbox | Part 3, L633–938 (`_RangePositionIndex` L645, `_SymbolOrthogonalOracle` L864) | `ortho.cpp` / `ortho.h` |
-| backward workbench (bidirectional index) | Part 4, `BiPositionSuffixIndex` L946, `CausalCutSuffixIndex` L1134, `one_bit_occurrences_filtered` L1060 | `index.cpp` / `index.h` |
-| K-side deletion oracles A/H + merge | Part 5, `MostRecentSuffixMatchOracle` L1194, `TruncatedRightMatchOracle` L1257, `_merge_A_H_surface_runs` L1355, `KDeleteCutOracle` L1422 | `oracles.cpp` / `oracles.h` |
-| Q-side deletion surfaces | Part 6, `_compile_q_latest_heads` L1494, `_build_q_delete_from_latest_heads` L1517 | `qrepair.cpp` / `qrepair.h` |
-| packing + payload LCE | Part 7, `_pack_group_bits_to_python_ints` L1540, `_PayloadLCE` L1651 | `contract.cpp` (PayloadLCE) |
-| numerical contraction | Part 8, `_DifferenceRS` L1675, `_KDeleteSurfaceSweep` L1874, `SurfaceVJP.contract` L1972 | `contract.cpp` / `contract.h` |
-| zero-baseline + direct Q repair | Part 9, `_zero_baseline_surfaces` L2038, `_q_repair_terms_suffix_range` L2051 | `qrepair.cpp` |
-| K-side surface-conditioned compiler | Part 10, `_compile_k_surface_conditioned` L2088 | `krepair.cpp` / `krepair.h` |
-| credit → logit map + counters | Part 11, `_flip_credit_to_logit_grad` L2220, `RepairStats` L2232 | `pipeline.cpp` |
-| shared one-bit repair bridge | Part 12, `_SharedRepairBridge` L2290, `_onebit_index` L2319 | `bridges.cpp` / `bridges.h` |
-| maximal-run square certificates | Part 13, `_KRunRepairCertificate` L2333, `_enumerate_k_runs_from_existing_lce` L2369, `_KRunRepairCertificateIndex` L2414 | `certificates.cpp` / `certificates.h` |
-| first-win + envelope | Part 14, `_first_win_shared_bridge` L2620, `_bridge_envelope_segments` L2648 | `bridges.cpp` |
-| backend switch + entry | Part 15, `_select_repair_backend` L2719, `_compile_repair_ir` L2753, `exact_stream_bit_credits` L2806 | `pipeline.cpp` / `pipeline.h` |
-| autograd glue | Part 16, `_HardQKVRosaFn` L2832, `NBitQKVRosa` L2929 | `binding.cpp`, `rosa_layer.py` |
-| self-test + timing probe | Part 17, `self_test` L2964, `measure_backward_forward_ratio` L3003 | `self_test.py` |
+| canonical forward definition | Part 0, `forward_naive`, [L154](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L154) | — (the plain definition exists only in the reference file) |
+| brute-force credit definition | Part 0, `backward_bruteforce`, [L189](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L189) | — (validation only, same file) |
+| surface data structures | Part 1, [L217](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L217)–365 (`AffineDeleteRun` [L242](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L242), `KRepairThresholdRun` [L258](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L258), `RepairTrackTerm` [L281](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L281), `RepairIR` [L291](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L291)) | shared headers |
+| fast forward (suffix array + static certs) | Part 2, [L582](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L582) (`_SuffixArrayLCE` [L503](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L503), `_StaticMaxPByRank` [L374](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L374), `_StaticRangeSuccessorP` [L444](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L444)) | `suffix.cpp` / `suffix.h` |
+| range-query toolbox | Part 3, [L633](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L633)–938 (`_RangePositionIndex` [L645](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L645), `_SymbolOrthogonalOracle` [L864](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L864)) | `ortho.cpp` / `ortho.h` |
+| backward workbench (bidirectional index) | Part 4, `BiPositionSuffixIndex` [L946](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L946), `CausalCutSuffixIndex` [L1134](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1134), `one_bit_occurrences_filtered` [L1060](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1060) | `index.cpp` / `index.h` |
+| K-side deletion oracles A/H + merge | Part 5, `MostRecentSuffixMatchOracle` [L1194](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1194), `TruncatedRightMatchOracle` [L1257](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1257), `_merge_A_H_surface_runs` [L1355](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1355), `KDeleteCutOracle` [L1422](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1422) | `oracles.cpp` / `oracles.h` |
+| Q-side deletion surfaces | Part 6, `_compile_q_latest_heads` [L1494](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1494), `_build_q_delete_from_latest_heads` [L1517](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1517) | `qrepair.cpp` / `qrepair.h` |
+| packing + payload LCE | Part 7, `_pack_group_bits_to_python_ints` [L1540](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1540), `_PayloadLCE` [L1651](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1651) | `contract.cpp` (PayloadLCE) |
+| numerical contraction | Part 8, `_DifferenceRS` [L1675](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1675), `_KDeleteSurfaceSweep` [L1874](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1874), `SurfaceVJP.contract` [L1972](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L1972) | `contract.cpp` / `contract.h` |
+| zero-baseline + direct Q repair | Part 9, `_zero_baseline_surfaces` [L2038](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2038), `_q_repair_terms_suffix_range` [L2051](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2051) | `qrepair.cpp` |
+| K-side surface-conditioned compiler | Part 10, `_compile_k_surface_conditioned` [L2088](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2088) | `krepair.cpp` / `krepair.h` |
+| credit → logit map + counters | Part 11, `_flip_credit_to_logit_grad` [L2220](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2220), `RepairStats` [L2232](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2232) | `pipeline.cpp` |
+| shared one-bit repair bridge | Part 12, `_SharedRepairBridge` [L2290](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2290), `_onebit_index` [L2319](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2319) | `bridges.cpp` / `bridges.h` |
+| maximal-run square certificates | Part 13, `_KRunRepairCertificate` [L2333](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2333), `_enumerate_k_runs_from_existing_lce` [L2369](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2369), `_KRunRepairCertificateIndex` [L2414](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2414) | `certificates.cpp` / `certificates.h` |
+| first-win + envelope | Part 14, `_first_win_shared_bridge` [L2620](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2620), `_bridge_envelope_segments` [L2648](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2648) | `bridges.cpp` |
+| backend switch + entry | Part 15, `_select_repair_backend` [L2719](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2719), `_compile_repair_ir` [L2753](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2753), `exact_stream_bit_credits` [L2806](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2806) | `pipeline.cpp` / `pipeline.h` |
+| autograd glue | Part 16, `_HardQKVRosaFn` [L2832](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2832), `NBitQKVRosa` [L2929](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2929) | `binding.cpp`, `rosa_layer.py` |
+| self-test + timing probe | Part 17, `self_test` [L2964](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2964), `measure_backward_forward_ratio` [L3003](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L3003) | `self_test.py` |
 
 ## 14. Open problems
 
@@ -1505,7 +1505,7 @@ README's "Limitations and future work" is the canonical statement; this
 section only localizes the pain.
 
 - **The forward `log²T` factor.** Both the forward (Figure 8's two static 2D
-  queries per `t`, `_StaticRangeSuccessorP`, L444) and the workbench rebuild
+  queries per `t`, `_StaticRangeSuccessorP`, [L444](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L444)) and the workbench rebuild
   (Part 4) pay it. A range-successor structure with `O(log T)` or better
   query time — or a different decomposition of causality than "value
   constraint `p > x`" — would improve forward *and* backward at once.
@@ -1517,14 +1517,14 @@ section only localizes the pain.
   question.
 - **Memory.** `O(T·log T + Λ)` per stream is dominated by the sparse tables
   and merge-sort trees of Parts 2–4. Succinct variants of `_SuffixArrayLCE`
-  (L503) and `_RangePositionIndex` (L645) would cut constants without
+  ([L503](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L503)) and `_RangePositionIndex` ([L645](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L645)) would cut constants without
   touching any math in this document.
 - **GPU affinity.** The algorithm is pointer-chasing and segment-tree heavy;
   contraction (Part 8) is the only GEMM-friendly stage. The per-`t`
   independence of the static-certificate forward (§4) is the most
   parallelizable property currently on the table; a GPU-shaped repair
   compiler is open.
-- **Batched streams.** `_HardQKVRosaFn` (L2832) loops over groups and batch
+- **Batched streams.** `_HardQKVRosaFn` ([L2832](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/blob/main/hard_qkv_rosa_explained.py#L2832)) loops over groups and batch
   elements sequentially. Cross-stream sharing of index construction (same `k`
   across a batch head?) is unexplored.
 - **Second-order information.** Credit is a first-order counterfactual.
