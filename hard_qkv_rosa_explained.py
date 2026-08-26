@@ -2,7 +2,7 @@
 # The forward architecture follows the RWKV-8 ROSA examples by Bo Peng (BlinkDL);
 # the exact backward algorithm is this repository's contribution.
 # Copyright 2026 xiaoiecc
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: MIT
 """Hard n-bit QKV-ROSA: a discrete retrieval architecture, and its exact backpropagation algorithm (complete single-file version).
 
 =====================================================================

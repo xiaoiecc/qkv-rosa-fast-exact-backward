@@ -249,7 +249,7 @@ Community ROSA projects listed by the
 
 ## License
 
-Copyright 2026 xiaoiecc. Licensed under the Apache License, Version 2.0 — see
+Copyright 2026 xiaoiecc. Licensed under the MIT License — see
 [LICENSE](LICENSE) for the full text.
 
 ROSA and the QKV-ROSA forward architecture are due to Bo Peng (BlinkDL) for
