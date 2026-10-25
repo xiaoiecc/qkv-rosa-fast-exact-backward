@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward",
+  "branch": "main",
+  "online_base": "4248b4601128637f5525cc0fad8be95210560a68",
+  "verified_at_utc": "2026-10-25T09:52:47Z",
+  "research_baseline": "f6d7c4b73d7040b1b33860f5a2649c3cd3036cc5",
+  "scope": "Local PR patch only; no remote push or pull request creation.",
+  "retained_upstream_changes": "Both GitHub mathematics-rendering fixes and unchanged published CSV measurements.",
+  "native_numeric_migration": "binary64 mapping/reductions; not bitwise old float32 training compatibility. Native randomized on/off bitwise contracts retained.",
+  "omitted_unreferenced_runtime_file": "conv_rosa_transformer/local_mixture.py (recorded in historical source inventories but not imported by current runtime)"
+}

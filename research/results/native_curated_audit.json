@@ -1,0 +1,425 @@
+{
+  "base_commit": "4248b4601128637f5525cc0fad8be95210560a68",
+  "copied_files": [
+    {
+      "path": "conv_rosa_transformer/__init__.py",
+      "sha256": "aa263607d3d1dd3409bc58474182ee3ceb512d8664fd0cd02da4e583d168f1f8",
+      "destination_already_identical": true
+    },
+    {
+      "path": "conv_rosa_transformer/build.bat",
+      "sha256": "ed7539059d39233a03225ec0f210a8dde1d5e811332379dffba8e38011bee965",
+      "destination_already_identical": true
+    },
+    {
+      "path": "conv_rosa_transformer/build.py",
+      "sha256": "2b8d99aa72bad85bbe3d4be87e903d5d738f384e64ed784563ea2a8c60b94ee7",
+      "destination_already_identical": true
+    },
+    {
+      "path": "conv_rosa_transformer/causal_candidates.py",
+      "sha256": "56cdcc4f8be7224016d608d59ac285081cda52f13bfe83fe51000068bfde4fdc",
+      "destination_already_identical": true
+    },
+    {
+      "path": "conv_rosa_transformer/csrc/delete_indexed.h",
+      "sha256": "73d49dc58dbc34b10dc8a69288ea9163e60aba3cfc2812c8f927099762b73dea",
+      "destination_already_identical": true
+    },
+    {
+      "path": "conv_rosa_transformer/csrc/exact_expansion.h",
+      "sha256": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+      "destination_already_identical": true
+    },
+    {
+      "path": "conv_rosa_transformer/csrc/forward.h",
+      "sha256": "76a0d37bfb258de0fb9fcaa2a6ad63a91a997dc5bb98b13aaa0ea606df043c26",
+      "destination_already_identical": true
+    },
+    {
+      "path": "conv_rosa_transformer/csrc/pair_candidates.h",
+      "sha256": "26952e61c452cbeb1c7a38f2975fb1560971d895b11ca1255b3961f9a7f76c31",
+      "destination_already_identical": true
+    },
+    {
+      "path": "conv_rosa_transformer/csrc/sam_q.h",
+      "sha256": "55523d51996b2dec4569823b6d12c3ad896b43b56b64e1eec1196adbb0136c90",
+      "destination_already_identical": false
+    },
+    {
+      "path": "conv_rosa_transformer/csrc/sam_routes.h",
+      "sha256": "8b92b7f502f4740c3dc811dcb66ea395dbf8447d7715f93e1f3a078e506fb481",
+      "destination_already_identical": true
+    },
+    {
+      "path": "conv_rosa_transformer/csrc/training.h",
+      "sha256": "b13b549ea21bcfe2edeed56f0783acb1148f59280b219856a8727f559a084f48",
+      "destination_already_identical": false
+    },
+    {
+      "path": "conv_rosa_transformer/csrc/training_impl.h",
+      "sha256": "bb0e870d0de103401cd4c0491a91ea235563350e2db6db4520f8aa2d6f90d867",
+      "destination_already_identical": false
+    },
+    {
+      "path": "conv_rosa_transformer/csrc/unified_core.cpp",
+      "sha256": "387f2136c78cbfdb6de7213f29e8a195fd5be85db3c36b2524e9dcdbff4f3b65",
+      "destination_already_identical": false
+    },
+    {
+      "path": "conv_rosa_transformer/joint_credit.py",
+      "sha256": "d549df96b4738e55c8923099067459cd41c3003002b6cc5dabb32117c8e76ce0",
+      "destination_already_identical": true
+    },
+    {
+      "path": "conv_rosa_transformer/multiply_demo.py",
+      "sha256": "27d6ea98b4e6804f59d35f72cd59a1f06f202113be45863eb515448d000e0109",
+      "destination_already_identical": true
+    },
+    {
+      "path": "conv_rosa_transformer/native_training.py",
+      "sha256": "e2d835da42fc87c9935bfbb516ccfadc0121bdce3d444a26fec94f868b15b40b",
+      "destination_already_identical": false
+    },
+    {
+      "path": "conv_rosa_transformer/overfit_test.py",
+      "sha256": "62231f4a62f5ac73258e510c862a3787e8c9fcd2f885f8b18c501819601122be",
+      "destination_already_identical": true
+    },
+    {
+      "path": "conv_rosa_transformer/rosa_core.py",
+      "sha256": "3145542210d4fd77cbeb2ef7d6f582e103ad94e6b4024eabbafa6f834ed3e2ea",
+      "destination_already_identical": false
+    },
+    {
+      "path": "conv_rosa_transformer/rosa_layer.py",
+      "sha256": "7574fc95530f90f309b8c46447da10c3766ef255061aa008ee0fa0a31d2fd126",
+      "destination_already_identical": false
+    },
+    {
+      "path": "conv_rosa_transformer/rosa_reference.py",
+      "sha256": "d5b43210aff0dbabf134878db03780bb9cfa2acfe188c6f0efa9ed5d6c1e31e7",
+      "destination_already_identical": true
+    },
+    {
+      "path": "conv_rosa_transformer/rosa_transformer.py",
+      "sha256": "5d6dfb59f6ebbc2a10539f128d051d937a22dcef80c9ae16b8fb30ff4f5d2f62",
+      "destination_already_identical": true
+    },
+    {
+      "path": "conv_rosa_transformer/self_test.py",
+      "sha256": "fea5f2ca387f73abd34342fb641e24c4f335c58ac3329e6d3309ec283f7a160e",
+      "destination_already_identical": true
+    },
+    {
+      "path": "examples/native_training.cpp",
+      "sha256": "4239aab5f45575ccbc0d21245b62c9ee5b6acc0487916816e3dc386ff09b6481",
+      "destination_already_identical": false
+    },
+    {
+      "path": "requirements.txt",
+      "sha256": "23519bd980a772934e75b19e68dab12b20246e8752b93f753a0609a156a07870",
+      "destination_already_identical": true
+    },
+    {
+      "path": "research/causal_candidates.py",
+      "sha256": "6e1cdde14d753e90fca3bb09cd54f25d0e8efd7a048f9bd0da938449bac0b52f",
+      "destination_already_identical": true
+    },
+    {
+      "path": "research/joint_bits.py",
+      "sha256": "6f1a8f65a4700d43a65ebd664594fa6997a9da214d8494196a8b9e1267430b7d",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/__init__.py",
+      "sha256": "6b2dc6ac5e7265e9639b666c63d91aac15bbf04683df73c9044a5adbc1dc68ef",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/_support.py",
+      "sha256": "5d032c4c13852f5065d68d5a2651699cb2dbda11fbfb7b8c9ccbbf0979bb97f5",
+      "destination_already_identical": false
+    },
+    {
+      "path": "tests/causal_candidates_oracle.py",
+      "sha256": "7fbeeb7f6bcd400e521a13ae738fbece5aa5efc40d862d8189c4e6a31ec03ae2",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/cpp/causal_occurrences.cpp",
+      "sha256": "1b2b112c8b8935c1ecb9279a408ae95fcfd47c10b0db8f0c94c8f5a5a0b28663",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/cpp/corridor_routes.cpp",
+      "sha256": "8b5d5f65412d69f27c9d711937e8531d48f6de87783142447663e06f154fb415",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/cpp/delete_routes.cpp",
+      "sha256": "1360e07f18ffbcd0753ac2d2362f4725f20bd156ad883f1e81a3c6fbd4fa7909",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/cpp/expansion_driver.cpp",
+      "sha256": "6a6eb6a7f83768b305aa7708334a58d6e3db690b105ffc3e989544db3c22ce33",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/cpp/expansion_normal.cpp",
+      "sha256": "0d0d028ef61db2e428af0b2d5f5ff8cffe1fccfc8adb9ad796ec1ad0155ce9db",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/fixtures/numeric_credits.json",
+      "sha256": "ee231dd9be4988524d3e6549c469858560fa08f7733aaabd86106afc3f23772b",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/frozen_training_oracle.py",
+      "sha256": "c003f0ce5bd6989e8dec60f2afd3d315d819b88e5442469e6fc39f8605c61bef",
+      "destination_already_identical": false
+    },
+    {
+      "path": "tests/oracle.py",
+      "sha256": "8a0f878a99ad2bbfef88bdd055a2c5232f1e22e83887a4b18ff9ddb071ce535c",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/run.py",
+      "sha256": "0334250e2239dd863234252884a376b9e7acfca33d727f3d293fdbb568a70395",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/snapshots/python_training_layer.py",
+      "sha256": "713c1b27cb2603de91e705e75dc1716122e91e0171cd41097d4b0bebdef06eab",
+      "destination_already_identical": false
+    },
+    {
+      "path": "tests/test_backward_hash.py",
+      "sha256": "6cdba570f787191a895f36004cb4d870a96ac8500f6a2d2a5cfad681add4c23b",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/test_causal_candidates.py",
+      "sha256": "f2a9d6ec8df9922a2d96f2b85417d4874e1b26e5a6deec060d76d70188137a10",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/test_core.py",
+      "sha256": "057c48e5e8d7c62c87eb18f88cc7d173c91ce167dd382928510de5a4a9668559",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/test_curvature.py",
+      "sha256": "87626043f2fe333d877a2cb5751724ac9add6296453f46604e9cc9c09a505365",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/test_dropin_layer.py",
+      "sha256": "48e489c9ef662f062388b2252f2feb62d17cdafa60e05992cad0c534e9eba77a",
+      "destination_already_identical": false
+    },
+    {
+      "path": "tests/test_expansion.py",
+      "sha256": "452734904e81b98304bb3282698950087e0cbba41236e7a0e30aa731b85ead95",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/test_forward_lean.py",
+      "sha256": "bd4fc09eb3113f00a6958a88e1fe83e565bf0548eed35edb7602495b89264a51",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/test_joint_bits.py",
+      "sha256": "fde4b16490fc06ccfe3547f5ca5d22c42fd3b78c173ed341157861637c1bf448",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/test_layer.py",
+      "sha256": "24e5a6d228f98fd075e603d8ea1d976faf5878a3a4fa4f75beda4c81e1d9a6c2",
+      "destination_already_identical": false
+    },
+    {
+      "path": "tests/test_native_candidates.py",
+      "sha256": "c7201e71b26550c70cb44004006a91e5be9e29a52c5d2007839b38e886dd114d",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/test_native_training.py",
+      "sha256": "37e6384b0e937331fb289dcbf336301c3092f6aac8d66d26febee82398263486",
+      "destination_already_identical": false
+    },
+    {
+      "path": "tests/test_numerics.py",
+      "sha256": "e949ee31c33c387b0a826c367da61bf41a31c9371268ff0a9f1dc68bcd63a656",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/test_randomized_join.py",
+      "sha256": "6d77642b530ce71ad6ed925a8d7da1edbf61e16b487461d50e10c4d7f440494b",
+      "destination_already_identical": false
+    },
+    {
+      "path": "tests/test_repair_sampling.py",
+      "sha256": "71695850313fc54f066bc7b3cca37c251352b822557a8b57b957189d4c41864a",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/test_structures.py",
+      "sha256": "c0e4f8ddad42d3921e75474330a8b77e17cc690f7741a75b8f0b82dfa796a566",
+      "destination_already_identical": true
+    },
+    {
+      "path": "tests/test_validation.py",
+      "sha256": "1417c2957a09231b955f37905be5b0c63a8f7fcbe1c05654adaf49467c5215fb",
+      "destination_already_identical": true
+    }
+  ],
+  "copied_count": 55,
+  "omitted": [
+    "conv_rosa_transformer/local_mixture.py",
+    "tests/snapshots/python_joint_credit.py"
+  ],
+  "removed_untracked": [
+    "conv_rosa_transformer/local_mixture.py"
+  ],
+  "online_tracked_files_missing": [],
+  "source_runtime_unchanged": true,
+  "dependencies": {
+    "external_python": [
+      "numpy>=1.24",
+      "torch"
+    ],
+    "native": [
+      "C++17 compiler",
+      "standard C++ library"
+    ],
+    "test_research_shims": [
+      "research/joint_bits.py -> conv_rosa_transformer.joint_credit",
+      "research/causal_candidates.py -> conv_rosa_transformer.causal_candidates"
+    ],
+    "dormant_snapshot_import": "python_training_layer.py preserves frozen local_mixture branch; no selected production code or retained test activates it."
+  },
+  "curated_import_gate": {
+    "status": "PASS",
+    "direct_modules": [
+      "conv_rosa_transformer.rosa_core",
+      "conv_rosa_transformer.native_training",
+      "conv_rosa_transformer.rosa_layer",
+      "conv_rosa_transformer.rosa_transformer",
+      "conv_rosa_transformer.rosa_reference",
+      "conv_rosa_transformer.joint_credit",
+      "conv_rosa_transformer.causal_candidates",
+      "conv_rosa_transformer.build",
+      "research.joint_bits",
+      "research.causal_candidates",
+      "tests.frozen_training_oracle"
+    ],
+    "test_modules_discovered": 16,
+    "test_cases_discovered": 89,
+    "missing_imports": [],
+    "dormant_excluded_snapshot_imports": [
+      {
+        "file": "tests/snapshots/python_training_layer.py",
+        "line": 378,
+        "module": "conv_rosa_transformer.local_mixture"
+      }
+    ],
+    "runtime_dependencies_on_research": false
+  },
+  "native_smoke": {
+    "status": "PASS",
+    "cases": [
+      {
+        "order": "first",
+        "randomized": false,
+        "shape": [
+          2,
+          5,
+          8
+        ],
+        "finite_gradients": true,
+        "baseline_matches": 4,
+        "core_calls": 4
+      },
+      {
+        "order": "first",
+        "randomized": true,
+        "shape": [
+          2,
+          5,
+          8
+        ],
+        "finite_gradients": true,
+        "baseline_matches": 4,
+        "core_calls": 4
+      },
+      {
+        "order": "second",
+        "randomized": false,
+        "shape": [
+          2,
+          5,
+          8
+        ],
+        "finite_gradients": true,
+        "baseline_matches": 4,
+        "core_calls": 4
+      },
+      {
+        "order": "second",
+        "randomized": true,
+        "shape": [
+          2,
+          5,
+          8
+        ],
+        "finite_gradients": true,
+        "baseline_matches": 4,
+        "core_calls": 4
+      }
+    ],
+    "on_off_bitwise_equal": true,
+    "loaded_library_path": "/workspace/scratch/0105199a8474/qkv-rosa-pr-ready/conv_rosa_transformer/build/exact/rosa_exact_7de97c34df7de419.so",
+    "loaded_library_sha256": "404b3b8c9ce3dbea99d0feba3cc5bbcc9e80ee59f9624e056f9980d0f1917c47",
+    "binary_cache_reused_from_same_source_hashes": true
+  },
+  "standalone_curated_example": {
+    "status": "PASS",
+    "compile_command": [
+      "c++",
+      "-O2",
+      "-std=c++17",
+      "-ffp-contract=off",
+      "examples/native_training.cpp",
+      "/workspace/scratch/0105199a8474/qkv-rosa-pr-ready/conv_rosa_transformer/build/exact/rosa_exact_7de97c34df7de419.so",
+      "-Wl,-rpath,/workspace/scratch/0105199a8474/qkv-rosa-pr-ready/conv_rosa_transformer/build/exact",
+      "-o",
+      "/tmp/qkv-rosa-curated-native-example"
+    ],
+    "runs": {
+      "second": {
+        "exit_code": 0,
+        "stdout": "hard output: -1, -1\njoint blocks: 1\nlast Q logit gradient: 0, -0.445694\n"
+      },
+      "first": {
+        "exit_code": 0,
+        "stdout": "hard output: -1, -1\njoint blocks: 0\nlast Q logit gradient: 0, 0\n"
+      }
+    }
+  },
+  "latest_randomized_join_tests": {
+    "status": "PASS",
+    "tests_run": 2,
+    "failures": 0,
+    "errors": 0,
+    "seconds": 8.103631812002277,
+    "source_unchanged": true,
+    "test_source_sha256": "6d77642b530ce71ad6ed925a8d7da1edbf61e16b487461d50e10c4d7f440494b",
+    "probe_sha256": "cf2d4ea882dd1f01c80bf9e342c8fe2b9db0091b9faf4a91268756ee057a4cfb"
+  },
+  "all_curated_files_still_match_frozen_source": true,
+  "git_diff_check": "PASS"
+}
