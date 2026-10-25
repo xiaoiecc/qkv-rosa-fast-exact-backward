@@ -1,0 +1,10 @@
+{
+  "measurement": "benchmarks/results/exact_randomized.json",
+  "measured_generated_cpp_snapshot": "benchmarks/snapshots/exact_randomized_probe.cpp",
+  "measured_generated_cpp_sha256": "1fd8b75d1cb0a18898a99d1771bac506ab2476bc028835d1f23ecbf5041938c3",
+  "measured_loaded_binary_sha256": "65ee45847b0481eaef494445f778d09b26f20f65de288d3e5d751aaf3b06126d",
+  "measured_test_module_sha256": "4872e115c375164fce1a38ed244934b7524ae3dbdafe920a256d9f5bf1b11dd3",
+  "current_test_module_sha256": "6d77642b530ce71ad6ed925a8d7da1edbf61e16b487461d50e10c4d7f440494b",
+  "production_sources_match_measurement": true,
+  "note": "After the frozen measurements, tests/test_randomized_join.py gained an explicit four-block planner case and a second selected/sampled/forced-lane trajectory test. This changes the test-module hash and generated test translation unit, but no measured production C++ source changed. The snapshot retains the exact C++ probe used by the reported timing. Raw timing samples were not rerun or changed."
+}
