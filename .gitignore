@@ -9,6 +9,9 @@ venv/
 # C++ extension JIT build artifacts
 conv_rosa_transformer/build/
 *.pyd
+*.so
+*.dylib
+*.dll
 *.o
 *.obj
 *.lib
@@ -16,3 +19,8 @@ conv_rosa_transformer/build/
 .ninja_deps
 .ninja_log
 build.ninja
+
+# Reproducible test/benchmark build caches (recorded JSON is kept separately).
+/build/
+tests/build/
+benchmarks/build/

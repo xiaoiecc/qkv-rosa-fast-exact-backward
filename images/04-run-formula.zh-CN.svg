@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="432" viewBox="0 0 900 432" role="img">
+<title>整段公式只有一个必须精确查询的边界</title>
+<desc>Q = 111101000，K = 010000001，t = 8。Q 尾 run 长 h=3，K 的零 run 从 l=2 开始。</desc>
+<defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7" fill="#56657a"/></marker></defs>
+<rect width="900" height="100%" fill="#f8fafc"/>
+<g font-family="DejaVu Sans, Noto Sans CJK SC, Microsoft YaHei, sans-serif">
+<text x="28" y="36" font-size="23" fill="#172033" text-anchor="start" font-weight="700">整段公式只有一个必须精确查询的边界</text>
+<text x="28" y="61" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">Q = 111101000，K = 010000001，t = 8。Q 尾 run 长 h=3，K 的零 run 从 l=2 开始。</text>
+<rect x="28" y="86" width="844" height="263" rx="10" fill="white" stroke="#d8e1ec"/>
+<text x="49" y="126" font-size="14" fill="#56657a" text-anchor="start" font-weight="400">K endpoint r</text>
+<text x="49" y="189" font-size="14" fill="#56657a" text-anchor="start" font-weight="400">min(h, r−l+1)</text>
+<text x="49" y="252" font-size="17" fill="#172033" text-anchor="start" font-weight="700">F(r)</text>
+<text x="215" y="126" font-size="18" fill="#172033" text-anchor="middle" font-weight="700">2</text>
+<rect x="182" y="158" width="66" height="45" rx="7" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="215" y="189" font-size="20" fill="#56657a" text-anchor="middle" font-weight="400">1</text>
+<rect x="182" y="221" width="66" height="45" rx="7" fill="#def3ec" stroke="#b5ddce"/>
+<text x="215" y="252" font-size="22" fill="#0f766e" text-anchor="middle" font-weight="700">1</text>
+<text x="332" y="126" font-size="18" fill="#172033" text-anchor="middle" font-weight="700">3</text>
+<rect x="299" y="158" width="66" height="45" rx="7" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="332" y="189" font-size="20" fill="#56657a" text-anchor="middle" font-weight="400">2</text>
+<rect x="299" y="221" width="66" height="45" rx="7" fill="#def3ec" stroke="#b5ddce"/>
+<text x="332" y="252" font-size="22" fill="#0f766e" text-anchor="middle" font-weight="700">2</text>
+<text x="449" y="126" font-size="18" fill="#172033" text-anchor="middle" font-weight="700">4</text>
+<rect x="416" y="158" width="66" height="45" rx="7" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="449" y="189" font-size="20" fill="#56657a" text-anchor="middle" font-weight="400">3</text>
+<rect x="416" y="221" width="66" height="45" rx="7" fill="#fff2d8" stroke="#e8b963"/>
+<text x="449" y="252" font-size="22" fill="#b45309" text-anchor="middle" font-weight="700">5</text>
+<text x="566" y="126" font-size="18" fill="#172033" text-anchor="middle" font-weight="700">5</text>
+<rect x="533" y="158" width="66" height="45" rx="7" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="566" y="189" font-size="20" fill="#56657a" text-anchor="middle" font-weight="400">3</text>
+<rect x="533" y="221" width="66" height="45" rx="7" fill="#def3ec" stroke="#b5ddce"/>
+<text x="566" y="252" font-size="22" fill="#0f766e" text-anchor="middle" font-weight="700">3</text>
+<text x="683" y="126" font-size="18" fill="#172033" text-anchor="middle" font-weight="700">6</text>
+<rect x="650" y="158" width="66" height="45" rx="7" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="683" y="189" font-size="20" fill="#56657a" text-anchor="middle" font-weight="400">3</text>
+<rect x="650" y="221" width="66" height="45" rx="7" fill="#def3ec" stroke="#b5ddce"/>
+<text x="683" y="252" font-size="22" fill="#0f766e" text-anchor="middle" font-weight="700">3</text>
+<text x="800" y="126" font-size="18" fill="#172033" text-anchor="middle" font-weight="700">7</text>
+<rect x="767" y="158" width="66" height="45" rx="7" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="800" y="189" font-size="20" fill="#56657a" text-anchor="middle" font-weight="400">3</text>
+<rect x="767" y="221" width="66" height="45" rx="7" fill="#def3ec" stroke="#b5ddce"/>
+<text x="800" y="252" font-size="22" fill="#0f766e" text-anchor="middle" font-weight="700">3</text>
+<line x1="449" y1="209" x2="449" y2="219" stroke="#b45309" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="49" y="299" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">r = l+h−1 = 4：两边同时离开零 run，左侧的 01 继续匹配，所以 F(4)=5。</text>
+<text x="49" y="321" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">其他终点：某一侧先遇到 run 边界，匹配长度已被唯一确定。</text>
+<text x="28" y="379" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">表示：连续改写 A 的记录压成 (min(c,s−o), s−1)，A/H 交点解两个线性不等式。</text>
+<text x="28" y="401" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">计账：按真实记录付费；数值收缩也按 owner 区间更新，不再展开所有 s。</text>
+</g>
+</svg>

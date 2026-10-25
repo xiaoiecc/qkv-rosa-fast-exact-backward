@@ -136,7 +136,7 @@ def main():
 
     # export weights
     ckpt = dict(config=dict(vocab_size=VOCAB, channels=args.channels, n_layers=args.layers,
-                            n_bits=args.n_bits, conv_kernel=4, max_seq_len=T_MAX),
+                            n_bits=args.n_bits, conv_kernel=args.conv_kernel, max_seq_len=T_MAX),
                 state_dict=model.state_dict(),
                 token_map=dict(MUL=MUL, EQ=EQ, EOS=EOS, PAD=PAD))
     torch.save(ckpt, args.out)

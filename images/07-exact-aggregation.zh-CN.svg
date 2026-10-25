@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="446" viewBox="0 0 900 446" role="img">
+<title>小残差必须活到最终相消之后</title>
+<desc>每个事件本身可精确表示为 binary64；错误来自中间累计或过早投影。</desc>
+<defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7" fill="#56657a"/></marker></defs>
+<rect width="900" height="100%" fill="#f8fafc"/>
+<g font-family="DejaVu Sans, Noto Sans CJK SC, Microsoft YaHei, sans-serif">
+<text x="28" y="36" font-size="23" fill="#172033" text-anchor="start" font-weight="700">小残差必须活到最终相消之后</text>
+<text x="28" y="61" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">每个事件本身可精确表示为 binary64；错误来自中间累计或过早投影。</text>
+<rect x="28" y="87" width="844" height="208" rx="10" fill="white" stroke="#d8e1ec"/>
+<text x="46" y="123" font-size="14" fill="#56657a" text-anchor="start" font-weight="400">事件</text>
+<text x="46" y="182" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">普通 double 前缀</text>
+<text x="46" y="245" font-size="14" fill="#0f766e" text-anchor="start" font-weight="700">精确事件和</text>
+<text x="307" y="123" font-size="19" fill="#172033" text-anchor="middle" font-weight="700">+2e16</text>
+<text x="461" y="123" font-size="19" fill="#172033" text-anchor="middle" font-weight="700">+2</text>
+<text x="615" y="123" font-size="19" fill="#172033" text-anchor="middle" font-weight="700">+2</text>
+<text x="769" y="123" font-size="19" fill="#172033" text-anchor="middle" font-weight="700">−2e16</text>
+<rect x="245" y="150" width="124" height="43" rx="6" fill="#fff1f0" stroke="#efc0bc"/>
+<text x="307" y="179" font-size="19" fill="#b91c1c" text-anchor="middle" font-weight="400">2e16</text>
+<rect x="399" y="150" width="124" height="43" rx="6" fill="#fff1f0" stroke="#efc0bc"/>
+<text x="461" y="179" font-size="19" fill="#b91c1c" text-anchor="middle" font-weight="400">2e16</text>
+<rect x="553" y="150" width="124" height="43" rx="6" fill="#fff1f0" stroke="#efc0bc"/>
+<text x="615" y="179" font-size="19" fill="#b91c1c" text-anchor="middle" font-weight="400">2e16</text>
+<rect x="707" y="150" width="124" height="43" rx="6" fill="#fff1f0" stroke="#efc0bc"/>
+<text x="769" y="179" font-size="19" fill="#b91c1c" text-anchor="middle" font-weight="400">0</text>
+<rect x="239" y="213" width="136" height="43" rx="6" fill="#e3f5ee" stroke="#b5ddce"/>
+<text x="307" y="242" font-size="17" fill="#0f766e" text-anchor="middle" font-weight="700">2e16</text>
+<rect x="393" y="213" width="136" height="43" rx="6" fill="#e3f5ee" stroke="#b5ddce"/>
+<text x="461" y="242" font-size="17" fill="#0f766e" text-anchor="middle" font-weight="700">2e16 + 2</text>
+<rect x="547" y="213" width="136" height="43" rx="6" fill="#e3f5ee" stroke="#b5ddce"/>
+<text x="615" y="242" font-size="17" fill="#0f766e" text-anchor="middle" font-weight="700">2e16 + 4</text>
+<rect x="701" y="213" width="136" height="43" rx="6" fill="#e3f5ee" stroke="#b5ddce"/>
+<text x="769" y="242" font-size="17" fill="#0f766e" text-anchor="middle" font-weight="700">4</text>
+<rect x="28" y="318" width="844" height="89" rx="10" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="46" y="347" font-size="16" fill="#2563eb" text-anchor="start" font-weight="700">同样需要延迟投影的最终合并</text>
+<text x="46" y="378" font-size="19" fill="#172033" text-anchor="start" font-weight="700">20000000000000002  −  19999999999999998  =  4</text>
+<text x="28" y="431" font-size="12" fill="#56657a" text-anchor="start" font-weight="400">Expansion 保存已经生成的浮点事件；它无法恢复行内点积此前已舍去的信息。</text>
+</g>
+</svg>

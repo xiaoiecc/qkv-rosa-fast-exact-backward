@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="454" viewBox="0 0 900 454" role="img">
+<title>Static endpos intervals, a dynamic causal list</title>
+<desc>K = 01010, t = 4. A terminal traversal of the suffix-link tree makes each state's occurrences contiguous.</desc>
+<defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7" fill="#56657a"/></marker></defs>
+<rect width="900" height="100%" fill="#f8fafc"/>
+<g font-family="DejaVu Sans, Noto Sans CJK SC, Microsoft YaHei, sans-serif">
+<text x="28" y="36" font-size="23" fill="#172033" text-anchor="start" font-weight="700">Static endpos intervals, a dynamic causal list</text>
+<text x="28" y="61" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">K = 01010, t = 4. A terminal traversal of the suffix-link tree makes each state's occurrences contiguous.</text>
+<rect x="28" y="87" width="268" height="281" rx="10" fill="white" stroke="#d8e1ec"/>
+<text x="46" y="116" font-size="16" fill="#172033" text-anchor="start" font-weight="700">suffix-link tree</text>
+<line x1="158" y1="158" x2="103" y2="194" stroke="#56657a" stroke-width="1.5"/>
+<line x1="158" y1="158" x2="227" y2="194" stroke="#56657a" stroke-width="1.5"/>
+<line x1="103" y1="214" x2="103" y2="250" stroke="#56657a" stroke-width="1.5"/>
+<line x1="227" y1="214" x2="227" y2="250" stroke="#56657a" stroke-width="1.5"/>
+<line x1="103" y1="270" x2="103" y2="306" stroke="#56657a" stroke-width="1.5"/>
+<rect x="123" y="135" width="70" height="29" rx="7" fill="white" stroke="#d8e1ec"/>
+<text x="158" y="155" font-size="12" fill="#172033" text-anchor="middle" font-weight="400">root</text>
+<rect x="68" y="191" width="70" height="29" rx="7" fill="#e3f5ee" stroke="#b5ddce"/>
+<text x="103" y="211" font-size="12" fill="#0f766e" text-anchor="middle" font-weight="400">0</text>
+<rect x="192" y="191" width="70" height="29" rx="7" fill="white" stroke="#d8e1ec"/>
+<text x="227" y="211" font-size="12" fill="#172033" text-anchor="middle" font-weight="400">01</text>
+<rect x="68" y="247" width="70" height="29" rx="7" fill="#e3f5ee" stroke="#b5ddce"/>
+<text x="103" y="267" font-size="12" fill="#0f766e" text-anchor="middle" font-weight="400">010</text>
+<rect x="192" y="247" width="70" height="29" rx="7" fill="white" stroke="#d8e1ec"/>
+<text x="227" y="267" font-size="12" fill="#172033" text-anchor="middle" font-weight="400">0101</text>
+<rect x="68" y="303" width="70" height="29" rx="7" fill="#e3f5ee" stroke="#b5ddce"/>
+<text x="103" y="323" font-size="12" fill="#0f766e" text-anchor="middle" font-weight="400">01010</text>
+<rect x="318" y="87" width="554" height="281" rx="10" fill="white" stroke="#d8e1ec"/>
+<text x="338" y="116" font-size="14" fill="#56657a" text-anchor="start" font-weight="400">terminal order: endpoint values</text>
+<rect x="340" y="134" width="292" height="59" rx="7" fill="#f0fdf9" stroke="#8dd4bd"/>
+<rect x="352" y="143" width="54" height="41" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="379" y="171" font-size="21" fill="#172033" text-anchor="middle" font-weight="700">0</text>
+<rect x="451" y="143" width="54" height="41" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="478" y="171" font-size="21" fill="#172033" text-anchor="middle" font-weight="700">2</text>
+<rect x="550" y="143" width="54" height="41" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="577" y="171" font-size="21" fill="#172033" text-anchor="middle" font-weight="700">4</text>
+<rect x="649" y="143" width="54" height="41" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="676" y="171" font-size="21" fill="#172033" text-anchor="middle" font-weight="700">1</text>
+<rect x="748" y="143" width="54" height="41" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="775" y="171" font-size="21" fill="#172033" text-anchor="middle" font-weight="700">3</text>
+<text x="338" y="217" font-size="14" fill="#0f766e" text-anchor="start" font-weight="700">endpos(0) = {0, 2, 4}</text>
+<text x="338" y="243" font-size="14" fill="#56657a" text-anchor="start" font-weight="400">Active list: only r &lt; 4</text>
+<line x1="404" y1="279" x2="449" y2="279" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M503,279 C523,324 627,324 647,279" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+<line x1="701" y1="279" x2="746" y2="279" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="352" y="258" width="54" height="41" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="379" y="286" font-size="20" fill="#2563eb" text-anchor="middle" font-weight="700">0</text>
+<rect x="451" y="258" width="54" height="41" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="478" y="286" font-size="20" fill="#2563eb" text-anchor="middle" font-weight="700">2</text>
+<rect x="550" y="258" width="54" height="41" rx="6" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="577" y="286" font-size="19" fill="#94a3b8" text-anchor="middle" font-weight="400">4</text>
+<rect x="649" y="258" width="54" height="41" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="676" y="286" font-size="20" fill="#2563eb" text-anchor="middle" font-weight="700">1</text>
+<rect x="748" y="258" width="54" height="41" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="775" y="286" font-size="20" fill="#2563eb" text-anchor="middle" font-weight="700">3</text>
+<text x="338" y="337" font-size="11" fill="#56657a" text-anchor="start" font-weight="400">From anchor 0, report 0 and 2; active endpoint 1 lies outside the interval.</text>
+<text x="28" y="399" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">Preserve each node's own neighbors during reverse deletion → reinsert in O(1) during forward activation.</text>
+<text x="28" y="421" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">Group reporting costs O(1+C), where C counts actual causal occurrences; future entries are never scanned.</text>
+</g>
+</svg>

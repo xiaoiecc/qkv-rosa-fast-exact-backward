@@ -1,85 +1,153 @@
-# Conv∥ROSA Transformer Package
+# Conv∥ROSA Transformer
 
-A parallel-mixer Transformer: **hard n-bit QKV-ROSA** as the long-range retrieval
-mixer + a **short convolution** as the local mixer, with a SwiGLU FFN. The
-backward pass is the exact one-bit counterfactual VJP credit, implemented as a
-C++ extension (see `csrc/`).
+This package combines a hard QKV-ROSA retrieval mixer with a depthwise causal
+convolution and a SwiGLU feed-forward block. Its retrieval layer uses the
+repository's single unified CPU algorithm for hard forward matching and the
+exact single-bit counterfactual Q/K/V credits.
 
-For a fully commented, single-file pure-Python explanation of the same algorithm,
-see [`hard_qkv_rosa_explained.py`](../hard_qkv_rosa_explained.py) at the
-repository root.
+For the algorithm itself, read the [English derivation](../ALGORITHM.md) or
+[中文推导](../ALGORITHM.zh-CN.md). Both derive the implementation from the
+bit-flip brute-force definition. The root
+[`hard_qkv_rosa_explained.py`](../hard_qkv_rosa_explained.py) is a readable
+entry point into the same runtime; it does not carry a second optimized
+implementation.
 
-## Contents
+## Build and use
 
-| File | Description |
-|---|---|
-| `csrc/suffix, ortho, index` | foundations: suffix array / LCE, orthogonal range oracles, bidirectional position-suffix index |
-| `csrc/oracles` | A/H deletion-context oracles + affine deletion-run merging |
-| `csrc/qrepair` | Q-side repair-term compilation + zero-baseline surfaces |
-| `csrc/bridges` | K-deletion threshold surfaces (with polarity merging) + shared one-bit repair bridges (sparse/diagonal materialization) |
-| `csrc/certificates` | Equality-Shadow: maximal-run right-boundary square repair certificates in K + static interval index |
-| `csrc/krepair` | K-side surface compiler (single threshold / boundary repair / certificate query / exact fallback) |
-| `csrc/pipeline` | adaptive backend selection + pipeline entry `exact_stream_bit_credits` |
-| `csrc/contract` | numerical contraction (DRS / sweep line / contraction; replicates torch's summation order at IEEE level) |
-| `csrc/binding` | compact API: `pack_bits` / `matching_stats` / `repair_backend` / `exact_stream_bit_credits` |
-| `rosa_reference.py` | reference Python implementation (the bitwise parity baseline for the C++ port) |
-| `self_test.py` | self-check: 25 streams × four backends, bitwise against the reference implementation |
-| `build.py` / `build.bat` | torch cpp_extension JIT build (`build.bat` sets up the MSVC environment; usage: `build.bat your_script.py`) |
-| `rosa_layer.py` | `NBitQKVRosaCpp` layer wrapper (bitwise identical to the Python reference; compatible parameter names) |
-| `rosa_transformer.py` | model definition: `RosaTransformer` stacking `ConvRosaBlock` (`x += ROSA(norm x) + ShortConv(norm x)`; `x += SwiGLU(norm x)`) |
-| `multiply_demo.py` | 10-digit × 10-digit multiplication: train → export `multiply_ckpt.pt` → dual-ACC evaluation |
-| `multiply_ckpt.pt` | trained example weights (see `multiply_metrics.json`) |
-| `multiply_metrics.json` | dual-ACC metrics of the bundled training run |
-| `train_log.txt` | training log of the bundled run |
+Python, NumPy, PyTorch, and a C++17 compiler are required for the layer. The
+NumPy-only stream API does not import PyTorch. On Linux/macOS/WSL, the first
+call compiles the core through `c++` (or `CXX`) and caches it by source and
+compiler options. PyTorch C++ headers, Ninja, and a CUDA toolkit are not
+required by the current native core.
 
-## Design notes
+Run from the repository root:
 
-- **Parallel mixers**: hard suffix-match retrieval (ROSA) excels at long-range
-  exact copying (induction-style), but cannot express smooth local statistics of
-  the form "use the most recent k tokens directly"; a depthwise causal conv with
-  K=4 covers exactly that. In toy experiments, the parallel combination beats
-  either mixer alone on a hybrid task (loss 2.152 vs 2.237 / 2.253).
-- **Q/K weight sharing** (`tie_qk=True` by default): hard threshold codes require
-  the same input to be encoded identically in the Q and K streams, otherwise
-  matches collapse within tens of training steps. This is a key difference
-  between hard routing and the bilinear scoring of self-attention.
-- **Output format**: the demo emits products **least-significant digit first**
-  (carry propagation then aligns with the generation direction, greatly improving
-  learnability) and reverses back to natural order for evaluation.
-
-## Multiplication demo
-
-```bat
-build.bat multiply_demo.py                 :: default 1500 steps, C=128, 3 layers, D=32, conv kernel 32
-build.bat multiply_demo.py --steps 5000 --layers 4 --n-bits 16
+```bash
+python -m pip install numpy torch
+python -m conv_rosa_transformer.self_test
+python -m conv_rosa_transformer.multiply_demo --steps 1500
 ```
 
-About the conv kernel: the model default is `conv_kernel=4` (general local
-mixing), while the multiplication demo defaults to `--conv-kernel 32` — because
-output digit k (in reverse order) depends on the low k digits of both operands,
-and the first answer digit is 13 tokens away from the units digit of `a`;
-K=32 places all low-half product digits inside the local window (making the
-units-digit rule purely locally learnable).
+Native Windows can use `build.bat` from an x64 Visual Studio developer command
+prompt, for example `build.bat self_test.py`. The full structural test harness
+uses GCC/Clang-compatible commands; use Linux/WSL for that harness. Published
+CPU benchmarks and validation do not constitute native Windows or CUDA
+performance measurements.
 
-Metrics:
+```python
+import torch
+from conv_rosa_transformer.rosa_layer import NBitQKVRosaCpp
+from conv_rosa_transformer.rosa_transformer import RosaTransformer
 
-- `digit_acc`: per-digit accuracy of the answer (left-aligned to the true answer
-  length; missing/wrong digits count as errors)
-- `exact_acc`: the whole product string is exactly correct
-- a per-position breakdown (units → high digits) is included, showing the
-  learning gradient across the algorithm's structure
+layer = NBitQKVRosaCpp(channels=64, n_bits=8)
+x = torch.randn(2, 32, 64)
+layer(x).square().mean().backward()
 
-Results of the bundled run (1500 steps, CPU): digit_acc 0.173 / exact_acc 0.000;
-units digit 0.94, highest digit 0.80 (Benford-margin predictable), middle digits
-still at chance level — the model did learn the lowest-digit local rule, and the
-middle digits need longer training (`--steps 10000+`). The overfitting smoke test
-`overfit_test.py` (single sample, 300 steps, loss → 0.0007, a 20-digit product
-fully reproduced) shows the pipeline and capacity are sound.
+model = RosaTransformer(
+    vocab_size=16, channels=64, n_layers=2, n_bits=8,
+    conv_kernel=4, max_seq_len=64,
+)
+logits = model(torch.randint(0, 16, (2, 32)))
+```
 
-## Correctness verification
+The historical `NBitQKVRosaCpp`, `NBitQKVRosaForwardCpp`, and
+`NBitQKVRosa` names refer to the same implementation. Projection and embedding
+parameter names are retained for checkpoint compatibility. Inputs have shape
+`[B,T,C]`, with `C % n_bits == 0` and `1 <= n_bits <= 64`. Each group of D
+channels is processed as one stream.
 
-The C++ extension is bitwise identical to the reference Python implementation:
-47 stream-level parity cases (full coverage of the four backends:
-shared_sparse / shared_diagonal / surface_run_certified / none) plus 3
-layer-level forward and full-gradient parity cases. In-package self-check:
-`build.bat self_test.py` (25 streams × four backends, bitwise parity).
+The layer preserves its tensor device for ordinary projections and outputs,
+but transfers discrete stream work to the CPU core when necessary. It is not
+a GPU suffix-matching implementation. Device transfers, dense projections,
+and model training are distinct from the
+[stream backward measurements](../benchmarks/README.md).
+
+## Forward and backward semantics
+
+Hard codes use `bit = (logit > 0)`. At output t, select the longest Q suffix
+matching a K endpoint `r < t`, breaking ties by the latest r. A nonempty route
+reads the signed payload at `V[r+1]`; an empty route reads `emb0`.
+
+The core returns the projected output difference after each individual Q/K/V
+bit flip. This is a finite counterfactual quantity. It is not the ordinary
+derivative of a threshold. The layer explicitly maps that credit to logits:
+
+- `credit_to_logit="bernoulli"` orients the flip as output-at-1 minus
+  output-at-0, then multiplies by `p*(1-p)/tau`, with `p=sigmoid(z/tau)`.
+- `credit_to_logit="identity"` uses the same oriented difference directly.
+
+Both retain the hard forward. The embedding gradients use the actual selected
+payloads and upstream vectors. Full derivations and floating-point guarantee
+boundaries are in [the algorithm guide](../ALGORITHM.md).
+
+## Model layout
+
+Each pre-normalized block computes
+
+```text
+h = RMSNorm(x)
+x = x + ROSA(h) + ShortConv(h)
+x = x + SwiGLU(RMSNorm(x))
+```
+
+The two mixers share their input. `ShortConv` is a left-padded depthwise
+convolution; its default kernel length is 4. `tie_qk=True` shares the Q and K
+projection module, making identical input vectors receive identical Q/K
+codes. It is a model design option, not a correctness condition of the
+stream algorithm. Untied Q/K codes are supported and covered by the stream
+tests. `RosaTransformer` also supports tied input/output token embeddings.
+
+## Multiplication demo and historical artifacts
+
+The demonstration task predicts decimal products, least-significant digit
+first, then reverses the result for display. Its default convolution kernel
+is 32, distinct from the model's generic default of 4. Evaluation reports
+per-digit accuracy and exact product-string accuracy.
+
+The bundled [`multiply_ckpt.pt`](multiply_ckpt.pt),
+[`multiply_metrics.json`](multiply_metrics.json), and
+[`train_log.txt`](train_log.txt) are historical artifacts from the original
+upstream implementation at commit
+[`32e90e2`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/commit/32e90e272929942a764d696b639409b783c61bb1).
+They have not been rerun as a training-quality evaluation of the current core.
+The saved metrics record 1,500 steps, digit accuracy 0.1730, and exact accuracy
+0.0000. Retaining these files preserves the example's provenance; it does not
+establish a new model accuracy or training-speed result.
+
+`overfit_test.py` remains a runnable small training diagnostic. Successful
+backward smoke tests check integration and gradients; they are not evidence
+of multiplication generalization.
+
+## Source map
+
+| File | Role |
+|---|---|
+| [`rosa_core.py`](rosa_core.py) | Validated NumPy/PyTorch stream APIs and source-hashed C++ build |
+| [`csrc/unified_core.cpp`](csrc/unified_core.cpp) | Shared row loop, common deletion, Q/K repair, bounded scores, numerical contraction |
+| [`csrc/sam_q.h`](csrc/sam_q.h) | Static K SAM, causal occurrence list, ordinary edited states and uniqueness certificates |
+| [`csrc/sam_routes.h`](csrc/sam_routes.h) | Shared suffix, predecessor/successor, and route queries |
+| [`csrc/delete_indexed.h`](csrc/delete_indexed.h) | R staircases and compressed A/H deletion envelopes |
+| [`csrc/exact_expansion.h`](csrc/exact_expansion.h) | Residual-preserving interval and snapshot aggregation |
+| [`rosa_reference.py`](rosa_reference.py) | Independent hard-forward and all-flip definitions for tests |
+| [`rosa_layer.py`](rosa_layer.py) | Custom autograd function, logit mapping, compatible layer aliases |
+| [`rosa_transformer.py`](rosa_transformer.py) | RMSNorm, ShortConv, SwiGLU, parallel block, token model |
+| [`self_test.py`](self_test.py) | Independent stream checks, also exposed by the root entry point |
+| [`build.py`](build.py), [`build.bat`](build.bat) | Convenience build/launch entry points |
+
+## Verification and measurement
+
+From the repository root:
+
+```bash
+python tests/run.py
+python tests/run.py --exhaustive
+python benchmarks/backward.py --repeats 7 --cpu 0 --output build/current.json
+```
+
+Choose a valid logical CPU or omit `--cpu` where unsupported. The
+[test guide](../tests/README.md) distinguishes route equality, independent
+integer credit checks, floating tolerances, targeted cancellation regressions,
+and layer gradients. The [measurement guide](../benchmarks/README.md) provides
+current absolute latency and throughput before its smaller comparison with
+the original upstream implementation. No old backend or runtime selector is
+needed to use this package.

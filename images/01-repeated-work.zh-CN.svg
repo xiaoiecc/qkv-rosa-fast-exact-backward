@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="462" viewBox="0 0 900 462" role="img">
+<title>从重跑中找共享的工作</title>
+<desc>一个 Q bit 家族：每次翻转重算全部行，每行又扫描所有终点与字符。</desc>
+<defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7" fill="#56657a"/></marker></defs>
+<rect width="900" height="100%" fill="#f8fafc"/>
+<g font-family="DejaVu Sans, Noto Sans CJK SC, Microsoft YaHei, sans-serif">
+<text x="28" y="36" font-size="23" fill="#172033" text-anchor="start" font-weight="700">从重跑中找共享的工作</text>
+<text x="28" y="61" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">一个 Q bit 家族：每次翻转重算全部行，每行又扫描所有终点与字符。</text>
+<rect x="28" y="86" width="505" height="305" rx="10" fill="white" stroke="#d8e1ec"/>
+<text x="46" y="111" font-size="14" fill="#56657a" text-anchor="start" font-weight="400">输出行 t</text>
+<text x="168" y="129" font-size="14" fill="#172033" text-anchor="middle" font-weight="700">0</text>
+<text x="242" y="129" font-size="14" fill="#172033" text-anchor="middle" font-weight="700">1</text>
+<text x="316" y="129" font-size="14" fill="#172033" text-anchor="middle" font-weight="700">2</text>
+<text x="390" y="129" font-size="14" fill="#172033" text-anchor="middle" font-weight="700">3</text>
+<text x="464" y="129" font-size="14" fill="#172033" text-anchor="middle" font-weight="700">4</text>
+<text x="44" y="160" font-size="13" fill="#172033" text-anchor="start" font-weight="400">flip Q[0]</text>
+<rect x="136" y="135" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="168" y="158" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<rect x="210" y="135" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="242" y="158" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<rect x="284" y="135" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="316" y="158" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<rect x="358" y="135" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="390" y="158" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<rect x="432" y="135" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="464" y="158" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<text x="44" y="205" font-size="13" fill="#172033" text-anchor="start" font-weight="400">flip Q[1]</text>
+<rect x="136" y="180" width="64" height="36" rx="6" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="168" y="203" font-size="13" fill="#56657a" text-anchor="middle" font-weight="400">不变</text>
+<rect x="210" y="180" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="242" y="203" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<rect x="284" y="180" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="316" y="203" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<rect x="358" y="180" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="390" y="203" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<rect x="432" y="180" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="464" y="203" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<text x="44" y="250" font-size="13" fill="#172033" text-anchor="start" font-weight="400">flip Q[2]</text>
+<rect x="136" y="225" width="64" height="36" rx="6" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="168" y="248" font-size="13" fill="#56657a" text-anchor="middle" font-weight="400">不变</text>
+<rect x="210" y="225" width="64" height="36" rx="6" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="242" y="248" font-size="13" fill="#56657a" text-anchor="middle" font-weight="400">不变</text>
+<rect x="284" y="225" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="316" y="248" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<rect x="358" y="225" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="390" y="248" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<rect x="432" y="225" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="464" y="248" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<text x="44" y="295" font-size="13" fill="#172033" text-anchor="start" font-weight="400">flip Q[3]</text>
+<rect x="136" y="270" width="64" height="36" rx="6" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="168" y="293" font-size="13" fill="#56657a" text-anchor="middle" font-weight="400">不变</text>
+<rect x="210" y="270" width="64" height="36" rx="6" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="242" y="293" font-size="13" fill="#56657a" text-anchor="middle" font-weight="400">不变</text>
+<rect x="284" y="270" width="64" height="36" rx="6" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="316" y="293" font-size="13" fill="#56657a" text-anchor="middle" font-weight="400">不变</text>
+<rect x="358" y="270" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="390" y="293" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<rect x="432" y="270" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="464" y="293" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<text x="44" y="340" font-size="13" fill="#172033" text-anchor="start" font-weight="400">flip Q[4]</text>
+<rect x="136" y="315" width="64" height="36" rx="6" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="168" y="338" font-size="13" fill="#56657a" text-anchor="middle" font-weight="400">不变</text>
+<rect x="210" y="315" width="64" height="36" rx="6" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="242" y="338" font-size="13" fill="#56657a" text-anchor="middle" font-weight="400">不变</text>
+<rect x="284" y="315" width="64" height="36" rx="6" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="316" y="338" font-size="13" fill="#56657a" text-anchor="middle" font-weight="400">不变</text>
+<rect x="358" y="315" width="64" height="36" rx="6" fill="#f1f5f9" stroke="#d8e1ec"/>
+<text x="390" y="338" font-size="13" fill="#56657a" text-anchor="middle" font-weight="400">不变</text>
+<rect x="432" y="315" width="64" height="36" rx="6" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="464" y="338" font-size="13" fill="#2563eb" text-anchor="middle" font-weight="400">r &lt; t</text>
+<rect x="556" y="86" width="316" height="305" rx="10" fill="white" stroke="#d8e1ec"/>
+<text x="575" y="115" font-size="17" fill="#172033" text-anchor="start" font-weight="700">每个蓝格内部</text>
+<text x="575" y="147" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">扫描因果终点 r &lt; t</text>
+<text x="575" y="169" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">逐字符向左匹配</text>
+<text x="575" y="191" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">按 (长度, 终点) 取最大</text>
+<line x1="575" y1="213" x2="850" y2="213" stroke="#d8e1ec" stroke-width="1.5"/>
+<text x="575" y="241" font-size="21" fill="#2563eb" text-anchor="start" font-weight="700">3TD × T × T × T</text>
+<text x="575" y="273" font-size="25" fill="#2563eb" text-anchor="start" font-weight="700">主导项 O(DT⁴)</text>
+<text x="575" y="311" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">灰格完全相同；蓝格也共享</text>
+<text x="575" y="333" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">不跨过 owner 的匹配。</text>
+<text x="28" y="419" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">优化顺序：不变答案 → 共同删除 → 一处失配修复 → 压缩实际记录与生命周期。</text>
+</g>
+</svg>

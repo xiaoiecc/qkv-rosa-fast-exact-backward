@@ -1,60 +1,68 @@
-"""Self-test: C++ extension bitwise parity against the bundled Python reference (rosa_reference.py)."""
-import importlib.util
-import os
+"""Independent hard-forward/one-bit-credit audit of the single CPU engine.
+
+Run from the repository root as ``python -m conv_rosa_transformer.self_test``
+or directly as ``python conv_rosa_transformer/self_test.py``. This audits exact
+integer routing and tolerance-based binary64 credits; it does not select a
+reference backend or require bitwise floating-point agreement.
+"""
+from __future__ import annotations
+
 import random
-import sys
 
 import torch
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from build import build
+if __package__:
+    from . import rosa_core
+    from .rosa_reference import backward_bruteforce, forward_naive
+else:
+    import rosa_core
+    from rosa_reference import backward_bruteforce, forward_naive
 
-ext = build()
-ref_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rosa_reference.py")
-spec = importlib.util.spec_from_file_location("rosa_ref", ref_path)
-py = importlib.util.module_from_spec(spec)
-sys.modules["rosa_ref"] = py
-spec.loader.exec_module(py)
 
-rng = random.Random(43)
-torch.manual_seed(43)
-backends_seen = {}
+def self_test(n_cases: int = 20, seed: int = 43, verbose: bool = True):
+    rng = random.Random(seed)
+    generator = torch.Generator().manual_seed(seed)
+    cases = []
+    for trial in range(n_cases):
+        T, D = rng.choice([0, 1, 2, 5, 8, 12]), rng.choice([1, 2, 4, 8])
+        alphabet = 1 << D
+        q = [rng.randrange(alphabet) for _ in range(T)]
+        k = [rng.randrange(alphabet) for _ in range(T)]
+        cases.append((f"random-{trial}", q, k, D))
+    cases.extend([
+        ("empty", [], [], 3),
+        ("single", [1], [1], 1),
+        ("equal", [0] * 24, [0] * 24, 1),
+        ("mismatch", [0] * 24, [3] * 24, 2),
+        ("shadow", [0] * 24, [1] + [0] * 23, 1),
+        ("periodic", [0, 1, 2, 3] * 6, [0, 1, 2, 3] * 6, 3),
+        ("bit-63", [1 << 63, 0, 1 << 63, 1, 1 << 63, 0],
+         [1 << 63, 0, 1, 0, 1 << 63, (1 << 64) - 1], 64),
+    ])
+    max_abs = 0.0
+    for tag, q, k, D in cases:
+        T = len(q)
+        vb = torch.randint(0, 2, (T, D), generator=generator, dtype=torch.uint8)
+        gy = torch.randn(T, D, generator=generator, dtype=torch.float64)
+        e0 = torch.randn(D, generator=generator, dtype=torch.float64)
+        e1 = torch.randn(D, generator=generator, dtype=torch.float64)
+        _, expected_lengths, expected_routes = forward_naive(q, k, vb, e0, e1, D)
+        assert rosa_core.matching_stats(q, k) == (expected_lengths, expected_routes), tag
+        actual = rosa_core.exact_stream_bit_credits(q, k, vb, gy, e0, e1, D)
+        assert actual[3] == expected_lengths and actual[4] == expected_routes, tag
+        expected = backward_bruteforce(q, k, vb, gy, e0, e1, D)
+        for name, a, b in zip(("Q", "K", "V"), actual[:3], expected):
+            torch.testing.assert_close(a, b, atol=1e-11, rtol=1e-11,
+                                       msg=lambda message: f"{tag} {name}: {message}")
+            if a.numel():
+                max_abs = max(max_abs, (a - b).abs().max().item())
+        if verbose:
+            print(f"PASS {tag}: T={T} D={D}")
+    result = {"streams": len(cases), "max_abs_credit_difference": max_abs}
+    print(f"SELF-TEST PASSED: {len(cases)} streams; exact routes; "
+          f"max absolute credit difference {max_abs:.3g}")
+    return result
 
-def check(tag, q, k, D):
-    T = len(q)
-    vb = torch.randint(0, 2, (T, D), dtype=torch.uint8)
-    gy = torch.randn(T, D)
-    e0 = torch.randn(D); e1 = torch.randn(D)
-    ra = py.exact_stream_bit_credits(q, k, vb, gy, e0, e1, D)
-    rb = ext.exact_stream_bit_credits(q, k, vb, gy, e0, e1, D)
-    backend_py = ra[3].repair_backend
-    backend_cc = ext.repair_backend(q, k, D)
-    assert backend_py == backend_cc, (tag, backend_py, backend_cc)
-    backends_seen[backend_py] = backends_seen.get(backend_py, 0) + 1
-    for i in range(3):
-        assert torch.equal(ra[i], rb[i]), (tag, i, backend_py)
-    assert list(ra[4]) == list(rb[3]) and list(ra[5]) == list(rb[4]), (tag, "ell/route")
 
-for trial in range(20):
-    T = rng.choice([2, 5, 30, 120, 400, 900])
-    D = rng.choice([1, 2, 4, 6])
-    alpha = rng.choice([2, 4, 16, 256])
-    q = [rng.randrange(alpha) for _ in range(T)]
-    k = [rng.randrange(alpha) for _ in range(T)]
-    check(f"rand{trial}", q, k, D)
-
-check("none", [0] * 100, [3] * 100, 2)
-q = [rng.randrange(4) for _ in range(300)]
-k = [100 + rng.randrange(4) for _ in range(300)]
-check("zeromatch", q, k, 2)
-base = [rng.randrange(8) for _ in range(40)]
-check("periodic", (base * 30)[:1200], (base * 30)[:1200], 4)
-s = [rng.randrange(4) for _ in range(600)]
-check("dup", s * 2, s * 2, 2)
-mut = (base * 30)[:1200]
-for i in range(0, 1200, 137):
-    mut[i] = (mut[i] + 1) % 8
-check("mutperiodic", mut, (base * 30)[:1200], 4)
-
-print("backend coverage:", backends_seen)
-print("SELF-TEST OK: C++ bitwise identical to bundled Python reference")
+if __name__ == "__main__":
+    self_test()

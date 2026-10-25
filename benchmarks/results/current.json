@@ -1,0 +1,1739 @@
+{
+  "status": "PASS",
+  "metadata": {
+    "started_utc": "2026-10-18T10:16:30.642103+00:00",
+    "hardware": {
+      "system": "Linux",
+      "machine": "x86_64",
+      "logical_cpu_count": 9,
+      "affinity_cpu_ids": [
+        0
+      ],
+      "cpu_model": "INTEL(R) XEON(R) PLATINUM 8573C"
+    },
+    "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+    "numpy": "2.3.5",
+    "torch": "2.14.1+cpu",
+    "compiler": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0",
+    "current_compile_flags": [
+      "-O3",
+      "-DNDEBUG",
+      "-std=c++17",
+      "-fPIC",
+      "-shared",
+      "-ffp-contract=off"
+    ],
+    "torch_threads": 1,
+    "repeats": 7,
+    "warmup": 1,
+    "seed": 20261018,
+    "timing": "complete public five-result CPU float32 counterfactual VJP call",
+    "included": [
+      "input validation and conversions",
+      "per-call indices and baseline routes",
+      "Q/K/V credit calculation",
+      "output allocation and conversion"
+    ],
+    "excluded": [
+      "compile/import",
+      "input generation",
+      "warmup",
+      "correctness checks",
+      "dense projections",
+      "autograd layer and end-to-end training"
+    ],
+    "source_sha256": {
+      "conv_rosa_transformer/rosa_core.py": "a88f24b3f5eb66799bb865faab8a41991c23ed9a0d02322910bacecd7c83c9c9",
+      "conv_rosa_transformer/build.py": "2b8d99aa72bad85bbe3d4be87e903d5d738f384e64ed784563ea2a8c60b94ee7",
+      "conv_rosa_transformer/csrc/delete_indexed.h": "73d49dc58dbc34b10dc8a69288ea9163e60aba3cfc2812c8f927099762b73dea",
+      "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+      "conv_rosa_transformer/csrc/sam_q.h": "67c2980c7258b1c6b6b9be06700843e62fb2565fc22e44c6c212277234efc596",
+      "conv_rosa_transformer/csrc/sam_routes.h": "8b92b7f502f4740c3dc811dcb66ea395dbf8447d7715f93e1f3a078e506fb481",
+      "conv_rosa_transformer/csrc/unified_core.cpp": "e4c4231f3bfb0b480ed87f533f84d5d2ad807340c91b6226c1ad18193cd5ada2"
+    },
+    "memory_reporting": "returned credit tensor bytes only; no peak RSS claim",
+    "finished_utc": "2026-10-18T10:16:47.121815+00:00"
+  },
+  "cases": [
+    {
+      "case_id": "random_binary_T1024_D1_Urandom",
+      "family": "random_binary",
+      "T": 1024,
+      "D": 1,
+      "requested_payload_classes": 0,
+      "seed": 7176684669677728856,
+      "input_sha256": "fdb555b634008abb81506f07bdcd826e8c065b855ccf0927613f66ff2f21bd54",
+      "counters": {
+        "payload_classes": 2,
+        "visited_alignment_pairs": 20515,
+        "one_mismatch_candidates": 15469,
+        "touched_owner_bits": 17411,
+        "payload_dot_components": 2042,
+        "reported_occurrence_entries": 20515,
+        "sam_active_advances": 8504,
+        "deletion_ranges": 5643,
+        "sam_transition_probes": 29140,
+        "sam_suffix_fallbacks": 3789,
+        "delete_a_records": 1176,
+        "delete_r_records": 4598,
+        "sam_endpoint_queries": 4483,
+        "delete_a_expanded_records": 1223,
+        "deletion_owner_ranges": 5,
+        "deletion_owner_covered_records": 12,
+        "materialized_index_flags": 3,
+        "singleton_corridors": 183,
+        "singleton_represented_rows": 535,
+        "singleton_run_steps": 269,
+        "singleton_k_key_rows": 535,
+        "singleton_dot_components": 0,
+        "singleton_heap_pops": 181,
+        "lca_index_materialized": true,
+        "wavelet_index_materialized": true,
+        "possible_alignment_pairs": 523776,
+        "sum_match_lengths": 8928
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 5.863633978364646e-08,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 1.8710912907948796e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 5.816324954999175e-08,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 12288,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.004062984,
+            0.004177219,
+            0.003810229,
+            0.003722191,
+            0.0036521580000000004,
+            0.003783058,
+            0.003824955
+          ],
+          "median_seconds": 0.003810229,
+          "min_seconds": 0.0036521580000000004,
+          "max_seconds": 0.004177219
+        }
+      },
+      "tokens_per_second": 268750.25096916745,
+      "credit_values_per_second": 806250.7529075023
+    },
+    {
+      "case_id": "random_binary_T4096_D1_Urandom",
+      "family": "random_binary",
+      "T": 4096,
+      "D": 1,
+      "requested_payload_classes": 0,
+      "seed": 4665130489798246426,
+      "input_sha256": "b8e771275df69911e0895818a99418934daf18eabdade088388f84640a729209",
+      "counters": {
+        "payload_classes": 2,
+        "visited_alignment_pairs": 104563,
+        "one_mismatch_candidates": 77024,
+        "touched_owner_bits": 86172,
+        "payload_dot_components": 8188,
+        "reported_occurrence_entries": 104563,
+        "sam_active_advances": 42376,
+        "deletion_ranges": 26435,
+        "sam_transition_probes": 148257,
+        "sam_suffix_fallbacks": 18358,
+        "delete_a_records": 4323,
+        "delete_r_records": 22306,
+        "sam_endpoint_queries": 22877,
+        "delete_a_expanded_records": 4375,
+        "deletion_owner_ranges": 10,
+        "deletion_owner_covered_records": 26,
+        "materialized_index_flags": 3,
+        "singleton_corridors": 740,
+        "singleton_represented_rows": 2202,
+        "singleton_run_steps": 1096,
+        "singleton_k_key_rows": 2202,
+        "singleton_dot_components": 0,
+        "singleton_heap_pops": 740,
+        "lca_index_materialized": true,
+        "wavelet_index_materialized": true,
+        "possible_alignment_pairs": 8386560,
+        "sum_match_lengths": 44395
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 1.7310047724095057e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 1.8073269387741675e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 8.510677389494958e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 49152,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.020432495000000002,
+            0.019905806,
+            0.020245782,
+            0.021800009000000002,
+            0.021093917,
+            0.020525789000000003,
+            0.020115309
+          ],
+          "median_seconds": 0.020432495000000002,
+          "min_seconds": 0.019905806,
+          "max_seconds": 0.021800009000000002
+        }
+      },
+      "tokens_per_second": 200464.9946078538,
+      "credit_values_per_second": 601394.9838235613
+    },
+    {
+      "case_id": "random_binary_T8192_D1_Urandom",
+      "family": "random_binary",
+      "T": 8192,
+      "D": 1,
+      "requested_payload_classes": 0,
+      "seed": 6633011920681829116,
+      "input_sha256": "c49f8ed5378b11284f9b170f73462164ad526d909c0658e1e78275ef5ad8cab3",
+      "counters": {
+        "payload_classes": 2,
+        "visited_alignment_pairs": 231195,
+        "one_mismatch_candidates": 170322,
+        "touched_owner_bits": 190147,
+        "payload_dot_components": 16380,
+        "reported_occurrence_entries": 231195,
+        "sam_active_advances": 92985,
+        "deletion_ranges": 56864,
+        "sam_transition_probes": 324499,
+        "sam_suffix_fallbacks": 40107,
+        "delete_a_records": 8557,
+        "delete_r_records": 48574,
+        "sam_endpoint_queries": 52418,
+        "delete_a_expanded_records": 8619,
+        "deletion_owner_ranges": 4,
+        "deletion_owner_covered_records": 8,
+        "materialized_index_flags": 3,
+        "singleton_corridors": 1475,
+        "singleton_represented_rows": 4397,
+        "singleton_run_steps": 2206,
+        "singleton_k_key_rows": 4397,
+        "singleton_dot_components": 0,
+        "singleton_heap_pops": 1475,
+        "lca_index_materialized": true,
+        "wavelet_index_materialized": true,
+        "possible_alignment_pairs": 33550336,
+        "sum_match_lengths": 97248
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 4.5495849043675207e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 8.883226385592025e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 2.2500704943695382e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 98304,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.050872148000000006,
+            0.052143797000000006,
+            0.076130503,
+            0.048887822000000004,
+            0.046719377000000006,
+            0.051513736000000004,
+            0.048135529
+          ],
+          "median_seconds": 0.050872148000000006,
+          "min_seconds": 0.046719377000000006,
+          "max_seconds": 0.076130503
+        }
+      },
+      "tokens_per_second": 161031.14026166144,
+      "credit_values_per_second": 483093.4207849843
+    },
+    {
+      "case_id": "random8_T1024_D8_Urandom",
+      "family": "random8",
+      "T": 1024,
+      "D": 8,
+      "requested_payload_classes": 0,
+      "seed": 6236971473999370495,
+      "input_sha256": "c6c30afd71c08e1ef5704d0425a7d5a64f692f7f061f2eb93e821a34b9fcc7c9",
+      "counters": {
+        "payload_classes": 253,
+        "visited_alignment_pairs": 12502,
+        "one_mismatch_candidates": 6138,
+        "touched_owner_bits": 12427,
+        "payload_dot_components": 78792,
+        "reported_occurrence_entries": 12502,
+        "sam_active_advances": 6395,
+        "deletion_ranges": 1594,
+        "sam_transition_probes": 12722,
+        "sam_suffix_fallbacks": 6081,
+        "delete_a_records": 794,
+        "delete_r_records": 800,
+        "sam_endpoint_queries": 5066,
+        "delete_a_expanded_records": 794,
+        "deletion_owner_ranges": 0,
+        "deletion_owner_covered_records": 0,
+        "materialized_index_flags": 0,
+        "singleton_corridors": 1,
+        "singleton_represented_rows": 2,
+        "singleton_run_steps": 1,
+        "singleton_k_key_rows": 2,
+        "singleton_dot_components": 16,
+        "singleton_heap_pops": 1,
+        "lca_index_materialized": false,
+        "wavelet_index_materialized": false,
+        "possible_alignment_pairs": 523776,
+        "sum_match_lengths": 802
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 9.13848001715678e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 1.8591746950846755e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 9.243901502031804e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 98304,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.002114293,
+            0.002085145,
+            0.002002671,
+            0.00204554,
+            0.002006821,
+            0.00183164,
+            0.002026611
+          ],
+          "median_seconds": 0.002026611,
+          "min_seconds": 0.00183164,
+          "max_seconds": 0.002114293
+        }
+      },
+      "tokens_per_second": 505277.03639228246,
+      "credit_values_per_second": 12126648.87341478
+    },
+    {
+      "case_id": "random8_T4096_D8_Urandom",
+      "family": "random8",
+      "T": 4096,
+      "D": 8,
+      "requested_payload_classes": 0,
+      "seed": 7417301297266858662,
+      "input_sha256": "05328cbcd14c270bedca9d10484ef23098f21e1a31c2dfc4061dea4e4c61e68e",
+      "counters": {
+        "payload_classes": 256,
+        "visited_alignment_pairs": 198161,
+        "one_mismatch_candidates": 40900,
+        "touched_owner_bits": 63437,
+        "payload_dot_components": 415736,
+        "reported_occurrence_entries": 198161,
+        "sam_active_advances": 31745,
+        "deletion_ranges": 7762,
+        "sam_transition_probes": 66508,
+        "sam_suffix_fallbacks": 32379,
+        "delete_a_records": 3827,
+        "delete_r_records": 3935,
+        "sam_endpoint_queries": 31353,
+        "delete_a_expanded_records": 3827,
+        "deletion_owner_ranges": 0,
+        "deletion_owner_covered_records": 0,
+        "materialized_index_flags": 2,
+        "singleton_corridors": 1,
+        "singleton_represented_rows": 2,
+        "singleton_run_steps": 1,
+        "singleton_k_key_rows": 2,
+        "singleton_dot_components": 16,
+        "singleton_heap_pops": 1,
+        "lca_index_materialized": false,
+        "wavelet_index_materialized": true,
+        "possible_alignment_pairs": 8386560,
+        "sum_match_lengths": 3956
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 9.346998695036746e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 1.8741723266657573e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 9.350883374281693e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 393216,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.010755186,
+            0.011052981,
+            0.011094511000000001,
+            0.011510973,
+            0.011329066,
+            0.010537226,
+            0.010634366000000001
+          ],
+          "median_seconds": 0.011052981,
+          "min_seconds": 0.010537226,
+          "max_seconds": 0.011510973
+        }
+      },
+      "tokens_per_second": 370578.7606076587,
+      "credit_values_per_second": 8893890.25458381
+    },
+    {
+      "case_id": "random8_T8192_D8_Urandom",
+      "family": "random8",
+      "T": 8192,
+      "D": 8,
+      "requested_payload_classes": 0,
+      "seed": 6286872774056251731,
+      "input_sha256": "06e11e015839637e3162faa74abf1bc6ec091d93832366e430cc747ffd609cbf",
+      "counters": {
+        "payload_classes": 256,
+        "visited_alignment_pairs": 791307,
+        "one_mismatch_candidates": 141872,
+        "touched_owner_bits": 134685,
+        "payload_dot_components": 882488,
+        "reported_occurrence_entries": 791307,
+        "sam_active_advances": 67250,
+        "deletion_ranges": 16301,
+        "sam_transition_probes": 142538,
+        "sam_suffix_fallbacks": 66356,
+        "delete_a_records": 7919,
+        "delete_r_records": 8383,
+        "sam_endpoint_queries": 65691,
+        "delete_a_expanded_records": 7919,
+        "deletion_owner_ranges": 0,
+        "deletion_owner_covered_records": 0,
+        "materialized_index_flags": 2,
+        "singleton_corridors": 18,
+        "singleton_represented_rows": 36,
+        "singleton_run_steps": 18,
+        "singleton_k_key_rows": 36,
+        "singleton_dot_components": 288,
+        "singleton_heap_pops": 18,
+        "lca_index_materialized": false,
+        "wavelet_index_materialized": true,
+        "possible_alignment_pairs": 33550336,
+        "sum_match_lengths": 8420
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 7.961413714951959e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 1.857778421765488e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 5.822242243880282e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 786432,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.029732495,
+            0.026458419,
+            0.027003974,
+            0.026677643,
+            0.028055451000000002,
+            0.026381946000000003,
+            0.026050728000000002
+          ],
+          "median_seconds": 0.026677643,
+          "min_seconds": 0.026050728000000002,
+          "max_seconds": 0.029732495
+        }
+      },
+      "tokens_per_second": 307073.6046658995,
+      "credit_values_per_second": 7369766.511981587
+    },
+    {
+      "case_id": "periodic_T1024_D4_Urandom",
+      "family": "periodic",
+      "T": 1024,
+      "D": 4,
+      "requested_payload_classes": 0,
+      "seed": 4925572062584638746,
+      "input_sha256": "6d8c2c513a0395419f08262f2359b4ab94024ffb55774897583999e93fcbc3c3",
+      "counters": {
+        "payload_classes": 16,
+        "visited_alignment_pairs": 145,
+        "one_mismatch_candidates": 133,
+        "touched_owner_bits": 2558,
+        "payload_dot_components": 55604,
+        "reported_occurrence_entries": 145,
+        "sam_active_advances": 2042,
+        "deletion_ranges": 42616,
+        "sam_transition_probes": 18438,
+        "sam_suffix_fallbacks": 2038,
+        "delete_a_records": 98048,
+        "delete_r_records": 1528,
+        "sam_endpoint_queries": 2410,
+        "delete_a_expanded_records": 98048,
+        "deletion_owner_ranges": 0,
+        "deletion_owner_covered_records": 0,
+        "materialized_index_flags": 1,
+        "singleton_corridors": 127,
+        "singleton_represented_rows": 32385,
+        "singleton_run_steps": 32258,
+        "singleton_k_key_rows": 507,
+        "singleton_dot_components": 3044,
+        "singleton_heap_pops": 0,
+        "lca_index_materialized": true,
+        "wavelet_index_materialized": false,
+        "possible_alignment_pairs": 523776,
+        "sum_match_lengths": 390662
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 3.7371903545135865e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 3.7532893486513785e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 6.406017618587612e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 49152,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.0040288400000000005,
+            0.003920437000000001,
+            0.003739899,
+            0.0036951170000000004,
+            0.003705171,
+            0.0038585610000000004,
+            0.004292018
+          ],
+          "median_seconds": 0.0038585610000000004,
+          "min_seconds": 0.0036951170000000004,
+          "max_seconds": 0.004292018
+        }
+      },
+      "tokens_per_second": 265383.90866439586,
+      "credit_values_per_second": 3184606.90397275
+    },
+    {
+      "case_id": "periodic_T4096_D4_Urandom",
+      "family": "periodic",
+      "T": 4096,
+      "D": 4,
+      "requested_payload_classes": 0,
+      "seed": 3791620611175387233,
+      "input_sha256": "70373b9f73c4652fb5adcd2606cf0288f5b41b5c04ecb73f9df85c0ede88bbe4",
+      "counters": {
+        "payload_classes": 16,
+        "visited_alignment_pairs": 529,
+        "one_mismatch_candidates": 517,
+        "touched_owner_bits": 10238,
+        "payload_dot_components": 251292,
+        "reported_occurrence_entries": 529,
+        "sam_active_advances": 8186,
+        "deletion_ranges": 662008,
+        "sam_transition_probes": 86382,
+        "sam_suffix_fallbacks": 8182,
+        "delete_a_records": 1571840,
+        "delete_r_records": 6136,
+        "sam_endpoint_queries": 9706,
+        "delete_a_expanded_records": 1571840,
+        "deletion_owner_ranges": 0,
+        "deletion_owner_covered_records": 0,
+        "materialized_index_flags": 1,
+        "singleton_corridors": 511,
+        "singleton_represented_rows": 522753,
+        "singleton_run_steps": 522242,
+        "singleton_k_key_rows": 2043,
+        "singleton_dot_components": 3408,
+        "singleton_heap_pops": 0,
+        "lca_index_materialized": true,
+        "wavelet_index_materialized": false,
+        "possible_alignment_pairs": 8386560,
+        "sum_match_lengths": 6281222
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 7.622703861898117e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 7.570622358343826e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 9.541693231085446e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 196608,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.046602773,
+            0.045276411,
+            0.047071559000000006,
+            0.044959524,
+            0.047189508000000005,
+            0.046890037,
+            0.046692709000000006
+          ],
+          "median_seconds": 0.046692709000000006,
+          "min_seconds": 0.044959524,
+          "max_seconds": 0.047189508000000005
+        }
+      },
+      "tokens_per_second": 87722.47504423013,
+      "credit_values_per_second": 1052669.7005307616
+    },
+    {
+      "case_id": "periodic_T8192_D4_Urandom",
+      "family": "periodic",
+      "T": 8192,
+      "D": 4,
+      "requested_payload_classes": 0,
+      "seed": 6793074115520085736,
+      "input_sha256": "c8f918656b864ad4ca8e66019fcd324926383539ba5a0b4cdc570b85f0130f26",
+      "counters": {
+        "payload_classes": 16,
+        "visited_alignment_pairs": 1041,
+        "one_mismatch_candidates": 1029,
+        "touched_owner_bits": 20478,
+        "payload_dot_components": 513672,
+        "reported_occurrence_entries": 1041,
+        "sam_active_advances": 16378,
+        "deletion_ranges": 2634744,
+        "sam_transition_probes": 185186,
+        "sam_suffix_fallbacks": 16374,
+        "delete_a_records": 6289408,
+        "delete_r_records": 12280,
+        "sam_endpoint_queries": 19434,
+        "delete_a_expanded_records": 6289408,
+        "deletion_owner_ranges": 0,
+        "deletion_owner_covered_records": 0,
+        "materialized_index_flags": 1,
+        "singleton_corridors": 1023,
+        "singleton_represented_rows": 2094081,
+        "singleton_run_steps": 2093058,
+        "singleton_k_key_rows": 4091,
+        "singleton_dot_components": 3984,
+        "singleton_heap_pops": 0,
+        "lca_index_materialized": true,
+        "wavelet_index_materialized": false,
+        "possible_alignment_pairs": 33550336,
+        "sum_match_lengths": 25145350
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 7.517240504739675e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 8.752246799303975e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 7.788730016500267e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 393216,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.172851059,
+            0.172784069,
+            0.17728986700000002,
+            0.172483095,
+            0.17262470300000002,
+            0.17182011700000002,
+            0.174492255
+          ],
+          "median_seconds": 0.172784069,
+          "min_seconds": 0.17182011700000002,
+          "max_seconds": 0.17728986700000002
+        }
+      },
+      "tokens_per_second": 47411.77845510745,
+      "credit_values_per_second": 568941.3414612894
+    },
+    {
+      "case_id": "shadow_T1024_D1_U2",
+      "family": "shadow",
+      "T": 1024,
+      "D": 1,
+      "requested_payload_classes": 2,
+      "seed": 4268543309443860419,
+      "input_sha256": "f15ad1e7ebd028efd230c069f88ec5d05884c4131fcf6ce15cbb2443ade906f4",
+      "counters": {
+        "payload_classes": 2,
+        "visited_alignment_pairs": 0,
+        "one_mismatch_candidates": 0,
+        "touched_owner_bits": 1024,
+        "payload_dot_components": 1025,
+        "reported_occurrence_entries": 0,
+        "sam_active_advances": 0,
+        "deletion_ranges": 1025,
+        "sam_transition_probes": 8146,
+        "sam_suffix_fallbacks": 1021,
+        "delete_a_records": 2043,
+        "delete_r_records": 1022,
+        "sam_endpoint_queries": 1,
+        "delete_a_expanded_records": 522753,
+        "deletion_owner_ranges": 1019,
+        "deletion_owner_covered_records": 261119,
+        "materialized_index_flags": 0,
+        "singleton_corridors": 1022,
+        "singleton_represented_rows": 523775,
+        "singleton_run_steps": 1022,
+        "singleton_k_key_rows": 1023,
+        "singleton_dot_components": 1020,
+        "singleton_heap_pops": 0,
+        "lca_index_materialized": false,
+        "wavelet_index_materialized": false,
+        "possible_alignment_pairs": 523776,
+        "sum_match_lengths": 522753
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 1.895742059332406e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 1.9028850957170107e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 1.1309825254102179e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 12288,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.0038516640000000003,
+            0.003740587,
+            0.003694741,
+            0.003774359,
+            0.003932692000000001,
+            0.003886118,
+            0.003702054
+          ],
+          "median_seconds": 0.003774359,
+          "min_seconds": 0.003694741,
+          "max_seconds": 0.003932692000000001
+        }
+      },
+      "tokens_per_second": 271304.3459829868,
+      "credit_values_per_second": 813913.0379489603
+    },
+    {
+      "case_id": "shadow_T4096_D1_U2",
+      "family": "shadow",
+      "T": 4096,
+      "D": 1,
+      "requested_payload_classes": 2,
+      "seed": 1554497687988961083,
+      "input_sha256": "975cec52effc162f4747b2fa16c85c4685fa70d0f4865ed1be3a9507e3f506e2",
+      "counters": {
+        "payload_classes": 2,
+        "visited_alignment_pairs": 0,
+        "one_mismatch_candidates": 0,
+        "touched_owner_bits": 4096,
+        "payload_dot_components": 4097,
+        "reported_occurrence_entries": 0,
+        "sam_active_advances": 0,
+        "deletion_ranges": 4097,
+        "sam_transition_probes": 36810,
+        "sam_suffix_fallbacks": 4093,
+        "delete_a_records": 8187,
+        "delete_r_records": 4094,
+        "sam_endpoint_queries": 1,
+        "delete_a_expanded_records": 8382465,
+        "deletion_owner_ranges": 4091,
+        "deletion_owner_covered_records": 4190207,
+        "materialized_index_flags": 0,
+        "singleton_corridors": 4094,
+        "singleton_represented_rows": 8386559,
+        "singleton_run_steps": 4094,
+        "singleton_k_key_rows": 4095,
+        "singleton_dot_components": 4092,
+        "singleton_heap_pops": 0,
+        "lca_index_materialized": false,
+        "wavelet_index_materialized": false,
+        "possible_alignment_pairs": 8386560,
+        "sum_match_lengths": 8382465
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 1.5114339703359292e-05,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 1.5073077747729258e-05,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 8.421287702731206e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 49152,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.046415159000000004,
+            0.048707528,
+            0.046277047,
+            0.046436046,
+            0.04603326,
+            0.04680004,
+            0.048569887000000006
+          ],
+          "median_seconds": 0.046436046,
+          "min_seconds": 0.04603326,
+          "max_seconds": 0.048707528
+        }
+      },
+      "tokens_per_second": 88207.33789435905,
+      "credit_values_per_second": 264622.0136830771
+    },
+    {
+      "case_id": "shadow_T8192_D1_U2",
+      "family": "shadow",
+      "T": 8192,
+      "D": 1,
+      "requested_payload_classes": 2,
+      "seed": 7923644585862480086,
+      "input_sha256": "2564791420fcf30138561910f2b20746e45bd4cb81a44f9958830019c08d95cf",
+      "counters": {
+        "payload_classes": 2,
+        "visited_alignment_pairs": 0,
+        "one_mismatch_candidates": 0,
+        "touched_owner_bits": 8192,
+        "payload_dot_components": 8193,
+        "reported_occurrence_entries": 0,
+        "sam_active_advances": 0,
+        "deletion_ranges": 8193,
+        "sam_transition_probes": 77766,
+        "sam_suffix_fallbacks": 8189,
+        "delete_a_records": 16379,
+        "delete_r_records": 8190,
+        "sam_endpoint_queries": 1,
+        "delete_a_expanded_records": 33542145,
+        "deletion_owner_ranges": 8187,
+        "deletion_owner_covered_records": 16769023,
+        "materialized_index_flags": 0,
+        "singleton_corridors": 8190,
+        "singleton_represented_rows": 33550335,
+        "singleton_run_steps": 8190,
+        "singleton_k_key_rows": 8191,
+        "singleton_dot_components": 8188,
+        "singleton_heap_pops": 0,
+        "lca_index_materialized": false,
+        "wavelet_index_materialized": false,
+        "possible_alignment_pairs": 33550336,
+        "sum_match_lengths": 33542145
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 3.813390577533937e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 1.9066060588102118e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 1.1444834058238484e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 98304,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.178397622,
+            0.180001652,
+            0.178673239,
+            0.17849114800000002,
+            0.18983370000000002,
+            0.17919176,
+            0.180915492
+          ],
+          "median_seconds": 0.17919176,
+          "min_seconds": 0.178397622,
+          "max_seconds": 0.18983370000000002
+        }
+      },
+      "tokens_per_second": 45716.387851762825,
+      "credit_values_per_second": 137149.16355528848
+    },
+    {
+      "case_id": "all_same_T1024_D1_U2",
+      "family": "all_same",
+      "T": 1024,
+      "D": 1,
+      "requested_payload_classes": 2,
+      "seed": 2328397031006638441,
+      "input_sha256": "7b0a68aee622eebde8ee061fa7216b92138394e61d48e07daa28a30815d1d008",
+      "counters": {
+        "payload_classes": 2,
+        "visited_alignment_pairs": 0,
+        "one_mismatch_candidates": 0,
+        "touched_owner_bits": 0,
+        "payload_dot_components": 1025,
+        "reported_occurrence_entries": 0,
+        "sam_active_advances": 0,
+        "deletion_ranges": 1026,
+        "sam_transition_probes": 1022,
+        "sam_suffix_fallbacks": 0,
+        "delete_a_records": 2045,
+        "delete_r_records": 1023,
+        "sam_endpoint_queries": 1,
+        "delete_a_expanded_records": 523776,
+        "deletion_owner_ranges": 1020,
+        "deletion_owner_covered_records": 261630,
+        "materialized_index_flags": 0,
+        "singleton_corridors": 0,
+        "singleton_represented_rows": 0,
+        "singleton_run_steps": 0,
+        "singleton_k_key_rows": 0,
+        "singleton_dot_components": 0,
+        "singleton_heap_pops": 0,
+        "lca_index_materialized": false,
+        "wavelet_index_materialized": false,
+        "possible_alignment_pairs": 523776,
+        "sum_match_lengths": 523776
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 2.2841643954052415e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 4.7580095596799765e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 5.9279557262925664e-08,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 12288,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.0008222920000000001,
+            0.000598111,
+            0.000552821,
+            0.000657591,
+            0.0005575090000000001,
+            0.000606161,
+            0.0005243390000000001
+          ],
+          "median_seconds": 0.000598111,
+          "min_seconds": 0.0005243390000000001,
+          "max_seconds": 0.0008222920000000001
+        }
+      },
+      "tokens_per_second": 1712056.7921339015,
+      "credit_values_per_second": 5136170.376401705
+    },
+    {
+      "case_id": "all_same_T4096_D1_U2",
+      "family": "all_same",
+      "T": 4096,
+      "D": 1,
+      "requested_payload_classes": 2,
+      "seed": 4011705203574733729,
+      "input_sha256": "7096f579e4694d239c6a5aac90f5f7417771db04f765f5aeca6436bfa6911a6d",
+      "counters": {
+        "payload_classes": 2,
+        "visited_alignment_pairs": 0,
+        "one_mismatch_candidates": 0,
+        "touched_owner_bits": 0,
+        "payload_dot_components": 4097,
+        "reported_occurrence_entries": 0,
+        "sam_active_advances": 0,
+        "deletion_ranges": 4098,
+        "sam_transition_probes": 4094,
+        "sam_suffix_fallbacks": 0,
+        "delete_a_records": 8189,
+        "delete_r_records": 4095,
+        "sam_endpoint_queries": 1,
+        "delete_a_expanded_records": 8386560,
+        "deletion_owner_ranges": 4092,
+        "deletion_owner_covered_records": 4192254,
+        "materialized_index_flags": 0,
+        "singleton_corridors": 0,
+        "singleton_represented_rows": 0,
+        "singleton_run_steps": 0,
+        "singleton_k_key_rows": 0,
+        "singleton_dot_components": 0,
+        "singleton_heap_pops": 0,
+        "lca_index_materialized": false,
+        "wavelet_index_materialized": false,
+        "possible_alignment_pairs": 8386560,
+        "sum_match_lengths": 8386560
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 1.1919870956944578e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 3.8111307389954163e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 2.229159292710392e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 49152,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.002296119,
+            0.0019982710000000002,
+            0.002202668,
+            0.001888125,
+            0.0021331510000000002,
+            0.0019835110000000003,
+            0.002003993
+          ],
+          "median_seconds": 0.002003993,
+          "min_seconds": 0.001888125,
+          "max_seconds": 0.002296119
+        }
+      },
+      "tokens_per_second": 2043919.315087428,
+      "credit_values_per_second": 6131757.945262284
+    },
+    {
+      "case_id": "all_same_T8192_D1_U2",
+      "family": "all_same",
+      "T": 8192,
+      "D": 1,
+      "requested_payload_classes": 2,
+      "seed": 8568583665914823438,
+      "input_sha256": "5afeba172844b4adf763cdcf02713cfe18ded9d3beee2a1861745800b416d4be",
+      "counters": {
+        "payload_classes": 2,
+        "visited_alignment_pairs": 0,
+        "one_mismatch_candidates": 0,
+        "touched_owner_bits": 0,
+        "payload_dot_components": 8193,
+        "reported_occurrence_entries": 0,
+        "sam_active_advances": 0,
+        "deletion_ranges": 8194,
+        "sam_transition_probes": 8190,
+        "sam_suffix_fallbacks": 0,
+        "delete_a_records": 16381,
+        "delete_r_records": 8191,
+        "sam_endpoint_queries": 1,
+        "delete_a_expanded_records": 33550336,
+        "deletion_owner_ranges": 8188,
+        "deletion_owner_covered_records": 16773118,
+        "materialized_index_flags": 0,
+        "singleton_corridors": 0,
+        "singleton_represented_rows": 0,
+        "singleton_run_steps": 0,
+        "singleton_k_key_rows": 0,
+        "singleton_dot_components": 0,
+        "singleton_heap_pops": 0,
+        "lca_index_materialized": false,
+        "wavelet_index_materialized": false,
+        "possible_alignment_pairs": 33550336,
+        "sum_match_lengths": 33550336
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 1.9069926793235936e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 1.9072704517952843e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 2.363982787301211e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 98304,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.004013119,
+            0.004047279,
+            0.004052534,
+            0.0037277100000000004,
+            0.0036609880000000004,
+            0.00368768,
+            0.0039970050000000005
+          ],
+          "median_seconds": 0.0039970050000000005,
+          "min_seconds": 0.0036609880000000004,
+          "max_seconds": 0.004052534
+        }
+      },
+      "tokens_per_second": 2049534.5890235312,
+      "credit_values_per_second": 6148603.767070593
+    },
+    {
+      "case_id": "random_binary_T16384_D1_Urandom",
+      "family": "random_binary",
+      "T": 16384,
+      "D": 1,
+      "requested_payload_classes": 0,
+      "seed": 726870643003377747,
+      "input_sha256": "27d004cdcf59a5f1ba5cab3abfcfc5ddab93e0c27e3ae41f7549b4e98f5b5ef1",
+      "counters": {
+        "payload_classes": 2,
+        "visited_alignment_pairs": 505740,
+        "one_mismatch_candidates": 370403,
+        "touched_owner_bits": 409225,
+        "payload_dot_components": 32763,
+        "reported_occurrence_entries": 505740,
+        "sam_active_advances": 202262,
+        "deletion_ranges": 121571,
+        "sam_transition_probes": 707062,
+        "sam_suffix_fallbacks": 87324,
+        "delete_a_records": 16801,
+        "delete_r_records": 105097,
+        "sam_endpoint_queries": 117849,
+        "delete_a_expanded_records": 16835,
+        "deletion_owner_ranges": 3,
+        "deletion_owner_covered_records": 7,
+        "materialized_index_flags": 3,
+        "singleton_corridors": 2973,
+        "singleton_represented_rows": 9155,
+        "singleton_run_steps": 4578,
+        "singleton_k_key_rows": 9155,
+        "singleton_dot_components": 0,
+        "singleton_heap_pops": 2972,
+        "lca_index_materialized": true,
+        "wavelet_index_materialized": true,
+        "possible_alignment_pairs": 134209536,
+        "sum_match_lengths": 212339
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 1.9024945885348643e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 1.906918711824801e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 9.327239212097993e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 196608,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.123036933,
+            0.11964366400000001,
+            0.12002599600000001,
+            0.121220565,
+            0.119205372,
+            0.12331960300000001,
+            0.12377747700000001
+          ],
+          "median_seconds": 0.121220565,
+          "min_seconds": 0.119205372,
+          "max_seconds": 0.12377747700000001
+        }
+      },
+      "tokens_per_second": 135158.58468404267,
+      "credit_values_per_second": 405475.754052128
+    },
+    {
+      "case_id": "random_binary_T65536_D1_Urandom",
+      "family": "random_binary",
+      "T": 65536,
+      "D": 1,
+      "requested_payload_classes": 0,
+      "seed": 7320886178266144183,
+      "input_sha256": "2a89c321c75630bf0e6c4e85b3f21ef1485965695b94bb718fb1ca64fd5d32c1",
+      "counters": {
+        "payload_classes": 2,
+        "visited_alignment_pairs": 2362657,
+        "one_mismatch_candidates": 1730989,
+        "touched_owner_bits": 1907802,
+        "payload_dot_components": 131069,
+        "reported_occurrence_entries": 2362657,
+        "sam_active_advances": 940843,
+        "deletion_ranges": 555113,
+        "sam_transition_probes": 3292958,
+        "sam_suffix_fallbacks": 402216,
+        "delete_a_records": 66192,
+        "delete_r_records": 489448,
+        "sam_endpoint_queries": 576086,
+        "delete_a_expanded_records": 66275,
+        "deletion_owner_ranges": 7,
+        "deletion_owner_covered_records": 15,
+        "materialized_index_flags": 3,
+        "singleton_corridors": 11835,
+        "singleton_represented_rows": 35643,
+        "singleton_run_steps": 17741,
+        "singleton_k_key_rows": 35643,
+        "singleton_dot_components": 0,
+        "singleton_heap_pops": 11835,
+        "lca_index_materialized": true,
+        "wavelet_index_materialized": true,
+        "possible_alignment_pairs": 2147450880,
+        "sum_match_lengths": 976993
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 1.5102479089534881e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 4.023609943004658e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 1.1566891089387354e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 786432,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.793957043,
+            0.808774337,
+            0.7956667730000001,
+            0.814553072,
+            0.7980649590000001,
+            0.8139488500000001,
+            0.837415376
+          ],
+          "median_seconds": 0.808774337,
+          "min_seconds": 0.793957043,
+          "max_seconds": 0.837415376
+        }
+      },
+      "tokens_per_second": 81031.25557011832,
+      "credit_values_per_second": 243093.76671035495
+    },
+    {
+      "case_id": "random16_T8192_D16_Urandom",
+      "family": "random16",
+      "T": 8192,
+      "D": 16,
+      "requested_payload_classes": 0,
+      "seed": 5515652126004994869,
+      "input_sha256": "c751e522b0a9acbf4f1889ed7b3e72c6e4c45c567e9c50e36f9102f687c07bbb",
+      "counters": {
+        "payload_classes": 7713,
+        "visited_alignment_pairs": 7876,
+        "one_mismatch_candidates": 7857,
+        "touched_owner_bits": 15745,
+        "payload_dot_components": 138496,
+        "reported_occurrence_entries": 7876,
+        "sam_active_advances": 7887,
+        "deletion_ranges": 942,
+        "sam_transition_probes": 8982,
+        "sam_suffix_fallbacks": 658,
+        "delete_a_records": 471,
+        "delete_r_records": 471,
+        "sam_endpoint_queries": 329,
+        "delete_a_expanded_records": 471,
+        "deletion_owner_ranges": 0,
+        "deletion_owner_covered_records": 0,
+        "materialized_index_flags": 0,
+        "singleton_corridors": 0,
+        "singleton_represented_rows": 0,
+        "singleton_run_steps": 0,
+        "singleton_k_key_rows": 0,
+        "singleton_dot_components": 0,
+        "singleton_heap_pops": 0,
+        "lca_index_materialized": false,
+        "wavelet_index_materialized": false,
+        "possible_alignment_pairs": 33550336,
+        "sum_match_lengths": 471
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 9.48377181231308e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 9.501186575278098e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 3.2389874604632496e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 1572864,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.013569609000000002,
+            0.014126366000000001,
+            0.013755938,
+            0.013556481,
+            0.013524924,
+            0.013796845,
+            0.013904548000000001
+          ],
+          "median_seconds": 0.013755938,
+          "min_seconds": 0.013524924,
+          "max_seconds": 0.014126366000000001
+        }
+      },
+      "tokens_per_second": 595524.6381598986,
+      "credit_values_per_second": 28585182.631675135
+    },
+    {
+      "case_id": "shadow_T2048_D64_U1",
+      "family": "shadow",
+      "T": 2048,
+      "D": 64,
+      "requested_payload_classes": 1,
+      "seed": 820056117658578591,
+      "input_sha256": "e4b6b3a79784edc5b4eb51f82ff6d2a1df9901d4fbd0d8f4ded14a991332d346",
+      "counters": {
+        "payload_classes": 1,
+        "visited_alignment_pairs": 0,
+        "one_mismatch_candidates": 0,
+        "touched_owner_bits": 2048,
+        "payload_dot_components": 131008,
+        "reported_occurrence_entries": 0,
+        "sam_active_advances": 0,
+        "deletion_ranges": 2049,
+        "sam_transition_probes": 17358,
+        "sam_suffix_fallbacks": 2045,
+        "delete_a_records": 4091,
+        "delete_r_records": 2046,
+        "sam_endpoint_queries": 1,
+        "delete_a_expanded_records": 2094081,
+        "deletion_owner_ranges": 2043,
+        "deletion_owner_covered_records": 1046527,
+        "materialized_index_flags": 0,
+        "singleton_corridors": 2046,
+        "singleton_represented_rows": 2096127,
+        "singleton_run_steps": 2046,
+        "singleton_k_key_rows": 2047,
+        "singleton_dot_components": 0,
+        "singleton_heap_pops": 0,
+        "lca_index_materialized": false,
+        "wavelet_index_materialized": false,
+        "possible_alignment_pairs": 2096128,
+        "sum_match_lengths": 2094081
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 1.8981199545464733e-06,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 1.5448046930544024e-07,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 8.597723990533268e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 1572864,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.010250208,
+            0.010106305000000001,
+            0.009745703000000001,
+            0.010219511,
+            0.009831823,
+            0.01001495,
+            0.010029087
+          ],
+          "median_seconds": 0.010029087,
+          "min_seconds": 0.009745703000000001,
+          "max_seconds": 0.010250208
+        }
+      },
+      "tokens_per_second": 204206.0259323705,
+      "credit_values_per_second": 39207556.979015134
+    },
+    {
+      "case_id": "shadow_T4096_D64_U2",
+      "family": "shadow",
+      "T": 4096,
+      "D": 64,
+      "requested_payload_classes": 2,
+      "seed": 7867428018356680836,
+      "input_sha256": "925621027c8236d7cf1f3f030ee65712f4fc26b8a76858e8566b359df5f109dc",
+      "counters": {
+        "payload_classes": 2,
+        "visited_alignment_pairs": 0,
+        "one_mismatch_candidates": 0,
+        "touched_owner_bits": 4096,
+        "payload_dot_components": 262208,
+        "reported_occurrence_entries": 0,
+        "sam_active_advances": 0,
+        "deletion_ranges": 4097,
+        "sam_transition_probes": 36810,
+        "sam_suffix_fallbacks": 4093,
+        "delete_a_records": 8187,
+        "delete_r_records": 4094,
+        "sam_endpoint_queries": 1,
+        "delete_a_expanded_records": 8382465,
+        "deletion_owner_ranges": 4091,
+        "deletion_owner_covered_records": 4190207,
+        "materialized_index_flags": 0,
+        "singleton_corridors": 4094,
+        "singleton_represented_rows": 8386559,
+        "singleton_run_steps": 4094,
+        "singleton_k_key_rows": 4095,
+        "singleton_dot_components": 261760,
+        "singleton_heap_pops": 0,
+        "lca_index_materialized": false,
+        "wavelet_index_materialized": false,
+        "possible_alignment_pairs": 8386560,
+        "sum_match_lengths": 8382465
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 6.095645221648738e-05,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 3.028624348644371e-05,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 9.519876584818121e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 3145728,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.11124895300000001,
+            0.111065518,
+            0.116955845,
+            0.11345363200000001,
+            0.111440647,
+            0.110904343,
+            0.10872079400000001
+          ],
+          "median_seconds": 0.11124895300000001,
+          "min_seconds": 0.10872079400000001,
+          "max_seconds": 0.116955845
+        }
+      },
+      "tokens_per_second": 36818.32403402484,
+      "credit_values_per_second": 7069118.214532769
+    },
+    {
+      "case_id": "shadow_T2048_D64_Urandom",
+      "family": "shadow",
+      "T": 2048,
+      "D": 64,
+      "requested_payload_classes": 0,
+      "seed": 3050107549613331782,
+      "input_sha256": "8bebd8a4bd2f60f20fa4f8ab194a57e0436802d6816bf29128c2841635bba554",
+      "counters": {
+        "payload_classes": 2048,
+        "visited_alignment_pairs": 0,
+        "one_mismatch_candidates": 0,
+        "touched_owner_bits": 2048,
+        "payload_dot_components": 131200,
+        "reported_occurrence_entries": 0,
+        "sam_active_advances": 0,
+        "deletion_ranges": 2049,
+        "sam_transition_probes": 17358,
+        "sam_suffix_fallbacks": 2045,
+        "delete_a_records": 4091,
+        "delete_r_records": 2046,
+        "sam_endpoint_queries": 1,
+        "delete_a_expanded_records": 2094081,
+        "deletion_owner_ranges": 2043,
+        "deletion_owner_covered_records": 1046527,
+        "materialized_index_flags": 0,
+        "singleton_corridors": 2046,
+        "singleton_represented_rows": 2096127,
+        "singleton_run_steps": 2046,
+        "singleton_k_key_rows": 2047,
+        "singleton_dot_components": 134152128,
+        "singleton_heap_pops": 0,
+        "lca_index_materialized": false,
+        "wavelet_index_materialized": false,
+        "possible_alignment_pairs": 2096128,
+        "sum_match_lengths": 2094081
+      },
+      "current_float32_vs_float64": {
+        "pass_check": true,
+        "routes_exact": true,
+        "atol": 0.0002,
+        "rtol": 2e-05,
+        "gradients": {
+          "q": {
+            "max_abs_error": 4.868157293458353e-05,
+            "finite": true,
+            "allclose": true
+          },
+          "k": {
+            "max_abs_error": 3.0353036095220887e-05,
+            "finite": true,
+            "allclose": true
+          },
+          "v": {
+            "max_abs_error": 5.641186362481676e-07,
+            "finite": true,
+            "allclose": true
+          }
+        }
+      },
+      "returned_credit_tensor_bytes": 1572864,
+      "timings": {
+        "current": {
+          "samples_seconds": [
+            0.07445765500000001,
+            0.099586145,
+            0.079943425,
+            0.075320544,
+            0.074689435,
+            0.07401800900000001,
+            0.07755642
+          ],
+          "median_seconds": 0.075320544,
+          "min_seconds": 0.07401800900000001,
+          "max_seconds": 0.099586145
+        }
+      },
+      "tokens_per_second": 27190.456829414295,
+      "credit_values_per_second": 5220567.711247545
+    }
+  ]
+}

@@ -3,21 +3,25 @@
 The SDPA/attention sublayer of a standard pre-norm Transformer block is replaced by
 two parallel context mixers:
   - NBitQKVRosaCpp: hard suffix-match retrieval (exact one-bit counterfactual
-    backward, C++ extension; see csrc/)
+    credits mapped to logits, shared CPU C++ core; see csrc/)
   - ShortConv: depthwise causal conv1d (a learnable longer token-shift) covering
     local smooth statistics that hard longest-match retrieval cannot express.
 The FFN is SwiGLU.
 
-Design reference: toy experiments showing conv (local) and ROSA (long-range
-retrieval) are complementary mixers; single parallel block is the sweet spot per
-layer. Q/K projections of each ROSA layer are weight-tied by default: hard
-threshold codes require identical Q/K encodings for matches to fire.
+The two mixers combine a local convolution with hard suffix retrieval. Q/K
+projections are weight-tied by default as a modeling choice that gives identical
+inputs identical codes. Untied projections are also supported. The current CPU
+core's performance and correctness tests do not establish training quality for
+this model architecture.
 """
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from rosa_layer import NBitQKVRosaCpp
+if __package__:
+    from .rosa_layer import NBitQKVRosaCpp
+else:
+    from rosa_layer import NBitQKVRosaCpp
 
 
 class RMSNorm(nn.Module):
