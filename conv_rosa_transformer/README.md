@@ -1,4 +1,50 @@
-# Conv∥ROSA Transformer
+# Conv∥ROSA with batched native training
+
+`NBitQKVRosa(channels, n_bits, credit_order="second", randomized=False)` uses
+one batched C++ forward and one batched C++ backward. Select `credit_order="first"`
+for original full singleton credit. Second order adds a diameter-scaled trust
+metric and one independent joint block per stream by default. `randomized=True`
+is an exact search accelerator and does not enable repair-lane sampling.
+
+```python
+from conv_rosa_transformer.rosa_layer import NBitQKVRosa
+layer = NBitQKVRosa(128, 8, credit_order="second", randomized=True)
+y = layer(x)
+loss = criterion(y, target)
+loss.backward()
+```
+
+The normal optimizer and outer training loop are unchanged. Each selected
+joint corner adds one internal component match, not another whole-model pass.
+The [integration guide](../docs/native-training.md) / [中文](../docs/native-training.zh-CN.md)
+explains the learning rule and its restrictions. The standalone
+[C ABI](csrc/training.h) and [example](../examples/native_training.cpp) need no
+framework headers. [Results](../docs/native-results.md) include absolute layer
+cost and the negative held-out result from the numerical migration.
+
+The main layer is CPU native; CUDA tensors incur transfers. Native arithmetic
+is binary64 before casting gradients back to input dtype. Old float32 Torch
+training is not bitwise preserved; the new random on/off toggle is. Second-order
+updates depend on incoming gradients and do not support double autograd or
+additivity between separate loss backwards. First/second modes share hard
+evaluation semantics and parameter names/shapes.
+
+| New source | Role |
+|---|---|
+| [native_training.py](native_training.py) | Thin validated contiguous-array binding |
+| [csrc/training.h](csrc/training.h) | Versioned C options and caller-owned arrays |
+| [csrc/training_impl.h](csrc/training_impl.h) | Batched packing, forward, proposals, metric, credits and gradient mapping |
+| [csrc/forward.h](csrc/forward.h) | Lean exact causal forward scan |
+| [csrc/sam_q.h](csrc/sam_q.h) | Sparse exact roots and optional random omitted-block join |
+| [csrc/pair_candidates.h](csrc/pair_candidates.h) | Shared bounded causal joint-bit proposals |
+
+## Original model and example documentation
+
+The following model layout and historical demonstration files are retained.
+Descriptions of the original singleton layer below refer to `credit_order="first"`.
+The current `RosaTransformer` uses the native layer's second-order default;
+retaining the model layout does not retain the old training rule by default.
+
 
 This package combines a hard QKV-ROSA retrieval mixer with a depthwise causal
 convolution and a SwiGLU feed-forward block. Its retrieval layer uses the
@@ -39,11 +85,11 @@ import torch
 from conv_rosa_transformer.rosa_layer import NBitQKVRosaCpp
 from conv_rosa_transformer.rosa_transformer import RosaTransformer
 
-layer = NBitQKVRosaCpp(channels=64, n_bits=8)
+layer = NBitQKVRosaCpp(channels=64, n_bits=8, credit_order="first")
 x = torch.randn(2, 32, 64)
 layer(x).square().mean().backward()
 
-model = RosaTransformer(
+model = RosaTransformer(  # uses the current second-order layer default
     vocab_size=16, channels=64, n_layers=2, n_bits=8,
     conv_kernel=4, max_seq_len=64,
 )
