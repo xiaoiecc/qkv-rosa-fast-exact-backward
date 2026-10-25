@@ -30,11 +30,11 @@ stated otherwise.
 | $`(L_t,r_t)`$ | Selected match length and K endpoint | Lexicographic route |
 | $`C^Q,C^K,C^V`$ | Single-bit flip credits | Each $`T\times D`$ |
 
-At output row $`t`$, only endpoints $`r<t`$ are legal. Define
+At output row $`t`$, only endpoints $`r\lt t`$ are legal. Define
 
 ```math
 F_t(r)=\mathrm{LCSuffix}(Q[0..t],K[0..r]),
-\qquad (L_t,r_t)=\max_{r<t}(F_t(r),r).
+\qquad (L_t,r_t)=\max_{r\lt t}(F_t(r),r).
 ```
 
 Longer matches win. Among equally long matches, later endpoints win. Normalize
@@ -52,7 +52,7 @@ P_{r_t+1},&r_t\ge0.
 ```
 
 The `+1` is part of the architecture: retrieve the payload following the
-matched K suffix. Because $`r<t`$, selecting $`V_t`$ is legal; selecting a K
+matched K suffix. Because $`r\lt t`$, selecting $`V_t`$ is legal; selecting a K
 endpoint at $`t`$ is not.
 
 ### Our hand-checkable example
@@ -206,7 +206,7 @@ without subtracting the baseline twice.
 Fix row t, abbreviate $`F=F_t`$, and let the baseline be $`(L,r_0)`$. Define
 
 ```math
-R[h]=\max\{r<t:F(r)\ge h\},\qquad 1\le h\le L.
+R[h]=\max\{r\lt t:F(r)\ge h\},\qquad 1\le h\le L.
 ```
 
 ### Q owner: cap the length
@@ -230,12 +230,12 @@ monotone cursor instead of a binary search per bit.
 
 ### K owner: split endpoints at the owner
 
-For $`s<t`$, an endpoint to the left of s cannot cross it. An endpoint on
+For $`s\lt t`$, an endpoint to the left of s cannot cross it. An endpoint on
 its right may retain only the $`r-s`$ symbols strictly after it. Therefore
 
 ```math
-A(s)=\max_{r<s}(F(r),r),\qquad
-H(s)=\max_{s\le r<t}(\min(F(r),r-s),r),
+A(s)=\max_{r\lt s}(F(r),r),\qquad
+H(s)=\max_{s\le r\lt t}(\min(F(r),r-s),r),
 ```
 
 ```math
@@ -273,7 +273,7 @@ tie-break. Before changing the representation, ask why adjacent records differ.
 Suppose Q currently ends in h copies of symbol c, and a maximal K run of c
 starts at l. For an endpoint r in that run:
 
-- If $`r-l+1<h`$, K leaves the run first, so $`F(r)=r-l+1`$.
+- If $`r-l+1\lt h`$, K leaves the run first, so $`F(r)=r-l+1`$.
 - If $`r-l+1>h`$, Q leaves first, so $`F(r)=h`$.
 - At $`r=l+h-1`$, both leave together. Earlier symbols may keep matching,
   so that one endpoint needs a genuine suffix query.
@@ -369,7 +369,7 @@ order of that tree, each state's endpoint set occupies a contiguous interval.
 
 The algorithm builds one SAM of full K. At row t it activates endpoint t−1,
 then consumes $`Q_t`$. The index knows the future but every answer filters
-by $`r<t`$. Static earliest endpoints can certify existence; causal latest
+by $`r\lt t`$. Static earliest endpoints can certify existence; causal latest
 endpoint queries settle ties. Original root transitions and every one-bit Q
 root alternative are prepared deterministically, so an absent causal target
 rejects a birth without searching for an impossible repair.
@@ -460,7 +460,7 @@ r₀+h<t₀+h.
 If the current longest repair is $`(L_0,r_0)`$, define
 
 ```math
-\alpha=L_0-t_0,\quad\beta=r_0-t_0<0,\qquad
+\alpha=L_0-t_0,\quad\beta=r_0-t_0\lt 0,\qquad
 \tau=t_0+\mathrm{LCE}(Q[t_0+1..],K[r_0+1..]).
 ```
 
