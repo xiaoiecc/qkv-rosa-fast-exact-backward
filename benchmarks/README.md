@@ -1,4 +1,44 @@
-# CPU backward measurements
+# CPU measurements
+
+## Current native component and exact randomization
+
+Current absolute performance is reported in [English](../docs/native-results.md)
+and [中文](../docs/native-results.zh-CN.md). Keep these scopes separate:
+
+| Report | Measured operation |
+|---|---|
+| [native_component.json](results/native_component.json) | Both credit orders × random off/on; hard component and full layer, including forward/backward separately |
+| [exact_randomized.json](results/exact_randomized.json) | Complete single-stream native credit engine with reused native buffers; all indexes included |
+| [forward.json](results/forward.json) | Completed lean forward matcher, native and public routes-only scopes |
+
+Every raw sample and source hash is retained. Current native component timing
+uses seven alternating samples; exact randomization uses eleven. The previous
+research baseline is the companion checkout at f6d7c4b, not an online commit.
+Run from this repository root, with an available CPU core:
+
+```bash
+python benchmarks/native_component.py --baseline-root ../baseline-f6 --cpu 0 --repeats 7 --output build/native_component.json
+python benchmarks/exact_randomized.py --baseline-root ../baseline-f6 --cpu 0 --repeats 11 --output build/exact_randomized.json
+python benchmarks/forward.py --baseline-dir ../online-base --cpu 0 --repeat 7 --output build/forward.json
+```
+
+Use each script's `--help` for other options. The exact randomized runner also
+uses shared generators in randomized_backward.py and curvature.py; those are
+benchmark helpers, not extra production backends. The measured test bridge is
+preserved in [snapshots](snapshots/exact_randomized_probe.cpp), with its
+[provenance](results/exact_randomized_provenance.json).
+
+The native migration has a held-out-loss regression in the small MSE study,
+retained alongside its first-divergence trace in the [results](../docs/native-results.md).
+Random on/off itself retains every tested update. No GPU speed, peak RSS or
+large-model quality result is implied by these CPU tables.
+
+## Published measurements before native training
+
+The following original report is preserved with its recorded source and
+scope. Its “current” labels refer to that historical snapshot, not the latest
+native-training source tree. It is not a fresh timing of this patch.
+
 
 The main results measure this repository's current algorithm on one stream
 and one D-bit group. The measured operation is the public five-result

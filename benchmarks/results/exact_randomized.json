@@ -1,0 +1,7342 @@
+{
+  "status": "PASS",
+  "scope": "Exact random root join and sparse root storage against the frozen last delivery.\n\nCore timings reuse native buffers and include all per-call indexing/contraction.\nSAM preparation is also measured separately. Neither includes projections,\ntraining, Python input validation, compilation, or warmup. All modes return the\nsame full credits, with no repair-lane sampling.\n",
+  "started_utc": "2026-10-25T09:39:09.842559+00:00",
+  "finished_utc": "2026-10-25T09:39:21.454485+00:00",
+  "baseline_commit": "f6d7c4b73d7040b1b33860f5a2649c3cd3036cc5",
+  "source_sha256": {
+    "conv_rosa_transformer/csrc/delete_indexed.h": "73d49dc58dbc34b10dc8a69288ea9163e60aba3cfc2812c8f927099762b73dea",
+    "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+    "conv_rosa_transformer/csrc/forward.h": "76a0d37bfb258de0fb9fcaa2a6ad63a91a997dc5bb98b13aaa0ea606df043c26",
+    "conv_rosa_transformer/csrc/pair_candidates.h": "26952e61c452cbeb1c7a38f2975fb1560971d895b11ca1255b3961f9a7f76c31",
+    "conv_rosa_transformer/csrc/sam_q.h": "55523d51996b2dec4569823b6d12c3ad896b43b56b64e1eec1196adbb0136c90",
+    "conv_rosa_transformer/csrc/sam_routes.h": "8b92b7f502f4740c3dc811dcb66ea395dbf8447d7715f93e1f3a078e506fb481",
+    "conv_rosa_transformer/csrc/training.h": "b13b549ea21bcfe2edeed56f0783acb1148f59280b219856a8727f559a084f48",
+    "conv_rosa_transformer/csrc/training_impl.h": "bb0e870d0de103401cd4c0491a91ea235563350e2db6db4520f8aa2d6f90d867",
+    "conv_rosa_transformer/csrc/unified_core.cpp": "387f2136c78cbfdb6de7213f29e8a195fd5be85db3c36b2524e9dcdbff4f3b65"
+  },
+  "baseline_source_sha256": {
+    "conv_rosa_transformer/csrc/delete_indexed.h": "73d49dc58dbc34b10dc8a69288ea9163e60aba3cfc2812c8f927099762b73dea",
+    "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+    "conv_rosa_transformer/csrc/forward.h": "76a0d37bfb258de0fb9fcaa2a6ad63a91a997dc5bb98b13aaa0ea606df043c26",
+    "conv_rosa_transformer/csrc/pair_candidates.h": "26952e61c452cbeb1c7a38f2975fb1560971d895b11ca1255b3961f9a7f76c31",
+    "conv_rosa_transformer/csrc/sam_q.h": "f933d28a16fe347aad4d374f66946650ba5aaf69e6a8bb4206b53006aff0874f",
+    "conv_rosa_transformer/csrc/sam_routes.h": "8b92b7f502f4740c3dc811dcb66ea395dbf8447d7715f93e1f3a078e506fb481",
+    "conv_rosa_transformer/csrc/unified_core.cpp": "66ad4987ce5e063bb06154401c106b6eed28d706b5cf31415d0ee3349c34e77c"
+  },
+  "source_unchanged": true,
+  "baseline_source_unchanged": true,
+  "test_bridge_sha256": "4872e115c375164fce1a38ed244934b7524ae3dbdafe920a256d9f5bf1b11dd3",
+  "loaded_binary_sha256": "65ee45847b0481eaef494445f778d09b26f20f65de288d3e5d751aaf3b06126d",
+  "compiler": "c++ -O3 -DNDEBUG -std=c++17 -ffp-contract=off",
+  "cpu_affinity": [
+    8
+  ],
+  "repeats": 11,
+  "root_counter_names": [
+    "enabled",
+    "used",
+    "direct_root_queries",
+    "bucket_queries",
+    "bucket_members",
+    "bucket_build_entries",
+    "empty_buckets",
+    "verified_neighbors",
+    "query_classes",
+    "supported_mask",
+    "blocks",
+    "stored_root_entries"
+  ],
+  "rows": [
+    {
+      "family": "random",
+      "T": 1024,
+      "D": 8,
+      "model": "linear",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 1.416111,
+        "native_off": 1.263284,
+        "native_on": 1.305728
+      },
+      "speedup_on_vs_last": 1.0845375147044407,
+      "speedup_on_vs_off": 0.9674939956866975,
+      "sam_preparation_median_ms": {
+        "0": 0.123056,
+        "1": 0.125707
+      },
+      "native_samples_ms": {
+        "baseline": [
+          1.366241,
+          1.523922,
+          1.416111,
+          1.210536,
+          1.199542,
+          1.469025,
+          1.19627,
+          1.283263,
+          4.457593,
+          1.734015,
+          1.682228
+        ],
+        "native_off": [
+          1.263284,
+          1.31827,
+          1.198496,
+          1.213993,
+          1.164048,
+          1.203659,
+          1.209597,
+          1.552405,
+          1.34721,
+          1.322943,
+          1.407148
+        ],
+        "native_on": [
+          1.363976,
+          1.295323,
+          1.383699,
+          1.367493,
+          1.193509,
+          1.205688,
+          1.296605,
+          1.305728,
+          1.247997,
+          1.468006,
+          1.514726
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          0.143234,
+          0.097681,
+          0.128199,
+          0.120088,
+          0.119278,
+          0.123056,
+          0.119268,
+          0.14213,
+          0.135621,
+          0.105313,
+          0.206714
+        ],
+        "1": [
+          0.483146,
+          0.125707,
+          0.102644,
+          0.12377,
+          0.101944,
+          0.126139,
+          0.126252,
+          0.725256,
+          0.106878,
+          0.225965,
+          0.103242
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            0,
+            1984,
+            0,
+            0,
+            0,
+            0,
+            1961,
+            248,
+            255,
+            0,
+            1857
+          ]
+        }
+      ]
+    },
+    {
+      "family": "random",
+      "T": 8192,
+      "D": 8,
+      "model": "linear",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 26.655694,
+        "native_off": 26.835167,
+        "native_on": 23.974265
+      },
+      "speedup_on_vs_last": 1.1118461400172226,
+      "speedup_on_vs_off": 1.119332208933204,
+      "sam_preparation_median_ms": {
+        "0": 1.211917,
+        "1": 1.104179
+      },
+      "native_samples_ms": {
+        "baseline": [
+          24.296058,
+          30.017565,
+          29.036439,
+          26.655694,
+          32.489923,
+          24.867865,
+          33.050433,
+          25.639177,
+          29.764122,
+          24.988547,
+          23.155423
+        ],
+        "native_off": [
+          24.287141,
+          26.835167,
+          24.724477,
+          30.960097,
+          22.315897,
+          24.931556,
+          23.472896,
+          27.044325,
+          56.289509,
+          31.182512,
+          57.945843
+        ],
+        "native_on": [
+          20.141508,
+          33.715716,
+          41.288803,
+          23.801711,
+          23.974265,
+          24.023334,
+          23.567493,
+          33.082117,
+          22.926693,
+          46.750482,
+          23.606139
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          1.14945,
+          1.248514,
+          1.071225,
+          1.373513,
+          1.253911,
+          1.711455,
+          1.132563,
+          1.211917,
+          1.068852,
+          1.002096,
+          1.684395
+        ],
+        "1": [
+          1.207027,
+          1.010606,
+          1.080839,
+          1.473833,
+          1.483174,
+          1.248498,
+          1.104179,
+          1.056412,
+          3.615035,
+          1.08323,
+          1.053967
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            0,
+            2048,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        }
+      ]
+    },
+    {
+      "family": "random",
+      "T": 2048,
+      "D": 16,
+      "model": "linear",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 1.756221,
+        "native_off": 1.605075,
+        "native_on": 1.518381
+      },
+      "speedup_on_vs_last": 1.1566405269823583,
+      "speedup_on_vs_off": 1.057096341432091,
+      "sam_preparation_median_ms": {
+        "0": 0.724439,
+        "1": 0.698395
+      },
+      "native_samples_ms": {
+        "baseline": [
+          2.213301,
+          1.769809,
+          1.494972,
+          1.873719,
+          1.795014,
+          1.480194,
+          1.632641,
+          1.454488,
+          2.279984,
+          1.496248,
+          1.756221
+        ],
+        "native_off": [
+          1.718626,
+          1.498646,
+          1.760465,
+          1.674414,
+          1.667613,
+          1.565208,
+          1.515061,
+          1.605075,
+          1.910197,
+          1.466398,
+          1.373206
+        ],
+        "native_on": [
+          2.216937,
+          1.999514,
+          1.487176,
+          1.949914,
+          1.697653,
+          1.500078,
+          1.363717,
+          1.518381,
+          1.619568,
+          1.370561,
+          1.469422
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          0.724439,
+          0.645562,
+          0.70804,
+          0.808713,
+          1.08751,
+          0.598469,
+          0.74379,
+          0.703538,
+          0.827782,
+          0.592368,
+          1.138494
+        ],
+        "1": [
+          0.768064,
+          0.704547,
+          0.697203,
+          0.668425,
+          0.721031,
+          0.732005,
+          0.900231,
+          0.605638,
+          0.564763,
+          0.698395,
+          0.574315
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            1,
+            4,
+            8048,
+            4037,
+            8080,
+            4786,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            1,
+            4,
+            8048,
+            4038,
+            8080,
+            4780,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            1,
+            0,
+            8048,
+            3968,
+            8080,
+            4839,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            1,
+            0,
+            8048,
+            4083,
+            8080,
+            4775,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            1,
+            4,
+            8048,
+            3982,
+            8080,
+            4843,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            1,
+            0,
+            8048,
+            3910,
+            8080,
+            4902,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            1,
+            0,
+            8048,
+            3995,
+            8080,
+            4846,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            1,
+            0,
+            8048,
+            3991,
+            8080,
+            4849,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            1,
+            4,
+            8048,
+            4050,
+            8080,
+            4804,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            1,
+            0,
+            8048,
+            3951,
+            8080,
+            4820,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            1,
+            0,
+            8048,
+            4102,
+            8080,
+            4786,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        }
+      ]
+    },
+    {
+      "family": "random",
+      "T": 2048,
+      "D": 16,
+      "model": "diagonal",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 1.573423,
+        "native_off": 1.494757,
+        "native_on": 1.533042
+      },
+      "speedup_on_vs_last": 1.0263404394661073,
+      "speedup_on_vs_off": 0.9750267768267274,
+      "sam_preparation_median_ms": {
+        "0": 0.678331,
+        "1": 0.664498
+      },
+      "native_samples_ms": {
+        "baseline": [
+          2.369743,
+          1.945425,
+          2.404505,
+          1.555031,
+          1.652219,
+          1.597763,
+          1.573423,
+          1.54435,
+          1.375942,
+          1.388652,
+          1.486552
+        ],
+        "native_off": [
+          2.244577,
+          1.593307,
+          2.608231,
+          1.821143,
+          1.762866,
+          1.354057,
+          1.313858,
+          1.284757,
+          1.494757,
+          1.276438,
+          1.282207
+        ],
+        "native_on": [
+          1.882137,
+          1.628415,
+          1.569678,
+          1.790031,
+          1.889774,
+          1.533042,
+          1.343619,
+          1.532696,
+          1.522049,
+          1.339917,
+          1.431865
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          0.834162,
+          0.724559,
+          1.399051,
+          0.647755,
+          0.717581,
+          0.678331,
+          0.762347,
+          0.644313,
+          0.667733,
+          0.577941,
+          0.618588
+        ],
+        "1": [
+          0.741996,
+          1.529187,
+          1.222223,
+          1.190328,
+          0.649375,
+          0.712335,
+          0.661119,
+          0.61756,
+          0.643114,
+          0.627258,
+          0.664498
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            1,
+            4,
+            8048,
+            4037,
+            8080,
+            4786,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            1,
+            4,
+            8048,
+            4038,
+            8080,
+            4780,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            1,
+            0,
+            8048,
+            3968,
+            8080,
+            4839,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            1,
+            0,
+            8048,
+            4083,
+            8080,
+            4775,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            1,
+            4,
+            8048,
+            3982,
+            8080,
+            4843,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            1,
+            0,
+            8048,
+            3910,
+            8080,
+            4902,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            1,
+            0,
+            8048,
+            3995,
+            8080,
+            4846,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            1,
+            0,
+            8048,
+            3991,
+            8080,
+            4849,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            1,
+            4,
+            8048,
+            4050,
+            8080,
+            4804,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            1,
+            0,
+            8048,
+            3951,
+            8080,
+            4820,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            32192,
+            0,
+            0,
+            0,
+            0,
+            969,
+            2012,
+            65535,
+            0,
+            479
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            1,
+            0,
+            8048,
+            4102,
+            8080,
+            4786,
+            969,
+            2012,
+            65535,
+            4,
+            479
+          ]
+        }
+      ]
+    },
+    {
+      "family": "random",
+      "T": 8192,
+      "D": 16,
+      "model": "linear",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 12.039416,
+        "native_off": 10.216749,
+        "native_on": 10.608402
+      },
+      "speedup_on_vs_last": 1.1348943978555865,
+      "speedup_on_vs_off": 0.9630808674105676,
+      "sam_preparation_median_ms": {
+        "0": 3.704614,
+        "1": 4.102918
+      },
+      "native_samples_ms": {
+        "baseline": [
+          10.469922,
+          14.534258,
+          13.716511,
+          12.039416,
+          12.077985,
+          9.867744,
+          11.029352,
+          18.490907,
+          15.167335,
+          12.012059,
+          11.426661
+        ],
+        "native_off": [
+          10.048071,
+          9.756646,
+          13.198991,
+          10.014937,
+          9.955045,
+          10.216749,
+          11.042894,
+          10.123719,
+          12.17774,
+          10.352664,
+          10.692613
+        ],
+        "native_on": [
+          9.251975,
+          10.608402,
+          10.832033,
+          9.696322,
+          10.842527,
+          8.603605,
+          10.848481,
+          12.685991,
+          10.138892,
+          10.80675,
+          10.222585
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          3.643371,
+          4.138965,
+          3.68926,
+          4.181237,
+          3.937437,
+          3.420676,
+          3.885511,
+          3.704614,
+          3.485538,
+          3.55614,
+          4.138626
+        ],
+        "1": [
+          4.733382,
+          3.683238,
+          4.333948,
+          4.102918,
+          4.630739,
+          3.85324,
+          4.415743,
+          3.405444,
+          3.409317,
+          3.888508,
+          4.314932
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            0,
+            123312,
+            0,
+            0,
+            0,
+            0,
+            14716,
+            7707,
+            65535,
+            0,
+            7742
+          ]
+        }
+      ]
+    },
+    {
+      "family": "random",
+      "T": 8192,
+      "D": 32,
+      "model": "linear",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 11.624225,
+        "native_off": 11.350923,
+        "native_on": 7.121063
+      },
+      "speedup_on_vs_last": 1.632372161291088,
+      "speedup_on_vs_off": 1.5939927788870847,
+      "sam_preparation_median_ms": {
+        "0": 4.368573,
+        "1": 1.695438
+      },
+      "native_samples_ms": {
+        "baseline": [
+          13.844097,
+          11.348467,
+          11.74494,
+          11.332056,
+          10.652025,
+          11.624225,
+          11.819499,
+          11.115168,
+          13.07551,
+          10.255685,
+          12.354016
+        ],
+        "native_off": [
+          11.350923,
+          12.432185,
+          11.545725,
+          14.201066,
+          10.651718,
+          12.989252,
+          10.653894,
+          9.476131,
+          13.161061,
+          9.557179,
+          10.885007
+        ],
+        "native_on": [
+          6.299288,
+          19.357065,
+          8.023853,
+          6.83278,
+          6.795641,
+          10.118626,
+          7.121063,
+          8.124284,
+          7.544766,
+          6.639072,
+          6.954721
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          4.199209,
+          5.247733,
+          4.314731,
+          4.281613,
+          4.252655,
+          4.368573,
+          4.988326,
+          4.659217,
+          4.605628,
+          4.005573,
+          5.02591
+        ],
+        "1": [
+          1.598035,
+          2.920747,
+          1.45194,
+          1.807635,
+          1.4764,
+          2.045949,
+          1.828949,
+          1.95767,
+          1.689265,
+          1.695438,
+          1.66946
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            262144,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8192,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2139,
+            16384,
+            14375,
+            0,
+            8192,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2114,
+            16384,
+            14405,
+            0,
+            8192,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            262144,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8192,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            262144,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8192,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2111,
+            16384,
+            14378,
+            0,
+            8192,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2003,
+            16384,
+            14502,
+            0,
+            8192,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            262144,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8192,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            262144,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8192,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            1924,
+            16384,
+            14579,
+            0,
+            8192,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            1976,
+            16384,
+            14527,
+            0,
+            8192,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            262144,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8192,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            262144,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8192,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2034,
+            16384,
+            14463,
+            0,
+            8192,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2018,
+            16384,
+            14482,
+            0,
+            8192,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            262144,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8192,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            262144,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8192,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2021,
+            16384,
+            14495,
+            0,
+            8192,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2084,
+            16384,
+            14434,
+            0,
+            8192,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            262144,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8192,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            262144,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8192,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            1993,
+            16384,
+            14511,
+            0,
+            8192,
+            0,
+            2,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "family": "wide",
+      "T": 8192,
+      "D": 64,
+      "model": "linear",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 21.824292,
+        "native_off": 20.094003,
+        "native_on": 12.033109
+      },
+      "speedup_on_vs_last": 1.8136868867389135,
+      "speedup_on_vs_off": 1.669892876396283,
+      "sam_preparation_median_ms": {
+        "0": 7.960273,
+        "1": 1.713148
+      },
+      "native_samples_ms": {
+        "baseline": [
+          21.857845,
+          19.477741,
+          23.167155,
+          18.715532,
+          18.194267,
+          21.824292,
+          19.132185,
+          25.376581,
+          19.364148,
+          31.84238,
+          24.601876
+        ],
+        "native_off": [
+          21.784681,
+          15.785323,
+          20.094003,
+          17.884665,
+          21.43486,
+          18.557931,
+          20.772673,
+          16.113292,
+          21.55893,
+          17.175899,
+          21.28738
+        ],
+        "native_on": [
+          12.373084,
+          12.712289,
+          9.972079,
+          12.033109,
+          10.007859,
+          15.896865,
+          10.434814,
+          13.666766,
+          10.409857,
+          11.743284,
+          12.449765
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          7.758673,
+          7.363682,
+          9.314699,
+          8.889816,
+          7.878399,
+          7.960273,
+          7.409058,
+          8.047851,
+          9.252285,
+          10.104904,
+          7.902633
+        ],
+        "1": [
+          1.446514,
+          1.713148,
+          2.977171,
+          1.700085,
+          1.504605,
+          1.813538,
+          1.970099,
+          1.733712,
+          1.476129,
+          1.659816,
+          1.991635
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        }
+      ]
+    },
+    {
+      "family": "wide",
+      "T": 8192,
+      "D": 64,
+      "model": "diagonal",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 18.437286,
+        "native_off": 16.658821,
+        "native_on": 10.434713
+      },
+      "speedup_on_vs_last": 1.7669183618179052,
+      "speedup_on_vs_off": 1.5964809956919754,
+      "sam_preparation_median_ms": {
+        "0": 7.828677,
+        "1": 1.843764
+      },
+      "native_samples_ms": {
+        "baseline": [
+          18.360254,
+          18.437286,
+          17.214258,
+          18.961686,
+          19.113631,
+          21.514972,
+          20.684714,
+          47.944148,
+          16.879747,
+          17.861201,
+          15.653572
+        ],
+        "native_off": [
+          16.402494,
+          20.558713,
+          15.696968,
+          15.524965,
+          15.154731,
+          16.658821,
+          18.472834,
+          81.33343,
+          14.948875,
+          19.136691,
+          17.294361
+        ],
+        "native_on": [
+          9.862323,
+          9.714351,
+          11.105214,
+          9.504984,
+          10.434713,
+          11.537967,
+          9.779261,
+          17.356803,
+          10.097884,
+          10.552354,
+          12.812821
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          7.417529,
+          7.817087,
+          7.416928,
+          9.043608,
+          8.138702,
+          7.409536,
+          7.373372,
+          8.164878,
+          9.843772,
+          7.915354,
+          7.828677
+        ],
+        "1": [
+          2.105744,
+          2.357662,
+          1.843764,
+          1.901057,
+          1.548608,
+          2.103217,
+          1.36397,
+          1.651787,
+          2.314003,
+          1.830575,
+          1.622549
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            524288,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            8192,
+            18446744073709551615,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            1,
+            0,
+            16384,
+            2048,
+            16384,
+            14336,
+            2048,
+            8192,
+            18446744073709551615,
+            2,
+            2048
+          ]
+        }
+      ]
+    },
+    {
+      "family": "narrow",
+      "T": 8192,
+      "D": 64,
+      "model": "linear",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 44.47588,
+        "native_off": 39.128715,
+        "native_on": 43.730891
+      },
+      "speedup_on_vs_last": 1.0170357608309422,
+      "speedup_on_vs_off": 0.8947614399166941,
+      "sam_preparation_median_ms": {
+        "0": 1.013125,
+        "1": 0.933562
+      },
+      "native_samples_ms": {
+        "baseline": [
+          49.659733,
+          40.205739,
+          49.768428,
+          47.695299,
+          39.937816,
+          44.47588,
+          45.355763,
+          43.980931,
+          45.908206,
+          40.418153,
+          39.739691
+        ],
+        "native_off": [
+          39.731709,
+          41.270948,
+          55.272466,
+          39.128715,
+          36.916764,
+          37.676306,
+          44.659513,
+          38.689407,
+          38.528645,
+          35.585532,
+          40.014477
+        ],
+        "native_on": [
+          48.534156,
+          43.785926,
+          43.280148,
+          42.357066,
+          44.604717,
+          47.028045,
+          38.730265,
+          43.998497,
+          37.555174,
+          35.828685,
+          43.730891
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          1.05674,
+          0.904708,
+          1.112307,
+          0.968282,
+          1.109278,
+          0.935402,
+          1.401568,
+          1.013125,
+          1.074703,
+          0.87781,
+          0.974387
+        ],
+        "1": [
+          0.735132,
+          0.936805,
+          0.933562,
+          1.002569,
+          0.764911,
+          1.971272,
+          0.779496,
+          1.11421,
+          0.807057,
+          1.304141,
+          0.740964
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            1,
+            0,
+            1024,
+            4608,
+            1024,
+            0,
+            2048,
+            256,
+            255,
+            4,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            1,
+            4096,
+            1024,
+            1792,
+            1024,
+            0,
+            2048,
+            256,
+            255,
+            4,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            1,
+            0,
+            1024,
+            4608,
+            1024,
+            0,
+            2048,
+            256,
+            255,
+            4,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            1,
+            4096,
+            1024,
+            1792,
+            1024,
+            0,
+            2048,
+            256,
+            255,
+            4,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            1,
+            0,
+            1024,
+            5376,
+            1024,
+            0,
+            2048,
+            256,
+            255,
+            4,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            1,
+            0,
+            1024,
+            6144,
+            1024,
+            0,
+            2048,
+            256,
+            255,
+            4,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            1,
+            0,
+            1024,
+            5120,
+            1024,
+            0,
+            2048,
+            256,
+            255,
+            4,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            1,
+            0,
+            1024,
+            5376,
+            1024,
+            0,
+            2048,
+            256,
+            255,
+            4,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            1,
+            0,
+            1024,
+            4608,
+            1024,
+            0,
+            2048,
+            256,
+            255,
+            4,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            1,
+            0,
+            1024,
+            6144,
+            1024,
+            0,
+            2048,
+            256,
+            255,
+            4,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            2048,
+            256,
+            255,
+            0,
+            2048
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            1,
+            0,
+            1024,
+            6144,
+            1024,
+            0,
+            2048,
+            256,
+            255,
+            4,
+            2048
+          ]
+        }
+      ]
+    },
+    {
+      "family": "correlated",
+      "T": 8192,
+      "D": 64,
+      "model": "linear",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 10.221465,
+        "native_off": 9.608194,
+        "native_on": 8.33034
+      },
+      "speedup_on_vs_last": 1.2270165443427279,
+      "speedup_on_vs_off": 1.1533975804108836,
+      "sam_preparation_median_ms": {
+        "0": 1.050182,
+        "1": 0.774782
+      },
+      "native_samples_ms": {
+        "baseline": [
+          12.563717,
+          11.443707,
+          9.87967,
+          10.589805,
+          10.221465,
+          9.559469,
+          9.405195,
+          10.500873,
+          9.022055,
+          9.840317,
+          16.129548
+        ],
+        "native_off": [
+          10.82122,
+          8.918065,
+          12.424446,
+          9.608194,
+          11.359664,
+          9.549461,
+          10.517547,
+          8.256064,
+          7.48893,
+          6.913605,
+          11.187333
+        ],
+        "native_on": [
+          8.33034,
+          9.117059,
+          7.844698,
+          10.312754,
+          8.214267,
+          8.019966,
+          9.618613,
+          8.774947,
+          7.710532,
+          7.061436,
+          14.936793
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          1.079303,
+          0.799446,
+          1.183902,
+          0.808208,
+          0.938638,
+          0.747018,
+          1.234876,
+          1.069352,
+          0.829929,
+          1.050182,
+          1.180105
+        ],
+        "1": [
+          0.917125,
+          0.979029,
+          0.774782,
+          0.698535,
+          0.708261,
+          0.734712,
+          0.990174,
+          0.71424,
+          0.680465,
+          1.022464,
+          0.898471
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            0,
+            256,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            1,
+            0,
+            512,
+            512,
+            512,
+            0,
+            0,
+            256,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            1,
+            0,
+            512,
+            512,
+            512,
+            0,
+            0,
+            256,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            0,
+            256,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            0,
+            256,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            1,
+            0,
+            512,
+            512,
+            512,
+            0,
+            0,
+            256,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            1,
+            0,
+            512,
+            512,
+            512,
+            0,
+            0,
+            256,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            0,
+            256,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            0,
+            256,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            1,
+            0,
+            512,
+            512,
+            512,
+            0,
+            0,
+            256,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            1,
+            0,
+            512,
+            512,
+            512,
+            0,
+            0,
+            256,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            0,
+            256,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            0,
+            256,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            1,
+            0,
+            512,
+            512,
+            512,
+            0,
+            0,
+            256,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            1,
+            0,
+            512,
+            512,
+            512,
+            0,
+            0,
+            256,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            0,
+            256,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            0,
+            256,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            1,
+            0,
+            512,
+            512,
+            512,
+            0,
+            0,
+            256,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            1,
+            0,
+            512,
+            512,
+            512,
+            0,
+            0,
+            256,
+            0,
+            2,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            0,
+            256,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0,
+            0,
+            0,
+            256,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            1,
+            0,
+            512,
+            512,
+            512,
+            0,
+            0,
+            256,
+            0,
+            2,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "family": "asymmetric",
+      "T": 8192,
+      "D": 16,
+      "model": "linear",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 8.508473,
+        "native_off": 7.81817,
+        "native_on": 7.804508
+      },
+      "speedup_on_vs_last": 1.0901997922226487,
+      "speedup_on_vs_off": 1.0017505267468494,
+      "sam_preparation_median_ms": {
+        "0": 2.924861,
+        "1": 2.440412
+      },
+      "native_samples_ms": {
+        "baseline": [
+          8.340471,
+          7.395965,
+          8.933463,
+          8.814205,
+          8.12287,
+          8.95232,
+          8.294672,
+          7.51794,
+          9.057815,
+          9.038312,
+          8.508473
+        ],
+        "native_off": [
+          7.670947,
+          8.362843,
+          7.345001,
+          7.675364,
+          8.192547,
+          8.784419,
+          7.5814,
+          7.358697,
+          11.719661,
+          12.847692,
+          7.81817
+        ],
+        "native_on": [
+          7.804508,
+          6.750962,
+          8.825835,
+          7.963532,
+          9.861943,
+          12.041703,
+          6.976855,
+          6.757701,
+          7.565344,
+          9.819314,
+          7.177934
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          2.393835,
+          3.166615,
+          2.809038,
+          3.084026,
+          3.131929,
+          3.086769,
+          2.682367,
+          2.742684,
+          4.148442,
+          2.514071,
+          2.924861
+        ],
+        "1": [
+          1.991835,
+          3.196408,
+          2.239206,
+          2.514153,
+          2.596403,
+          6.029409,
+          2.023888,
+          3.000103,
+          2.25165,
+          2.440412,
+          2.135879
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            123392,
+            0,
+            0,
+            0,
+            0,
+            3807,
+            7712,
+            65535,
+            0,
+            2949
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            1,
+            8,
+            30848,
+            15133,
+            8068,
+            18640,
+            3807,
+            7712,
+            65535,
+            4,
+            2949
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            1,
+            20,
+            30848,
+            15163,
+            8068,
+            18663,
+            3807,
+            7712,
+            65535,
+            4,
+            2949
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            123392,
+            0,
+            0,
+            0,
+            0,
+            3807,
+            7712,
+            65535,
+            0,
+            2949
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            123392,
+            0,
+            0,
+            0,
+            0,
+            3807,
+            7712,
+            65535,
+            0,
+            2949
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            1,
+            8,
+            30848,
+            15328,
+            8068,
+            18627,
+            3807,
+            7712,
+            65535,
+            4,
+            2949
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            1,
+            4,
+            30848,
+            15083,
+            8068,
+            18737,
+            3807,
+            7712,
+            65535,
+            4,
+            2949
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            123392,
+            0,
+            0,
+            0,
+            0,
+            3807,
+            7712,
+            65535,
+            0,
+            2949
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            123392,
+            0,
+            0,
+            0,
+            0,
+            3807,
+            7712,
+            65535,
+            0,
+            2949
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            1,
+            0,
+            30848,
+            15192,
+            8068,
+            18805,
+            3807,
+            7712,
+            65535,
+            4,
+            2949
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            1,
+            4,
+            30848,
+            15165,
+            8068,
+            18763,
+            3807,
+            7712,
+            65535,
+            4,
+            2949
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            123392,
+            0,
+            0,
+            0,
+            0,
+            3807,
+            7712,
+            65535,
+            0,
+            2949
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            123392,
+            0,
+            0,
+            0,
+            0,
+            3807,
+            7712,
+            65535,
+            0,
+            2949
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            1,
+            8,
+            30848,
+            15127,
+            8068,
+            18891,
+            3807,
+            7712,
+            65535,
+            4,
+            2949
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            1,
+            0,
+            30848,
+            15068,
+            8068,
+            18863,
+            3807,
+            7712,
+            65535,
+            4,
+            2949
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            123392,
+            0,
+            0,
+            0,
+            0,
+            3807,
+            7712,
+            65535,
+            0,
+            2949
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            123392,
+            0,
+            0,
+            0,
+            0,
+            3807,
+            7712,
+            65535,
+            0,
+            2949
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            1,
+            8,
+            30848,
+            15046,
+            8068,
+            18738,
+            3807,
+            7712,
+            65535,
+            4,
+            2949
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            1,
+            8,
+            30848,
+            15105,
+            8068,
+            18747,
+            3807,
+            7712,
+            65535,
+            4,
+            2949
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            123392,
+            0,
+            0,
+            0,
+            0,
+            3807,
+            7712,
+            65535,
+            0,
+            2949
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            123392,
+            0,
+            0,
+            0,
+            0,
+            3807,
+            7712,
+            65535,
+            0,
+            2949
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            1,
+            0,
+            30848,
+            15127,
+            8068,
+            18648,
+            3807,
+            7712,
+            65535,
+            4,
+            2949
+          ]
+        }
+      ]
+    },
+    {
+      "family": "shadow",
+      "T": 2048,
+      "D": 64,
+      "model": "linear",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 14.977368,
+        "native_off": 14.670419,
+        "native_on": 14.754453
+      },
+      "speedup_on_vs_last": 1.0151083201796773,
+      "speedup_on_vs_off": 0.9943044991230784,
+      "sam_preparation_median_ms": {
+        "0": 0.23727,
+        "1": 0.237672
+      },
+      "native_samples_ms": {
+        "baseline": [
+          16.246832,
+          13.394179,
+          14.067192,
+          15.867595,
+          14.740486,
+          20.655725,
+          14.977368,
+          12.724391,
+          17.490119,
+          14.648487,
+          15.695281
+        ],
+        "native_off": [
+          14.107439,
+          16.098072,
+          14.71479,
+          14.670419,
+          15.238159,
+          14.185942,
+          14.7961,
+          13.661307,
+          14.892565,
+          13.831157,
+          14.566675
+        ],
+        "native_on": [
+          14.379945,
+          14.754453,
+          16.165686,
+          16.464598,
+          16.286508,
+          17.926303,
+          13.695585,
+          13.642804,
+          16.549952,
+          13.911984,
+          14.054815
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          0.246819,
+          0.346339,
+          0.280892,
+          0.23727,
+          0.228819,
+          0.190279,
+          0.231943,
+          0.278219,
+          0.230023,
+          0.190014,
+          0.306539
+        ],
+        "1": [
+          0.195182,
+          0.242724,
+          0.191103,
+          0.440421,
+          0.316917,
+          0.348602,
+          0.196724,
+          0.228911,
+          0.288744,
+          0.237672,
+          0.194827
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "family": "shadow",
+      "T": 2048,
+      "D": 64,
+      "model": "diagonal",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 16.038208,
+        "native_off": 15.615158,
+        "native_on": 15.51009
+      },
+      "speedup_on_vs_last": 1.0340499636043377,
+      "speedup_on_vs_off": 1.006774170878441,
+      "sam_preparation_median_ms": {
+        "0": 0.276322,
+        "1": 0.228847
+      },
+      "native_samples_ms": {
+        "baseline": [
+          18.00731,
+          15.939938,
+          16.04494,
+          14.950422,
+          21.327109,
+          16.038208,
+          14.531432,
+          14.588731,
+          15.520944,
+          16.876009,
+          17.55628
+        ],
+        "native_off": [
+          15.615158,
+          13.320909,
+          18.466878,
+          16.567774,
+          15.332113,
+          16.721964,
+          14.3558,
+          15.883439,
+          15.540852,
+          15.15872,
+          18.32262
+        ],
+        "native_on": [
+          14.981439,
+          15.51009,
+          15.609155,
+          16.597084,
+          15.602927,
+          14.487748,
+          15.142414,
+          16.801117,
+          15.444668,
+          15.501787,
+          15.666579
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          0.248707,
+          0.228627,
+          0.238599,
+          0.201708,
+          0.29744,
+          0.276322,
+          0.334921,
+          0.191102,
+          0.329922,
+          0.379977,
+          0.341504
+        ],
+        "1": [
+          0.188702,
+          0.247786,
+          0.228847,
+          0.370997,
+          0.221685,
+          0.237443,
+          0.188825,
+          0.246639,
+          0.196128,
+          0.249304,
+          0.190369
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            0,
+            64,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "family": "periodic",
+      "T": 4096,
+      "D": 4,
+      "model": "linear",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 47.998895,
+        "native_off": 45.63479,
+        "native_on": 49.376337
+      },
+      "speedup_on_vs_last": 0.972103195909409,
+      "speedup_on_vs_off": 0.9242238848134887,
+      "sam_preparation_median_ms": {
+        "0": 0.384848,
+        "1": 0.391778
+      },
+      "native_samples_ms": {
+        "baseline": [
+          49.511862,
+          44.579795,
+          47.051226,
+          47.494734,
+          66.607575,
+          50.91446,
+          50.06023,
+          44.964937,
+          47.998895,
+          54.294943,
+          47.235825
+        ],
+        "native_off": [
+          43.372365,
+          43.270185,
+          49.501011,
+          48.147198,
+          47.873329,
+          45.63479,
+          47.885349,
+          48.957941,
+          44.538805,
+          43.250692,
+          44.462475
+        ],
+        "native_on": [
+          52.842069,
+          53.455337,
+          46.867766,
+          62.239586,
+          48.587967,
+          43.123923,
+          49.924451,
+          47.617081,
+          50.317272,
+          49.315044,
+          49.376337
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          0.384848,
+          0.330422,
+          0.397336,
+          0.31965,
+          0.389553,
+          0.322408,
+          0.748567,
+          0.301493,
+          0.432625,
+          0.325649,
+          0.423682
+        ],
+        "1": [
+          0.319104,
+          0.415164,
+          0.355899,
+          0.372875,
+          0.376973,
+          0.391778,
+          0.926446,
+          0.537977,
+          0.496932,
+          0.396321,
+          0.307904
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            0,
+            16,
+            0,
+            0,
+            0,
+            0,
+            8,
+            4,
+            3,
+            0,
+            8
+          ]
+        }
+      ]
+    },
+    {
+      "family": "all_same",
+      "T": 8192,
+      "D": 8,
+      "model": "linear",
+      "bitwise_equal_baseline": true,
+      "bitwise_equal_on_off": true,
+      "median_native_ms": {
+        "baseline": 3.77422,
+        "native_off": 3.61783,
+        "native_on": 3.691957
+      },
+      "speedup_on_vs_last": 1.022281678795284,
+      "speedup_on_vs_off": 0.9799220305111896,
+      "sam_preparation_median_ms": {
+        "0": 0.521776,
+        "1": 0.517158
+      },
+      "native_samples_ms": {
+        "baseline": [
+          3.52793,
+          3.672066,
+          3.783308,
+          3.77422,
+          4.450387,
+          4.14022,
+          4.586237,
+          6.816255,
+          3.221213,
+          3.130551,
+          3.049102
+        ],
+        "native_off": [
+          3.129884,
+          4.308548,
+          3.61783,
+          2.878195,
+          3.293619,
+          6.601571,
+          3.641427,
+          3.936258,
+          3.446341,
+          3.647779,
+          3.204058
+        ],
+        "native_on": [
+          3.178389,
+          3.619135,
+          5.011492,
+          2.892553,
+          3.716489,
+          5.190423,
+          4.732976,
+          3.896885,
+          3.202839,
+          3.108533,
+          3.691957
+        ]
+      },
+      "sam_preparation_samples_ms": {
+        "0": [
+          0.521776,
+          0.565339,
+          0.468686,
+          0.466437,
+          0.508122,
+          0.942736,
+          0.577864,
+          0.419715,
+          0.543001,
+          0.467264,
+          0.606654
+        ],
+        "1": [
+          0.465811,
+          0.681907,
+          0.397014,
+          0.876009,
+          0.517158,
+          0.436908,
+          0.619367,
+          0.542407,
+          0.430502,
+          0.534476,
+          0.43448
+        ]
+      },
+      "root_counts": [
+        {
+          "randomized": false,
+          "seed": 719263,
+          "counters": [
+            0,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719263,
+          "counters": [
+            1,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719264,
+          "counters": [
+            1,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719264,
+          "counters": [
+            0,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719265,
+          "counters": [
+            0,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719265,
+          "counters": [
+            1,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719266,
+          "counters": [
+            1,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719266,
+          "counters": [
+            0,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719267,
+          "counters": [
+            0,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719267,
+          "counters": [
+            1,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719268,
+          "counters": [
+            1,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719268,
+          "counters": [
+            0,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719269,
+          "counters": [
+            0,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719269,
+          "counters": [
+            1,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719270,
+          "counters": [
+            1,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719270,
+          "counters": [
+            0,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719271,
+          "counters": [
+            0,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719271,
+          "counters": [
+            1,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719272,
+          "counters": [
+            1,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719272,
+          "counters": [
+            0,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": false,
+          "seed": 719273,
+          "counters": [
+            0,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "randomized": true,
+          "seed": 719273,
+          "counters": [
+            1,
+            0,
+            8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  ]
+}

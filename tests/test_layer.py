@@ -17,6 +17,13 @@ from conv_rosa_transformer.rosa_reference import backward_bruteforce, forward_na
 from conv_rosa_transformer.rosa_transformer import RosaTransformer
 
 
+# Numerical singleton-oracle checks retain their exact original rule even if
+# the shipped layer's recommended training defaults change after experiments.
+LINEAR_OPTIONS = dict(repair_samples=None, joint_pairs=0, joint_rows=32,
+                      stochastic_values=False, trust_diagonal=0.,
+                      training_rule="hard_credit", joint_row_selection="input")
+
+
 def _pack_independently(bits):
     return [sum(int(bit) * (1 << j) for j, bit in enumerate(row))
             for row in bits.tolist()]
@@ -26,7 +33,7 @@ class LayerTest(unittest.TestCase):
     def audit_layer(self, mode, D=3, T=6, groups=2, batch=2, strided=False):
         generator = torch.Generator().manual_seed(893)
         C = groups * D
-        layer = NBitQKVRosa(C, D, tau=0.7, credit_to_logit=mode).double()
+        layer = NBitQKVRosa(C, D, tau=0.7, credit_to_logit=mode, **LINEAR_OPTIONS).double()
         with torch.no_grad():
             layer.emb0.copy_(torch.randn(1, 1, C, generator=generator, dtype=torch.float64))
             layer.emb1.copy_(torch.randn(1, 1, C, generator=generator, dtype=torch.float64))
@@ -170,8 +177,8 @@ class LayerTest(unittest.TestCase):
 
     @unittest.skipUnless(torch.cuda.is_available(), "CUDA device unavailable")
     def test_cuda_transfer_and_gradient(self):
-        cpu = NBitQKVRosa(6, 3).double()
-        gpu = NBitQKVRosa(6, 3).double().cuda()
+        cpu = NBitQKVRosa(6, 3, **LINEAR_OPTIONS).double()
+        gpu = NBitQKVRosa(6, 3, **LINEAR_OPTIONS).double().cuda()
         gpu.load_state_dict(cpu.state_dict())
         x = torch.randn(1, 5, 6, dtype=torch.float64, requires_grad=True)
         x_gpu = x.detach().cuda().requires_grad_()

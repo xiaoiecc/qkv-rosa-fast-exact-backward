@@ -131,7 +131,7 @@ The ordinary derivative of threshold quantization is zero almost everywhere;
 it is a different object. For a nonlinear downstream loss, the supplied
 upstream vector is its local linear functional, not an exact loss rerun.
 
-The layer separately maps credit to logits. For $`b=\mathbf1[z>0]`$, orient
+The layer separately maps credit to logits. For $`b=\mathbf1[z\gt 0]`$, orient
 the flip difference as $`\Delta_{1-0}=(1-2b)C`$. The `bernoulli` mapping uses
 $`p=\sigma(z/\tau)`$ and returns
 
@@ -219,7 +219,7 @@ that length, the latest is R[h]:
 \mathrm{DelQ}(u)=
 \begin{cases}
 (0,-1),&h=0,\\
-(h,R[h]),&h>0.
+(h,R[h]),&h\gt 0.
 \end{cases}
 ```
 
@@ -274,7 +274,7 @@ Suppose Q currently ends in h copies of symbol c, and a maximal K run of c
 starts at l. For an endpoint r in that run:
 
 - If $`r-l+1\lt h`$, K leaves the run first, so $`F(r)=r-l+1`$.
-- If $`r-l+1>h`$, Q leaves first, so $`F(r)=h`$.
+- If $`r-l+1\gt h`$, Q leaves first, so $`F(r)=h`$.
 - At $`r=l+h-1`$, both leave together. Earlier symbols may keep matching,
   so that one endpoint needs a genuine suffix query.
 
@@ -367,12 +367,63 @@ occurrence endpoints, or `endpos`. Substrings with the same endpoint set share
 a state. Suffix links lead toward shorter suffixes. In a depth-first terminal
 order of that tree, each state's endpoint set occupies a contiguous interval.
 
-The algorithm builds one SAM of full K. At row t it activates endpoint t−1,
+The backward builds one SAM of full K. At row t it activates endpoint t−1,
 then consumes $`Q_t`$. The index knows the future but every answer filters
 by $`r\lt t`$. Static earliest endpoints can certify existence; causal latest
-endpoint queries settle ties. Original root transitions and every one-bit Q
-root alternative are prepared deterministically, so an absent causal target
-rejects a birth without searching for an impossible repair.
+endpoint queries settle ties. Original root transitions and one-bit alternatives
+are looked up exactly. An absent causal target rejects a birth without
+searching for an impossible repair.
+
+### Share the question before speeding up the dictionary
+
+If a Q word appears ten times, all ten positions ask the same static root
+question. Only the causal time limit changes. Classify equal Q words once;
+for each of the $`U_Q`$ classes, save its root neighbors and check their earliest
+K endpoints at the current row. A neighbor with first K position at or after
+the last occurrence of that Q word can never be causal and is discarded.
+
+A dense table would still allocate $`U_QD`$ cells, usually including many absent
+neighbors. Instead, each Q class stores a bit mask, an offset and only its
+existing root targets, in increasing bit order. If R targets survive the
+causal test, this takes $`O(U_Q+R)`$ root storage. The row loop walks that mask;
+it does not test every globally live bit for every occurrence of a Q word.
+The same sparse representation is used with randomization either off or on.
+
+The dictionaries compare the full 64-bit word; SAM transitions also compare
+the full state. Random placement affects probe counts, never word equality.
+With randomization off, root preparation queries every allowed flipped word.
+With it on, the same search may use a cheaper exact cover:
+
+1. Randomly partition the D bit positions into two or four balanced blocks.
+2. For each block, index distinct K words by **all bits outside that block**.
+3. Query each Q word in those indexes. A true one-bit neighbor differs inside
+   exactly one block, so it must meet Q in that block's bucket.
+4. Check the full XOR. Accept only a single set bit and a possible causal root.
+
+The random choice cannot remove a true neighbor. It changes how many false
+candidates are inspected. If a bucket has c members and its block has m
+allowed bits, inspect the bucket only when that is cheaper; otherwise query
+those m exact bit flips. Thus candidate/probe attempts per Q are bounded by
+$`\sum_b\min(c_b,m_b)\le D`$, plus the block lookups. Index construction and
+actual hash collisions still cost time; this is not a whole-backward bound.
+
+A cost planner chooses direct queries, two blocks or four blocks from the
+observed Q/K vocabulary and varying bits. These are choices inside one exact
+root join, not specialized kernels for benchmark families. The planner can be
+wrong about speed without changing any credit. The [randomized search guide](docs/exact-randomized.md)
+derives its coverage probability, construction costs and measured failures.
+
+The standalone forward follows only the original Q trajectory. Its matched
+length increases by at most one per row, so at most T suffix-link fallbacks
+occur in total; binary lifting and the causal occurrence list are
+unnecessary. Each transition first requires the target state's earliest
+endpoint to be below t, then obtains the latest endpoint through exact
+certificates or a lazily built range-maximum tree. Auxiliary space is O(T).
+Assuming constant average hash-probe cost, the scan is O(T), and the complete
+algorithm including general endpoint maintenance is O(T log T). Full state
+and 64-bit symbol comparisons make hash collisions a performance concern only.
+The [forward measurements](benchmarks/results/forward.json) time this path
+separately from the backward.
 
 An ordinary Q branch stores owner, bit, longest edited match, and `short_state`:
 the state of the **whole edited suffix from the owner through the current
@@ -616,13 +667,19 @@ interval merges, and V scatters complete the outputs.
 
 The following parameters count actual execution, not the number of conceptual
 alignments a compressed record represents. Put
-$`\ell=\max(1,\lceil\log_2(T+1)\rceil)`$ and
-$`\eta=\max(1,\log_2(\sigma_K+1))`$, where $`\sigma_K`$ is K's alphabet size.
+$`\ell=\max(1,\lceil\log_2(T+1)\rceil)`$. Keep actual hash probe work explicit;
+randomized placement cannot be replaced by a deterministic constant-cost
+lookup in an unconditional bound.
 
 | Parameter | Work counted |
 |---|---|
+| $`U_Q`$ | Distinct Q words whose root alternatives are prepared |
+| $`U_K,R`$ | Distinct K words; stored causal root neighbors |
+| $`P_{\rm root}`$ | Root-index construction and candidate/probe attempts, excluding collision overhead |
+| $`B_0`$ | Stored root neighbors visited over all Q positions |
+| $`H_{\rm hash}`$ | Actual full-key hash probes in construction, Q classification, root lookup, and streaming transitions |
 | $`A_*`$ | Ordinary Q advance attempts, including retirement attempts |
-| $`B`$ | Successful Q births; all $`TD`$ birth conditions still get checked |
+| $`B`$ | Successful Q births after the $`B_0`$ sparse causal checks |
 | $`C`$ | Causal endpoints actually reported for ordinary K repair |
 | $`W_*`$ | Total deletion-generation cost, including records and the full costs of probes/indexed queries |
 | $`M`$ | Detached intervals, at most $`TD`$ |
@@ -636,7 +693,7 @@ $`\eta=\max(1,\log_2(\sigma_K+1))`$, where $`\sigma_K`$ is K's alphabet size.
 A conservative time bound is
 
 ```math
-O\!\left(T\ell+TD+UD+W_*+(T+A_*+B)\ell\eta+C\ell
+O\!\left(T\ell+TD+UD+P_{\rm root}+B_0+H_{\rm hash}+W_*+(T+A_*+B)\ell+C\ell
 +M\log(M+1)+J+E\ell+\mathcal H+D(S+X+G)+F_{\rm exp}\right).
 ```
 
@@ -644,18 +701,53 @@ The $`W_*`$ term includes query costs; it is not merely the number of A records
 or indexed jumps. Heap insertion and expiration cost $`O(M\log(M+1))`$ altogether. Fenwick
 paths and component manipulation belong to $`F_{\rm exp}`$, not a fictional
 single constant-time addition. Bounded cache allocation and two gradient
-buckets are included in the TD term. Space is
+buckets are included in the TD term. Here $`U`$ is the number of distinct
+payload words from the score-sharing section. Direct roots use
+$`P_{\rm root}=O(U_QD)`$. With p blocks, the root work is bounded by
+$`O(D+pU_K+pU_Q+\sum_{q,b}\min(c_{q,b},m_b))`$, excluding actual hash
+collision probes. The sparse birth visits satisfy $`B_0\le TD`$. Constant
+average hash-probe cost is an assumption; the expression retains actual
+probe work when that assumption fails. Space is
 
 ```math
 O(TD+UD+T\log(T+1)+P_{\rm exp}),
 ```
 
-where $`P_{\rm exp}`$ counts extra stored residuals. Lazy indexes still incur
-their worst-case space charge. No quadratic alignment matrix is stored.
+where $`P_{\rm exp}`$ counts extra stored residuals. Sparse roots use
+$`O(U_Q+R)`$ storage, with $`R\le U_QD\le TD`$; the position-to-class map and
+flat dictionaries use $`O(T)`$ space. Vector capacity is not peak RSS. Lazy indexes
+still incur their worst-case space charge. No quadratic alignment matrix is stored.
 
-For fixed machine-word D, the structural worst case remains quadratic up to
-logarithmic factors, with numerical component costs accounted for separately.
+For fixed machine-word D and constant average hash-probe cost, the structural
+worst case remains quadratic up to logarithmic factors, with numerical
+component costs accounted for separately.
 This is not a general near-linear theorem or a claim of global optimality.
+
+### Optional sampling should preserve the common work
+
+The decomposition also gives a control variate. Write each Q/K credit as its
+exact common deletion value plus its repair residual, $`C_{s,j}=B_s+R_{s,j}`$.
+Sampling an entire supported bit lane with probability $`p_j`$ gives
+
+```math
+\widehat C_{s,j}=B_s+I_jR_{s,j}/p_j,\qquad
+\mathbb E\widehat C_{s,j}=C_{s,j}.
+```
+
+Deletion and V remain exact; unsupported lanes have a certified zero residual.
+A selected lane retains all of its alternatives, including the maximum needed
+by each K owner. Sampling alternatives before taking that maximum would not
+have this expectation. Forced joint-block lanes are computed exactly, and a
+separate random stream samples the others with known conditional probabilities.
+
+This saves only selected repair work, not shared preparation, deletion,
+payload scoring, or all $`TD`$ output cells. Its mean squared coordinate error
+is $`(1-p_j)R_{s,j}^2/p_j`$ in exact arithmetic. The measured error is too large
+on some inputs to enable a small budget by default. Full repairs remain the
+ordinary path. Even oracle importance probabilities leave large errors on
+the measured inputs. The [randomization guide](docs/exact-randomized.md)
+records this rejection. The public `randomized=True` option selects the exact
+root join above and never enables this separate research sampler.
 
 ### Two structures that show the difference between control and arithmetic
 
@@ -687,12 +779,16 @@ is a quadratic lower bound.
 |---|---|
 | Independent hard forward and all-bit definition | [`rosa_reference.py`](conv_rosa_transformer/rosa_reference.py) |
 | Public arrays, validation, native build | [`rosa_core.py`](conv_rosa_transformer/rosa_core.py) |
-| SAM, causal list, Q branches | [`sam_q.h`](conv_rosa_transformer/csrc/sam_q.h) |
+| Lean hard forward and lazy latest endpoints | [`forward.h`](conv_rosa_transformer/csrc/forward.h) |
+| Full-key SAM dictionaries, shared Q roots, causal support, Q branches | [`sam_q.h`](conv_rosa_transformer/csrc/sam_q.h) |
 | Shared suffix and endpoint queries | [`sam_routes.h`](conv_rosa_transformer/csrc/sam_routes.h) |
 | R staircase, A/H, compressed owner intervals | [`delete_indexed.h`](conv_rosa_transformer/csrc/delete_indexed.h) |
 | Row loop, K heaps, score sharing, contraction | [`unified_core.cpp`](conv_rosa_transformer/csrc/unified_core.cpp) |
 | Residual-preserving aggregation | [`exact_expansion.h`](conv_rosa_transformer/csrc/exact_expansion.h) |
-| Logit mapping and PyTorch integration | [`rosa_layer.py`](conv_rosa_transformer/rosa_layer.py) |
+| Bounded causal-band joint proposals | [`pair_candidates.h`](conv_rosa_transformer/csrc/pair_candidates.h) |
+| Batched training, metric, blocks and logit mapping | [`training_impl.h`](conv_rosa_transformer/csrc/training_impl.h) |
+| Framework-independent C interface | [`training.h`](conv_rosa_transformer/csrc/training.h) |
+| Thin PyTorch autograd adapter | [`rosa_layer.py`](conv_rosa_transformer/rosa_layer.py) |
 
 Run `python tests/run.py` for quick independent checks, or
 `python tests/run.py --exhaustive` for the full binary enumeration and
@@ -713,3 +809,85 @@ Useful exercises before modifying a data structure:
    which work is still a sum?
 5. Place a small term between two large opposite terms. Check what is lost
    by rounding a Fenwick node, a snapshot, or the final correction too early.
+6. Prove that a one-bit neighbor survives the omitted-block join for every
+   partition. Why can a large bucket safely switch to exact bit probes?
+7. Why does sampling a K bit lane preserve its maximum, while sampling only
+   some alternatives need not? Construct two alternatives that expose the bias.
+
+## 13. Accurate output credit is only one part of learning
+
+The derivation above computes $`g^T\delta_i`$ for the exact output change of a
+bit flip. It does not turn that finite jump into an exact downstream loss
+change. Given an output-space diagonal $`h`$, the same routing engine can score
+$`g^T\delta_i+\tfrac12\sum h\delta_i^2`$. Each coordinate of a matched payload
+has only two possible values, so two baseline-relative costs per coordinate
+are enough; neither another route search nor a dense Hessian is required.
+This is an exact score of a chosen local model. Supplying a useful $`h`$ in a
+deep network is a separate problem.
+
+There is also a different obstacle: both individual flips may leave the
+output unchanged while their joint flip changes the match. No output
+curvature can recover an interaction absent from both single-flip deltas.
+Selected pairs therefore need their joint corner evaluated explicitly.
+The four resulting costs admit both independent interpolation and an exact
+optimal coupling at fixed flip marginals. The latter can remove a local
+two-bit probability barrier, but it cannot create a descending corner where
+all four corners have no improvement.
+
+Ordinary model integration has an information constraint:
+backward receives the current g. Every function
+$`L_a(Y)=g_0^T(Y-Y_0)+a\lVert Y-Y_0\rVert^2/2`$ has the same gradient at $`Y_0`$,
+despite differing curvature. A toy interface supplied with the correct
+diagonal therefore does not establish automatic Hessian recovery in a model.
+
+### A diagonal penalty should preserve an aligned feasible move
+
+The layer can define an explicit local metric from its own output geometry.
+One group's output lies in
+$`\{e_0\}\cup\{s\odot e_1:s_j\in\{-1,1\}\}`$. A diameter bound is
+
+```math
+D_Y=\max\left(2\lVert e_1\rVert_2,
+                 \lVert |e_0|+|e_1|\rVert_2\right).
+```
+
+Scoring finite edits with $`h_{t,j}=\lVert g_t\rVert_2/D_Y`$ needs no downstream
+Hessian. It has a simple property: for nonzero g, an aligned displacement
+$`\delta=-s g/\lVert g\rVert`$, with $`0\lt s\le D_Y`$, satisfies
+
+```math
+g^T\delta+\tfrac12h\lVert\delta\rVert^2
+ \le-\tfrac12\lVert g\rVert s\lt 0.
+```
+
+At least half the linear improvement remains for an aligned feasible jump.
+Using the radius $`\lVert e_1\rVert`$ directly can penalize a move across the
+entire payload range down to zero. This happens in an actual ROSA example:
+both individual flips preserve the output, and the old penalty also assigns
+zero credit to the useful joint flip. Diameter scaling restores its signal.
+The regression test executes the layer's ordinary `loss.backward()`.
+
+![A useful joint edit erased by an excessive penalty](images/diameter_barrier.png)
+
+This statement concerns the chosen local model. Unknown downstream cross
+curvature and simultaneous shared-parameter changes still prevent a guarantee
+of decreasing the actual loss. The implementation applies this metric to Q/K
+routing changes, retains linear V credit, and uses independent four-corner
+interpolation for selected joint blocks.
+
+### Integration and total cost belong in the evaluation
+
+These operations now live inside `NBitQKVRosa`. The caller executes one model
+forward, one task loss and one `loss.backward()`, without supplying h or
+changing its optimizer. Each selected pair adds one exact component-internal
+matching pass; training timings must include it. Active-row selection and the
+metric depend on g. Their surrogate update preserves positive loss scaling,
+but is not a fixed VJP additive in arbitrary incoming gradients.
+
+The [native component guide](docs/native-training.md) derives the selected
+rule and its first-order alternative. Packing, both passes, the diagonal,
+proposals, joint replay, logit mapping and embedding gradients now run in one
+batched C++ implementation. The [results](docs/native-results.md) separate
+exact randomization from native integration, and retain the numerical
+migration and held-out loss regressions. The [forward supplement](docs/forward.md) continues to document the
+separate lean matcher and its timings.

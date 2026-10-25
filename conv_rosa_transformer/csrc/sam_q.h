@@ -3,7 +3,9 @@
 // Does not compute K repair or common Q deletion contributions.
 #include <algorithm>
 #include <cstdint>
-#include <map>
+#include <chrono>
+#include <cmath>
+#include <random>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -22,21 +24,40 @@ public:
         uint64_t born=0, retired=0, endpoint_queries=0;
     };
 
+    struct RootJoinCounters {
+        uint64_t enabled=0, used=0, direct_queries=0, bucket_queries=0;
+        uint64_t bucket_members=0, bucket_build_entries=0, empty_buckets=0, verified_neighbors=0;
+        uint64_t blocks=0;
+    };
+    static uint64_t process_hash_seed() { return default_seed(); }
+    RootJoinCounters root_join_counters;
+
     // q and k must remain valid throughout this object's lifetime.
     // Internal d=0 requests baseline matching only, using the same SAM scan.
-    SamQRepairs(const uint64_t* q, const uint64_t* k, int n, int d)
-        : q_(q), k_(k), n_(n), d_(d), prefix_state_(n) {
+    SamQRepairs(const uint64_t* q, const uint64_t* k, int n, int d,
+                uint64_t repair_mask=~uint64_t(0), int repair_budget=-1,
+                uint64_t sampling_seed=0, uint64_t forced_mask=0,
+                uint64_t hash_seed=default_seed(), bool randomized_roots=false)
+        : q_(q), k_(k), n_(n), d_(d), seed_(hash_seed), prefix_state_(n) {
         if (n<0 || d<0 || d>64) throw std::invalid_argument("invalid T or D");
+        for (int bit=0;bit<d;++bit)
+            if ((repair_mask>>bit)&1) repair_bits_.push_back(bit);
         builder_.reserve(std::max(1,2*n));
+        edges_.reserve(size_t(n)*3);
+        size_t capacity=8;
+        while(capacity<std::max(size_t(8),size_t(n)*6))capacity*=2;
+        transition_table_.assign(capacity,-1);
         builder_.push_back(BuilderNode{});
+        state_salts_.push_back(mix(seed_+UINT64_C(0x9e3779b97f4a7c15)));
         int last=0;
         for (int r=0;r<n;++r) last=extend(last,k[r],r);
-        build_root_targets();
+        build_root_targets(randomized_roots);
+        if(repair_budget>=0)sample_repair_lanes(repair_budget,sampling_seed,forced_mask);
         freeze_transitions();
         build_links_and_euler();
         score_stamp_.assign(nodes_.size(),-1);
         endpoint_cache_.assign(nodes_.size(),-1);
-        active_.reserve(size_t(n)*std::min(d,4));
+        active_.reserve(size_t(n)*std::min(size_t(4),active_lanes_.size()));
     }
 
     void advance(int t) {
@@ -71,8 +92,13 @@ public:
             else active_[kept++]=z;
         }
         active_.resize(kept);
-        for (int bit=0;bit<d_;++bit) {
-            const int root=causal_root(root_flips_[size_t(t)*d_+bit],t);
+        const size_t query=size_t(query_class_[t]);
+        size_t entry=root_offsets_[query];
+        for(uint64_t pending=root_masks_[query];pending;pending&=pending-1) {
+            const int bit=singleton_bit(pending&(~pending+1));
+            const int target=root_targets_[entry++];
+            if(!((selected_mask_>>bit)&1))continue;
+            const int root=causal_root(target,t);
             if (root<0) continue;
             Match m=consume(old_base,q_[t]^(uint64_t(1)<<bit),t,root);
             const Repair z{t,bit,m.length,m.end,m.state,root};
@@ -169,12 +195,22 @@ public:
         }
         return endpoint_cache_[state];
     }
+    // Logical query count retained for the existing public work-counter ABI.
+    size_t root_repair_entries() const {return query_symbols_*repair_bits_.size();}
+    size_t stored_root_entries() const {return root_targets_.size();}
+    size_t query_symbol_count() const {return query_symbols_;}
+    size_t transition_working_bytes() const {
+        return edges_.capacity()*sizeof(Edge)+transition_table_.capacity()*sizeof(int)
+            +state_salts_.capacity()*sizeof(uint64_t);
+    }
+    uint64_t supported_repair_mask() const {return supported_mask_;}
+    uint64_t selected_repair_mask() const {return selected_mask_;}
     Counters counters;
 
 private:
     struct RuntimeNode { int length=0,link=-1,firstpos=-1; };
-    struct BuilderNode { int length=0,link=-1,firstpos=-1; std::map<uint64_t,int> next; };
-    struct Edge { uint64_t symbol; int target; };
+    struct BuilderNode { int length=0,link=-1,firstpos=-1,head=-1; };
+    struct Edge { uint64_t symbol; int source,target,next; };
     struct Match { int state=0,length=0,end=-1; };
     struct MaxTree {
         int size=1;
@@ -196,11 +232,19 @@ private:
     const uint64_t* q_;
     const uint64_t* k_;
     int n_,d_,time_=-1;
+    uint64_t seed_;
+    size_t query_symbols_=0;
+    size_t root_degree_=0;
+    uint64_t supported_mask_=0,selected_mask_=0;
+    std::vector<size_t> active_lanes_;
+    std::vector<uint64_t> state_salts_;
     std::vector<RuntimeNode> nodes_;
     std::vector<BuilderNode> builder_;
     std::vector<Edge> edges_;
-    std::vector<int> edge_start_;
-    std::vector<int> root_original_,root_flips_;
+    std::vector<int> transition_table_;
+    std::vector<int> root_original_,root_targets_,repair_bits_,query_class_;
+    std::vector<size_t> root_offsets_;
+    std::vector<uint64_t> root_masks_;
     std::vector<int> prefix_state_,tin_,tout_,score_stamp_,endpoint_cache_;
     std::vector<int> last_endpoint_;
     std::vector<int> occurrence_prefix_,occurrence_endpoints_;
@@ -214,77 +258,291 @@ private:
             && nodes_[z.short_state].firstpos==last_endpoint_[z.short_state];
     }
 
-    int extend(int last,uint64_t c,int position) {
-        int cur=int(builder_.size());builder_.push_back(BuilderNode{});
-        builder_[cur].length=builder_[last].length+1;builder_[cur].firstpos=position;
-        prefix_state_[position]=cur;
-        int p=last;
-        while(p>=0 && builder_[p].next.find(c)==builder_[p].next.end()) {
-            builder_[p].next[c]=cur;p=builder_[p].link;
+    static uint64_t default_seed() {
+        static const uint64_t value=[] {
+            try {
+                std::random_device rd;
+                return (uint64_t(rd())<<32)^uint64_t(rd());
+            } catch (...) {
+                return uint64_t(std::chrono::steady_clock::now().time_since_epoch().count());
+            }
+        }();
+        return value;
+    }
+    static uint64_t mix(uint64_t x) {
+        x=(x^(x>>30))*UINT64_C(0xbf58476d1ce4e5b9);
+        x=(x^(x>>27))*UINT64_C(0x94d049bb133111eb);
+        return x^(x>>31);
+    }
+    size_t find_slot(int state,uint64_t symbol,uint64_t word_hash) const {
+        size_t slot=size_t(word_hash^state_salts_[state])&(transition_table_.size()-1);
+        for(;;slot=(slot+1)&(transition_table_.size()-1)) {
+            const int id=transition_table_[slot];
+            if(id<0)return slot;
+            const auto&e=edges_[id];
+            if(e.source==state && e.symbol==symbol)return slot;
+        }
+    }
+    void add_edge(size_t slot,int state,uint64_t symbol,int target) {
+        if(!state)++root_degree_;
+        transition_table_[slot]=int(edges_.size());
+        edges_.push_back({symbol,state,target,builder_[state].head});
+        builder_[state].head=int(edges_.size())-1;
+    }
+    int extend(int last,uint64_t symbol,int position) {
+        const int cur=int(builder_.size());builder_.push_back(BuilderNode{});
+        state_salts_.push_back(mix(uint64_t(cur)+seed_+UINT64_C(0x9e3779b97f4a7c15)));
+        builder_[cur].length=builder_[last].length+1;
+        builder_[cur].firstpos=position;prefix_state_[position]=cur;
+        const uint64_t word_hash=mix(symbol^seed_);
+        int p=last,existing=-1;
+        while(p>=0) {
+            const size_t slot=find_slot(p,symbol,word_hash);
+            existing=transition_table_[slot];
+            if(existing>=0)break;
+            add_edge(slot,p,symbol,cur);p=builder_[p].link;
         }
         if(p<0)builder_[cur].link=0;
         else {
-            const int q=builder_[p].next.find(c)->second;
-            if(builder_[p].length+1==builder_[q].length)builder_[cur].link=q;
+            const int v=edges_[existing].target;
+            if(builder_[p].length+1==builder_[v].length)builder_[cur].link=v;
             else {
-                BuilderNode copy=builder_[q];copy.length=builder_[p].length+1;
-                const int clone=int(builder_.size());builder_.push_back(std::move(copy));
-                while(p>=0) {
-                    auto it=builder_[p].next.find(c);
-                    if(it==builder_[p].next.end() || it->second!=q)break;
-                    it->second=clone;p=builder_[p].link;
+                const int clone=int(builder_.size());
+                BuilderNode copy=builder_[v];copy.length=builder_[p].length+1;copy.head=-1;
+                builder_.push_back(copy);state_salts_.push_back(mix(uint64_t(clone)+seed_+UINT64_C(0x9e3779b97f4a7c15)));
+                for(int e=builder_[v].head;e>=0;) {
+                    const Edge old=edges_[e];
+                    add_edge(find_slot(clone,old.symbol,mix(old.symbol^seed_)),clone,old.symbol,old.target);
+                    e=old.next;
                 }
-                builder_[q].link=builder_[cur].link=clone;
+                while(p>=0) {
+                    const int e=transition_table_[find_slot(p,symbol,word_hash)];
+                    if(e<0 || edges_[e].target!=v)break;
+                    edges_[e].target=clone;p=builder_[p].link;
+                }
+                builder_[v].link=builder_[cur].link=clone;
             }
         }
         return cur;
     }
 
-    // Deterministic offline dictionary join for every future root query.
-    // Flipping bit j exchanges the two j-bit halves inside each block with
-    // identical higher bits. Their lower-bit order is unchanged, so the
-    // sorted Q order yields each sorted flipped order in one linear pass.
-    void build_root_targets() {
-        std::vector<Edge> root;
-        root.reserve(builder_[0].next.size());
-        for (const auto& edge:builder_[0].next)
-            root.push_back({edge.first,edge.second});
-        std::vector<int> order(n_);
-        for (int t=0;t<n_;++t)order[t]=t;
-        std::sort(order.begin(),order.end(),[&](int a,int b){return q_[a]<q_[b];});
-        root_original_.assign(n_,-1);
-        root_flips_.assign(size_t(n_)*d_,-1);
-        size_t cursor=0;
-        for (const int t:order) {
-            const uint64_t symbol=q_[t];
-            while(cursor<root.size() && root[cursor].symbol<symbol)++cursor;
-            if(cursor<root.size() && root[cursor].symbol==symbol)
-                root_original_[t]=root[cursor].target;
-        }
-        for (int bit=0;bit<d_;++bit) {
-            const uint64_t flip=uint64_t(1)<<bit;
-            const uint64_t high_mask=bit==63 ? 0 : (~uint64_t(0)<<(bit+1));
-            cursor=0;
-            auto join_range=[&](int lo,int hi) {
-                for (int p=lo;p<hi;++p) {
-                    const int t=order[p];const uint64_t symbol=q_[t]^flip;
-                    while(cursor<root.size() && root[cursor].symbol<symbol)++cursor;
-                    if(cursor<root.size() && root[cursor].symbol==symbol)
-                        root_flips_[size_t(t)*d_+bit]=root[cursor].target;
-                }
-            };
-            int lo=0;
-            while(lo<n_) {
-                const uint64_t high=q_[order[lo]]&high_mask;
-                int hi=lo+1;
-                while(hi<n_ && (q_[order[hi]]&high_mask)==high)++hi;
-                int mid=lo;
-                while(mid<hi && !(q_[order[mid]]&flip))++mid;
-                join_range(mid,hi);
-                join_range(lo,mid);
-                lo=hi;
+    // A projected bucket is still a full-key dictionary: the projected word
+    // is compared exactly, and every enumerated neighbor is verified by XOR.
+    struct RootBuckets {
+        struct Group { uint64_t word; int head=-1,count=0; };
+        uint64_t mask=0;
+        std::vector<int> table,next;
+        std::vector<Group> groups;
+        RootBuckets(uint64_t bits,const std::vector<int>& roots,
+                    const std::vector<Edge>& edges,uint64_t seed):mask(bits),next(roots.size(),-1) {
+            size_t capacity=8;
+            while(capacity<std::max(size_t(8),roots.size()*2))capacity*=2;
+            table.assign(capacity,-1);groups.reserve(roots.size());
+            for(size_t i=0;i<roots.size();++i) {
+                const uint64_t word=edges[roots[i]].symbol&mask;
+                size_t slot=size_t(mix(word^seed))&(capacity-1);
+                while(table[slot]>=0 && groups[table[slot]].word!=word)
+                    slot=(slot+1)&(capacity-1);
+                int group=table[slot];
+                if(group<0) {group=int(groups.size());table[slot]=group;groups.push_back({word,-1,0});}
+                next[i]=groups[group].head;groups[group].head=int(i);++groups[group].count;
             }
         }
+        const Group* find(uint64_t word,uint64_t seed) const {
+            word&=mask;size_t slot=size_t(mix(word^seed))&(table.size()-1);
+            while(table[slot]>=0) {
+                const auto&group=groups[table[slot]];
+                if(group.word==word)return &group;
+                slot=(slot+1)&(table.size()-1);
+            }
+            return nullptr;
+        }
+    };
+    static int singleton_bit(uint64_t word) {
+        // Called only for a nonzero power of two.
+#if defined(__GNUC__) || defined(__clang__)
+        return __builtin_ctzll(word);
+#else
+        int bit=0;
+        if(!(word&UINT64_C(0xffffffff))){word>>=32;bit+=32;}
+        if(!(word&UINT64_C(0xffff))){word>>=16;bit+=16;}
+        if(!(word&UINT64_C(0xff))){word>>=8;bit+=8;}
+        if(!(word&UINT64_C(0xf))){word>>=4;bit+=4;}
+        if(!(word&UINT64_C(3))){word>>=2;bit+=2;}
+        if(!(word&UINT64_C(1)))++bit;
+        return bit;
+#endif
+    }
+
+    // Equal Q symbols share one static neighbor query. When enabled and large
+    // enough to amortize its indexes, use a random balanced bit partition.
+    // A one-bit neighbor agrees outside exactly one block; query that bucket.
+    // Each bucket costs at most the number of flips in its omitted block:
+    // enumerate a small bucket, otherwise do those direct full-key lookups.
+    // No root neighbor can be missed and the candidate work is at most U_Q*D.
+    void build_root_targets(bool randomized_roots) {
+        query_class_.resize(n_);
+        root_original_.assign(n_,-1);
+        std::vector<uint64_t> symbols;
+        std::vector<int> latest_query,ordinary_root;
+        symbols.reserve(n_);latest_query.reserve(n_);ordinary_root.reserve(n_);
+        size_t capacity=8;
+        while(capacity<std::max(size_t(8),size_t(n_)*2))capacity*=2;
+        std::vector<int> classes(capacity,-1);
+        for(int t=0;t<n_;++t) {
+            const uint64_t symbol=q_[t],word_hash=mix(symbol^seed_);
+            size_t slot=size_t(word_hash)&(capacity-1);
+            while(classes[slot]>=0 && symbols[classes[slot]]!=symbol)
+                slot=(slot+1)&(capacity-1);
+            int id=classes[slot];
+            if(id<0) {
+                id=int(symbols.size());classes[slot]=id;
+                symbols.push_back(symbol);latest_query.push_back(t);
+                const int edge=transition_table_[find_slot(0,symbol,word_hash)];
+                ordinary_root.push_back(edge<0 ? -1 : edges_[edge].target);
+            } else latest_query[id]=t;
+            query_class_[t]=id;root_original_[t]=ordinary_root[id];
+        }
+        query_symbols_=symbols.size();
+        root_offsets_.resize(symbols.size()+1);
+        root_masks_.assign(symbols.size(),0);
+        root_targets_.reserve(symbols.size()*std::min(size_t(4),repair_bits_.size()));
+        root_join_counters.enabled=randomized_roots;
+        auto direct=[&](size_t id,size_t lane)->int {
+            const uint64_t symbol=symbols[id]^(uint64_t(1)<<repair_bits_[lane]);
+            const int edge=transition_table_[find_slot(0,symbol,mix(symbol^seed_))];
+            ++root_join_counters.direct_queries;
+            return edge<0?-1:edges_[edge].target;
+        };
+        // One operation-based planner for all inputs. The occupancy model is
+        // only a speed heuristic: correctness and the per-query D cap never
+        // depend on it. Estimate 2- and 4-block covers, charging index builds,
+        // bucket probes, exact member checks, and a small fixed setup budget.
+        const size_t direct_work=symbols.size()*repair_bits_.size();
+        int blocks=0;
+        std::vector<int> roots,bits;
+        if(randomized_roots && direct_work>256 &&
+           direct_work>2*(symbols.size()+root_degree_)+size_t(d_)) {
+            roots.reserve(root_degree_);uint64_t varying=0,reference=0;
+            for(int edge=builder_[0].head;edge>=0;edge=edges_[edge].next) {
+                if(roots.empty())reference=edges_[edge].symbol;
+                varying|=edges_[edge].symbol^reference;roots.push_back(edge);
+            }
+            bits.resize(d_);for(int j=0;j<d_;++j)bits[j]=j;
+            std::mt19937_64 random(seed_^UINT64_C(0x72da41f6c385eb09));
+            for(int j=d_-1;j>0;--j) {
+                std::uniform_int_distribution<int> pick(0,j);std::swap(bits[j],bits[pick(random)]);
+            }
+            size_t exact_members=0;
+            for(int target:ordinary_root)exact_members+=target>=0;
+            const double self_rate=symbols.empty()?0.0:double(exact_members)/symbols.size();
+            double best=0.85*double(direct_work);
+            for(int count: {2,4}) {
+                if(count>d_)continue;
+                double estimate=256.0+2.0*d_+2.0*count*root_degree_+double(count)*symbols.size();
+                for(int block=0;block<count;++block) {
+                    uint64_t omitted=0;
+                    for(int j=block*d_/count;j<(block+1)*d_/count;++j)
+                        omitted|=uint64_t(1)<<bits[j];
+                    size_t width=0;
+                    for(int bit:repair_bits_)width+=(omitted>>bit)&1;
+                    uint64_t variable=varying&~omitted;int entropy_bits=0;
+                    while(variable){variable&=variable-1;++entropy_bits;}
+                    const double occupancy=std::max(self_rate,std::ldexp(double(root_degree_),-entropy_bits));
+                    estimate+=double(symbols.size())*(occupancy>width?double(width):0.5*occupancy);
+                }
+                if(estimate<best){best=estimate;blocks=count;}
+            }
+        }
+        root_join_counters.used=blocks!=0;
+        root_join_counters.blocks=blocks;
+        std::vector<RootBuckets> indexes;
+        std::vector<uint64_t> bucket_seeds;
+        std::vector<std::vector<size_t>> complements;
+        if(blocks) {
+            const uint64_t all_bits=d_==64?~uint64_t(0):(uint64_t(1)<<d_)-1;
+            indexes.reserve(blocks);bucket_seeds.reserve(blocks);complements.reserve(blocks);
+            for(int block=0;block<blocks;++block) {
+                uint64_t omitted=0;
+                for(int j=block*d_/blocks;j<(block+1)*d_/blocks;++j)
+                    omitted|=uint64_t(1)<<bits[j];
+                std::vector<size_t> complement;
+                for(size_t lane=0;lane<repair_bits_.size();++lane)
+                    if((omitted>>repair_bits_[lane])&1)complement.push_back(lane);
+                if(complement.empty())continue;
+                const uint64_t bucket_seed=mix(seed_+uint64_t(block)+UINT64_C(0xf16a8bd029c735e4));
+                indexes.emplace_back(all_bits^omitted,roots,edges_,bucket_seed);
+                complements.push_back(std::move(complement));bucket_seeds.push_back(bucket_seed);
+                root_join_counters.bucket_build_entries+=roots.size();
+            }
+        }
+        int lane_for_bit[64];std::fill(lane_for_bit,lane_for_bit+64,-1);
+        for(size_t lane=0;lane<repair_bits_.size();++lane)lane_for_bit[repair_bits_[lane]]=int(lane);
+        for(size_t id=0;id<symbols.size();++id) {
+            int targets[64];uint64_t available=0;
+            auto install=[&](int bit,int target) {
+                if(target<0)return;
+                ++root_join_counters.verified_neighbors;
+                // A root first appearing after this Q class's last occurrence
+                // can never be causal. Do not store such an impossible edge.
+                if(builder_[target].firstpos>=latest_query[id])return;
+                available|=uint64_t(1)<<bit;targets[bit]=target;
+            };
+            if(!blocks) {
+                for(size_t lane=0;lane<repair_bits_.size();++lane)
+                    install(repair_bits_[lane],direct(id,lane));
+            } else for(size_t block=0;block<indexes.size();++block) {
+                const auto&buckets=indexes[block];const auto&complement=complements[block];
+                const auto*group=buckets.find(symbols[id],bucket_seeds[block]);
+                ++root_join_counters.bucket_queries;
+                if(!group){++root_join_counters.empty_buckets;continue;}
+                if(size_t(group->count)>complement.size()) {
+                    for(size_t lane:complement)install(repair_bits_[lane],direct(id,lane));
+                } else {
+                    for(int member=group->head;member>=0;member=buckets.next[member]) {
+                        ++root_join_counters.bucket_members;
+                        const auto&edge=edges_[roots[member]];
+                        const uint64_t diff=edge.symbol^symbols[id];
+                        if(!diff || (diff&(diff-1)))continue;
+                        const int bit=singleton_bit(diff);
+                        if(lane_for_bit[bit]>=0)install(bit,edge.target);
+                    }
+                }
+            }
+            root_offsets_[id]=root_targets_.size();root_masks_[id]=available;
+            supported_mask_|=available;
+            // One representation for every input, sorted by bit without sorting.
+            // Empty roots occupy no slot and are never revisited by advance().
+            for(uint64_t pending=available;pending;pending&=pending-1)
+                root_targets_.push_back(targets[singleton_bit(pending&(~pending+1))]);
+        }
+        root_offsets_[symbols.size()]=root_targets_.size();
+        for(size_t lane=0;lane<repair_bits_.size();++lane)
+            if((supported_mask_>>repair_bits_[lane])&1)active_lanes_.push_back(lane);
+        selected_mask_=supported_mask_;
+    }
+
+    void sample_repair_lanes(int budget,uint64_t seed,uint64_t forced_mask) {
+        std::vector<size_t> forced,optional;
+        for(const size_t lane:active_lanes_)
+            (((forced_mask>>repair_bits_[lane])&1)?forced:optional).push_back(lane);
+        // Every nonzero residual keeps a positive inclusion probability.
+        // Forced exact lanes may therefore raise a too-small target budget
+        // by one, rather than silently dropping every other lane forever.
+        const size_t wanted=std::min(optional.size(),size_t(std::max(1,budget-int(forced.size()))));
+        if(wanted<optional.size()) {
+            std::mt19937_64 random(seed);
+            for(size_t i=0;i<wanted;++i) {
+                std::uniform_int_distribution<size_t> choose(i,optional.size()-1);
+                std::swap(optional[i],optional[choose(random)]);
+            }
+            optional.resize(wanted);
+        }
+        active_lanes_=std::move(forced);
+        active_lanes_.insert(active_lanes_.end(),optional.begin(),optional.end());
+        std::sort(active_lanes_.begin(),active_lanes_.end());
+        selected_mask_=0;
+        for(const size_t lane:active_lanes_)selected_mask_|=uint64_t(1)<<repair_bits_[lane];
     }
 
     int causal_root(int target,int t) const {
@@ -292,34 +550,13 @@ private:
     }
 
     void freeze_transitions() {
-        size_t count=0;
-        for (const auto& node:builder_) count+=node.next.size();
-        edges_.resize(count);
-        edge_start_.resize(builder_.size()+1);
         nodes_.resize(builder_.size());
-        size_t offset=0;
-        for (size_t v=0;v<builder_.size();++v) {
-            const auto& built=builder_[v];
+        for(size_t v=0;v<builder_.size();++v) {
+            const auto&built=builder_[v];
             nodes_[v]={built.length,built.link,built.firstpos};
-            edge_start_[v]=int(offset);
-            const size_t degree=builder_[v].next.size();
-            auto it=builder_[v].next.begin();
-            // One implicit complete binary search tree per node. Inorder
-            // traversal consumes the sorted map; heap slot 1 is stored at
-            // offset, so no dummy edge or padding is required.
-            const auto fill=[&](const auto& self,size_t slot)->void {
-                if(slot>degree)return;
-                self(self,2*slot);
-                edges_[offset+slot-1]={it->first,it->second};
-                ++it;
-                self(self,2*slot+1);
-            };
-            fill(fill,1);
-            offset+=degree;
-            builder_[v].next.clear();
         }
-        edge_start_[builder_.size()]=int(offset);
-        // No streaming method retains a construction map or its capacity.
+        // The full-key table is also the immutable runtime dictionary. No
+        // node maps or tree-shaped transition copies survive construction.
         std::vector<BuilderNode>().swap(builder_);
     }
 
@@ -387,18 +624,10 @@ private:
 
     int valid_transition(int state,uint64_t symbol,int t) {
         ++counters.transition_probes;
-        const size_t offset=size_t(edge_start_[state]);
-        const size_t degree=size_t(edge_start_[state+1])-offset;
-        size_t slot=1;
-        while(slot<=degree) {
-            const auto& edge=edges_[offset+slot-1];
-            if(edge.symbol==symbol) {
-                const int target=edge.target;
-                return nodes_[target].firstpos<t ? target : -1;
-            }
-            slot=2*slot+size_t(edge.symbol<symbol);
-        }
-        return -1;
+        const int edge=transition_table_[find_slot(state,symbol,mix(symbol^seed_))];
+        if(edge<0)return -1;
+        const int target=edges_[edge].target;
+        return nodes_[target].firstpos<t ? target : -1;
     }
 
     int direct_endpoint(int state,int previous_end,uint64_t symbol,int t) {

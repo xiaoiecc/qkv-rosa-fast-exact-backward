@@ -1,0 +1,140 @@
+{
+  "status": "PASS",
+  "exhaustive": true,
+  "seconds": 39.820018989001255,
+  "tests_run": 88,
+  "skipped": 1,
+  "source_unchanged": true,
+  "source_sha256": {
+    "conv_rosa_transformer/__init__.py": "aa263607d3d1dd3409bc58474182ee3ceb512d8664fd0cd02da4e583d168f1f8",
+    "conv_rosa_transformer/build.py": "2b8d99aa72bad85bbe3d4be87e903d5d738f384e64ed784563ea2a8c60b94ee7",
+    "conv_rosa_transformer/causal_candidates.py": "56cdcc4f8be7224016d608d59ac285081cda52f13bfe83fe51000068bfde4fdc",
+    "conv_rosa_transformer/joint_credit.py": "d549df96b4738e55c8923099067459cd41c3003002b6cc5dabb32117c8e76ce0",
+    "conv_rosa_transformer/local_mixture.py": "e04add2152b5ad9e8c5a2ac59affc1774c69dd02276945a48b0b40b1ced0d658",
+    "conv_rosa_transformer/multiply_demo.py": "27d6ea98b4e6804f59d35f72cd59a1f06f202113be45863eb515448d000e0109",
+    "conv_rosa_transformer/native_training.py": "e2d835da42fc87c9935bfbb516ccfadc0121bdce3d444a26fec94f868b15b40b",
+    "conv_rosa_transformer/overfit_test.py": "62231f4a62f5ac73258e510c862a3787e8c9fcd2f885f8b18c501819601122be",
+    "conv_rosa_transformer/rosa_core.py": "3145542210d4fd77cbeb2ef7d6f582e103ad94e6b4024eabbafa6f834ed3e2ea",
+    "conv_rosa_transformer/rosa_layer.py": "7574fc95530f90f309b8c46447da10c3766ef255061aa008ee0fa0a31d2fd126",
+    "conv_rosa_transformer/rosa_reference.py": "d5b43210aff0dbabf134878db03780bb9cfa2acfe188c6f0efa9ed5d6c1e31e7",
+    "conv_rosa_transformer/rosa_transformer.py": "5d6dfb59f6ebbc2a10539f128d051d937a22dcef80c9ae16b8fb30ff4f5d2f62",
+    "conv_rosa_transformer/self_test.py": "fea5f2ca387f73abd34342fb641e24c4f335c58ac3329e6d3309ec283f7a160e",
+    "conv_rosa_transformer/csrc/unified_core.cpp": "387f2136c78cbfdb6de7213f29e8a195fd5be85db3c36b2524e9dcdbff4f3b65",
+    "conv_rosa_transformer/csrc/delete_indexed.h": "73d49dc58dbc34b10dc8a69288ea9163e60aba3cfc2812c8f927099762b73dea",
+    "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+    "conv_rosa_transformer/csrc/forward.h": "76a0d37bfb258de0fb9fcaa2a6ad63a91a997dc5bb98b13aaa0ea606df043c26",
+    "conv_rosa_transformer/csrc/pair_candidates.h": "26952e61c452cbeb1c7a38f2975fb1560971d895b11ca1255b3961f9a7f76c31",
+    "conv_rosa_transformer/csrc/sam_q.h": "55523d51996b2dec4569823b6d12c3ad896b43b56b64e1eec1196adbb0136c90",
+    "conv_rosa_transformer/csrc/sam_routes.h": "8b92b7f502f4740c3dc811dcb66ea395dbf8447d7715f93e1f3a078e506fb481",
+    "conv_rosa_transformer/csrc/training.h": "b13b549ea21bcfe2edeed56f0783acb1148f59280b219856a8727f559a084f48",
+    "conv_rosa_transformer/csrc/training_impl.h": "bb0e870d0de103401cd4c0491a91ea235563350e2db6db4520f8aa2d6f90d867"
+  },
+  "coverage": {
+    "all_bit_core": {
+      "binary_integer_inputs": 5461,
+      "floating_inputs": 160,
+      "structured_inputs": 16,
+      "wide_inputs": 25,
+      "max_abs_error": 1.0658141036401503e-14,
+      "floating_atol": 1e-10,
+      "floating_rtol": 1e-10
+    },
+    "diagonal_quadratic_credit": {
+      "single_bit_checks": 21588,
+      "max_abs_error": 5.684341886080802e-14,
+      "model": "supplied_nonnegative_output_diagonal",
+      "training_claim": false
+    },
+    "expansion_fraction": {
+      "exact_representation_checks": 4052,
+      "correct_rounding_checks": 4052,
+      "max_components": 61,
+      "results_with_more_than_two_components": 3822
+    },
+    "expansion_ordinary": {
+      "updates": 1000000,
+      "spills": 0,
+      "max_components": 2
+    },
+    "lean_forward_binary_pairs": 21845,
+    "lean_forward_hash_seeds": 4,
+    "lean_forward_seed_cases": 68,
+    "constant_forward": {
+      "inputs": 540,
+      "strict_zero_qk_elements": 232128
+    },
+    "minimal_constant_witnesses": {
+      "inputs": 2
+    },
+    "nonconstant_cancellation": {
+      "exact_target_cases": 9
+    },
+    "snapshot_cancellation": {
+      "exact_target_cases": 24
+    },
+    "causal_occurrences": {
+      "status": "PASS",
+      "input_cases": 6030,
+      "rows": 50359,
+      "state_queries": 1466677,
+      "causal_memberships": 7858789,
+      "latest_queries": 2933354
+    },
+    "corridor_routes": {
+      "status": "PASS",
+      "inputs": 5950,
+      "baseline_rows": 38412,
+      "Q_flip_routes": 1267260,
+      "K_flip_routes": 1108192,
+      "static_singleton_corridors": 4305,
+      "run_LCE_lifetimes": 4305,
+      "heap_winner_checks": 8172,
+      "expired_heap_items": 1155
+    },
+    "delete_routes": {
+      "status": "PASS",
+      "numeric_mode": "baseline_bit_two_buckets",
+      "header": "conv_rosa_transformer/csrc/delete_indexed.h",
+      "inputs": 23054,
+      "rows": 206564,
+      "route_checks": 5782250,
+      "range_checks": 7205159,
+      "numeric_checks": 413128,
+      "a_runs": 239687,
+      "k_runs": 241964,
+      "owner_ranges": 18653
+    }
+  },
+  "loaded_library": {
+    "path": "/workspace/scratch/0105199a8474/qkv-rosa-cpp/conv_rosa_transformer/build/exact/rosa_exact_7de97c34df7de419.so",
+    "sha256": "404b3b8c9ce3dbea99d0feba3cc5bbcc9e80ee59f9624e056f9980d0f1917c47",
+    "recorded_after_suite": true
+  },
+  "standalone_example": {
+    "compile": [
+      "c++",
+      "-O2",
+      "-std=c++17",
+      "-ffp-contract=off",
+      "examples/native_training.cpp",
+      "/workspace/scratch/0105199a8474/qkv-rosa-cpp/conv_rosa_transformer/build/exact/rosa_exact_7de97c34df7de419.so",
+      "-Wl,-rpath,/workspace/scratch/0105199a8474/qkv-rosa-cpp/conv_rosa_transformer/build/exact",
+      "-o",
+      "/tmp/qkv-rosa-native-final-example"
+    ],
+    "source_sha256": "4239aab5f45575ccbc0d21245b62c9ee5b6acc0487916816e3dc386ff09b6481",
+    "framework_headers": false,
+    "runs": {
+      "second": {
+        "exit_code": 0,
+        "stdout": "hard output: -1, -1\njoint blocks: 1\nlast Q logit gradient: 0, -0.445694\n",
+        "stderr": ""
+      },
+      "first": {
+        "exit_code": 0,
+        "stdout": "hard output: -1, -1\njoint blocks: 0\nlast Q logit gradient: 0, 0\n",
+        "stderr": ""
+      }
+    }
+  }
+}

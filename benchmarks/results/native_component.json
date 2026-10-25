@@ -1,0 +1,2400 @@
+{
+  "status": "PASS",
+  "scope": "Paired native training costs, with hard-component and full-layer scopes.\n\nThe full-layer scope includes Q/K/V/O dense projections and their gradients.\nBoth scopes exclude a downstream model and optimizer. The frozen Python\ncomponent is imported into a separate module namespace with its own old core.\nAll library compilation and warmup are outside timing.\n",
+  "source_before": {
+    "conv_rosa_transformer/__init__.py": "aa263607d3d1dd3409bc58474182ee3ceb512d8664fd0cd02da4e583d168f1f8",
+    "conv_rosa_transformer/build.py": "2b8d99aa72bad85bbe3d4be87e903d5d738f384e64ed784563ea2a8c60b94ee7",
+    "conv_rosa_transformer/causal_candidates.py": "56cdcc4f8be7224016d608d59ac285081cda52f13bfe83fe51000068bfde4fdc",
+    "conv_rosa_transformer/joint_credit.py": "d549df96b4738e55c8923099067459cd41c3003002b6cc5dabb32117c8e76ce0",
+    "conv_rosa_transformer/local_mixture.py": "e04add2152b5ad9e8c5a2ac59affc1774c69dd02276945a48b0b40b1ced0d658",
+    "conv_rosa_transformer/multiply_demo.py": "27d6ea98b4e6804f59d35f72cd59a1f06f202113be45863eb515448d000e0109",
+    "conv_rosa_transformer/native_training.py": "e2d835da42fc87c9935bfbb516ccfadc0121bdce3d444a26fec94f868b15b40b",
+    "conv_rosa_transformer/overfit_test.py": "62231f4a62f5ac73258e510c862a3787e8c9fcd2f885f8b18c501819601122be",
+    "conv_rosa_transformer/rosa_core.py": "3145542210d4fd77cbeb2ef7d6f582e103ad94e6b4024eabbafa6f834ed3e2ea",
+    "conv_rosa_transformer/rosa_layer.py": "7574fc95530f90f309b8c46447da10c3766ef255061aa008ee0fa0a31d2fd126",
+    "conv_rosa_transformer/rosa_reference.py": "d5b43210aff0dbabf134878db03780bb9cfa2acfe188c6f0efa9ed5d6c1e31e7",
+    "conv_rosa_transformer/rosa_transformer.py": "5d6dfb59f6ebbc2a10539f128d051d937a22dcef80c9ae16b8fb30ff4f5d2f62",
+    "conv_rosa_transformer/self_test.py": "fea5f2ca387f73abd34342fb641e24c4f335c58ac3329e6d3309ec283f7a160e",
+    "conv_rosa_transformer/csrc/delete_indexed.h": "73d49dc58dbc34b10dc8a69288ea9163e60aba3cfc2812c8f927099762b73dea",
+    "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+    "conv_rosa_transformer/csrc/forward.h": "76a0d37bfb258de0fb9fcaa2a6ad63a91a997dc5bb98b13aaa0ea606df043c26",
+    "conv_rosa_transformer/csrc/pair_candidates.h": "26952e61c452cbeb1c7a38f2975fb1560971d895b11ca1255b3961f9a7f76c31",
+    "conv_rosa_transformer/csrc/sam_q.h": "55523d51996b2dec4569823b6d12c3ad896b43b56b64e1eec1196adbb0136c90",
+    "conv_rosa_transformer/csrc/sam_routes.h": "8b92b7f502f4740c3dc811dcb66ea395dbf8447d7715f93e1f3a078e506fb481",
+    "conv_rosa_transformer/csrc/training.h": "b13b549ea21bcfe2edeed56f0783acb1148f59280b219856a8727f559a084f48",
+    "conv_rosa_transformer/csrc/training_impl.h": "bb0e870d0de103401cd4c0491a91ea235563350e2db6db4520f8aa2d6f90d867",
+    "conv_rosa_transformer/csrc/unified_core.cpp": "387f2136c78cbfdb6de7213f29e8a195fd5be85db3c36b2524e9dcdbff4f3b65"
+  },
+  "source_after": {
+    "conv_rosa_transformer/__init__.py": "aa263607d3d1dd3409bc58474182ee3ceb512d8664fd0cd02da4e583d168f1f8",
+    "conv_rosa_transformer/build.py": "2b8d99aa72bad85bbe3d4be87e903d5d738f384e64ed784563ea2a8c60b94ee7",
+    "conv_rosa_transformer/causal_candidates.py": "56cdcc4f8be7224016d608d59ac285081cda52f13bfe83fe51000068bfde4fdc",
+    "conv_rosa_transformer/joint_credit.py": "d549df96b4738e55c8923099067459cd41c3003002b6cc5dabb32117c8e76ce0",
+    "conv_rosa_transformer/local_mixture.py": "e04add2152b5ad9e8c5a2ac59affc1774c69dd02276945a48b0b40b1ced0d658",
+    "conv_rosa_transformer/multiply_demo.py": "27d6ea98b4e6804f59d35f72cd59a1f06f202113be45863eb515448d000e0109",
+    "conv_rosa_transformer/native_training.py": "e2d835da42fc87c9935bfbb516ccfadc0121bdce3d444a26fec94f868b15b40b",
+    "conv_rosa_transformer/overfit_test.py": "62231f4a62f5ac73258e510c862a3787e8c9fcd2f885f8b18c501819601122be",
+    "conv_rosa_transformer/rosa_core.py": "3145542210d4fd77cbeb2ef7d6f582e103ad94e6b4024eabbafa6f834ed3e2ea",
+    "conv_rosa_transformer/rosa_layer.py": "7574fc95530f90f309b8c46447da10c3766ef255061aa008ee0fa0a31d2fd126",
+    "conv_rosa_transformer/rosa_reference.py": "d5b43210aff0dbabf134878db03780bb9cfa2acfe188c6f0efa9ed5d6c1e31e7",
+    "conv_rosa_transformer/rosa_transformer.py": "5d6dfb59f6ebbc2a10539f128d051d937a22dcef80c9ae16b8fb30ff4f5d2f62",
+    "conv_rosa_transformer/self_test.py": "fea5f2ca387f73abd34342fb641e24c4f335c58ac3329e6d3309ec283f7a160e",
+    "conv_rosa_transformer/csrc/delete_indexed.h": "73d49dc58dbc34b10dc8a69288ea9163e60aba3cfc2812c8f927099762b73dea",
+    "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+    "conv_rosa_transformer/csrc/forward.h": "76a0d37bfb258de0fb9fcaa2a6ad63a91a997dc5bb98b13aaa0ea606df043c26",
+    "conv_rosa_transformer/csrc/pair_candidates.h": "26952e61c452cbeb1c7a38f2975fb1560971d895b11ca1255b3961f9a7f76c31",
+    "conv_rosa_transformer/csrc/sam_q.h": "55523d51996b2dec4569823b6d12c3ad896b43b56b64e1eec1196adbb0136c90",
+    "conv_rosa_transformer/csrc/sam_routes.h": "8b92b7f502f4740c3dc811dcb66ea395dbf8447d7715f93e1f3a078e506fb481",
+    "conv_rosa_transformer/csrc/training.h": "b13b549ea21bcfe2edeed56f0783acb1148f59280b219856a8727f559a084f48",
+    "conv_rosa_transformer/csrc/training_impl.h": "bb0e870d0de103401cd4c0491a91ea235563350e2db6db4520f8aa2d6f90d867",
+    "conv_rosa_transformer/csrc/unified_core.cpp": "387f2136c78cbfdb6de7213f29e8a195fd5be85db3c36b2524e9dcdbff4f3b65"
+  },
+  "source_unchanged": true,
+  "baseline_source_before": {
+    "conv_rosa_transformer/__init__.py": "aa263607d3d1dd3409bc58474182ee3ceb512d8664fd0cd02da4e583d168f1f8",
+    "conv_rosa_transformer/build.py": "2b8d99aa72bad85bbe3d4be87e903d5d738f384e64ed784563ea2a8c60b94ee7",
+    "conv_rosa_transformer/causal_candidates.py": "56cdcc4f8be7224016d608d59ac285081cda52f13bfe83fe51000068bfde4fdc",
+    "conv_rosa_transformer/joint_credit.py": "d549df96b4738e55c8923099067459cd41c3003002b6cc5dabb32117c8e76ce0",
+    "conv_rosa_transformer/local_mixture.py": "e04add2152b5ad9e8c5a2ac59affc1774c69dd02276945a48b0b40b1ced0d658",
+    "conv_rosa_transformer/multiply_demo.py": "27d6ea98b4e6804f59d35f72cd59a1f06f202113be45863eb515448d000e0109",
+    "conv_rosa_transformer/overfit_test.py": "62231f4a62f5ac73258e510c862a3787e8c9fcd2f885f8b18c501819601122be",
+    "conv_rosa_transformer/rosa_core.py": "3145542210d4fd77cbeb2ef7d6f582e103ad94e6b4024eabbafa6f834ed3e2ea",
+    "conv_rosa_transformer/rosa_layer.py": "713c1b27cb2603de91e705e75dc1716122e91e0171cd41097d4b0bebdef06eab",
+    "conv_rosa_transformer/rosa_reference.py": "d5b43210aff0dbabf134878db03780bb9cfa2acfe188c6f0efa9ed5d6c1e31e7",
+    "conv_rosa_transformer/rosa_transformer.py": "5d6dfb59f6ebbc2a10539f128d051d937a22dcef80c9ae16b8fb30ff4f5d2f62",
+    "conv_rosa_transformer/self_test.py": "fea5f2ca387f73abd34342fb641e24c4f335c58ac3329e6d3309ec283f7a160e",
+    "conv_rosa_transformer/csrc/delete_indexed.h": "73d49dc58dbc34b10dc8a69288ea9163e60aba3cfc2812c8f927099762b73dea",
+    "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+    "conv_rosa_transformer/csrc/forward.h": "76a0d37bfb258de0fb9fcaa2a6ad63a91a997dc5bb98b13aaa0ea606df043c26",
+    "conv_rosa_transformer/csrc/pair_candidates.h": "26952e61c452cbeb1c7a38f2975fb1560971d895b11ca1255b3961f9a7f76c31",
+    "conv_rosa_transformer/csrc/sam_q.h": "f933d28a16fe347aad4d374f66946650ba5aaf69e6a8bb4206b53006aff0874f",
+    "conv_rosa_transformer/csrc/sam_routes.h": "8b92b7f502f4740c3dc811dcb66ea395dbf8447d7715f93e1f3a078e506fb481",
+    "conv_rosa_transformer/csrc/unified_core.cpp": "66ad4987ce5e063bb06154401c106b6eed28d706b5cf31415d0ee3349c34e77c"
+  },
+  "baseline_source_after": {
+    "conv_rosa_transformer/__init__.py": "aa263607d3d1dd3409bc58474182ee3ceb512d8664fd0cd02da4e583d168f1f8",
+    "conv_rosa_transformer/build.py": "2b8d99aa72bad85bbe3d4be87e903d5d738f384e64ed784563ea2a8c60b94ee7",
+    "conv_rosa_transformer/causal_candidates.py": "56cdcc4f8be7224016d608d59ac285081cda52f13bfe83fe51000068bfde4fdc",
+    "conv_rosa_transformer/joint_credit.py": "d549df96b4738e55c8923099067459cd41c3003002b6cc5dabb32117c8e76ce0",
+    "conv_rosa_transformer/local_mixture.py": "e04add2152b5ad9e8c5a2ac59affc1774c69dd02276945a48b0b40b1ced0d658",
+    "conv_rosa_transformer/multiply_demo.py": "27d6ea98b4e6804f59d35f72cd59a1f06f202113be45863eb515448d000e0109",
+    "conv_rosa_transformer/overfit_test.py": "62231f4a62f5ac73258e510c862a3787e8c9fcd2f885f8b18c501819601122be",
+    "conv_rosa_transformer/rosa_core.py": "3145542210d4fd77cbeb2ef7d6f582e103ad94e6b4024eabbafa6f834ed3e2ea",
+    "conv_rosa_transformer/rosa_layer.py": "713c1b27cb2603de91e705e75dc1716122e91e0171cd41097d4b0bebdef06eab",
+    "conv_rosa_transformer/rosa_reference.py": "d5b43210aff0dbabf134878db03780bb9cfa2acfe188c6f0efa9ed5d6c1e31e7",
+    "conv_rosa_transformer/rosa_transformer.py": "5d6dfb59f6ebbc2a10539f128d051d937a22dcef80c9ae16b8fb30ff4f5d2f62",
+    "conv_rosa_transformer/self_test.py": "fea5f2ca387f73abd34342fb641e24c4f335c58ac3329e6d3309ec283f7a160e",
+    "conv_rosa_transformer/csrc/delete_indexed.h": "73d49dc58dbc34b10dc8a69288ea9163e60aba3cfc2812c8f927099762b73dea",
+    "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+    "conv_rosa_transformer/csrc/forward.h": "76a0d37bfb258de0fb9fcaa2a6ad63a91a997dc5bb98b13aaa0ea606df043c26",
+    "conv_rosa_transformer/csrc/pair_candidates.h": "26952e61c452cbeb1c7a38f2975fb1560971d895b11ca1255b3961f9a7f76c31",
+    "conv_rosa_transformer/csrc/sam_q.h": "f933d28a16fe347aad4d374f66946650ba5aaf69e6a8bb4206b53006aff0874f",
+    "conv_rosa_transformer/csrc/sam_routes.h": "8b92b7f502f4740c3dc811dcb66ea395dbf8447d7715f93e1f3a078e506fb481",
+    "conv_rosa_transformer/csrc/unified_core.cpp": "66ad4987ce5e063bb06154401c106b6eed28d706b5cf31415d0ee3349c34e77c"
+  },
+  "baseline_source_unchanged": true,
+  "native_library_sha256": "404b3b8c9ce3dbea99d0feba3cc5bbcc9e80ee59f9624e056f9980d0f1917c47",
+  "baseline_library_sha256": "f5be19782f5a517d7af5ef24f74ce5cd0a4ac7353e902254bdcad73bcba17e52",
+  "baseline_revision": "f6d7c4b73d7040b1b33860f5a2649c3cd3036cc5",
+  "torch_version": "2.14.1+cpu",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "affinity": [
+    8
+  ],
+  "repeats": 7,
+  "smoke": false,
+  "rows": [
+    {
+      "T": 128,
+      "D": 8,
+      "B": 4,
+      "G": 2,
+      "scope": "hard_component",
+      "methods": {
+        "baseline_second": {
+          "forward_median_ms": 1.943249,
+          "backward_median_ms": 16.09521,
+          "forward_backward_median_ms": 17.822502,
+          "samples_forward_backward_ms": [
+            [
+              1.943249,
+              14.732681
+            ],
+            [
+              2.184183,
+              22.579196
+            ],
+            [
+              1.966614,
+              19.980988
+            ],
+            [
+              1.727292,
+              16.09521
+            ],
+            [
+              1.949707,
+              13.442905
+            ],
+            [
+              1.69203,
+              15.940214
+            ],
+            [
+              1.829447,
+              16.682916
+            ]
+          ]
+        },
+        "first_exact": {
+          "forward_median_ms": 0.498587,
+          "backward_median_ms": 3.26268,
+          "forward_backward_median_ms": 3.683537,
+          "samples_forward_backward_ms": [
+            [
+              0.658126,
+              4.231205
+            ],
+            [
+              0.498587,
+              3.026755
+            ],
+            [
+              0.448213,
+              5.446962
+            ],
+            [
+              0.468737,
+              1.931079
+            ],
+            [
+              0.420857,
+              3.26268
+            ],
+            [
+              0.558958,
+              3.835972
+            ],
+            [
+              0.633732,
+              1.778818
+            ]
+          ]
+        },
+        "first_random": {
+          "forward_median_ms": 0.466988,
+          "backward_median_ms": 2.612494,
+          "forward_backward_median_ms": 3.54253,
+          "samples_forward_backward_ms": [
+            [
+              0.577006,
+              2.026915
+            ],
+            [
+              0.466988,
+              6.965253
+            ],
+            [
+              0.471786,
+              4.136129
+            ],
+            [
+              2.586483,
+              2.148011
+            ],
+            [
+              0.384499,
+              1.718106
+            ],
+            [
+              0.440602,
+              3.101928
+            ],
+            [
+              0.439287,
+              2.612494
+            ]
+          ]
+        },
+        "second_exact": {
+          "forward_median_ms": 0.58231,
+          "backward_median_ms": 3.376338,
+          "forward_backward_median_ms": 4.0134799999999995,
+          "samples_forward_backward_ms": [
+            [
+              0.577011,
+              3.922746
+            ],
+            [
+              0.58231,
+              3.43117
+            ],
+            [
+              0.418364,
+              3.902356
+            ],
+            [
+              0.863042,
+              2.772972
+            ],
+            [
+              0.678388,
+              2.904092
+            ],
+            [
+              0.911303,
+              3.376338
+            ],
+            [
+              0.48957,
+              2.642832
+            ]
+          ]
+        },
+        "second_random": {
+          "forward_median_ms": 0.564832,
+          "backward_median_ms": 3.896069,
+          "forward_backward_median_ms": 4.460901,
+          "samples_forward_backward_ms": [
+            [
+              0.647842,
+              5.416843
+            ],
+            [
+              0.564832,
+              3.896069
+            ],
+            [
+              0.547132,
+              6.935378
+            ],
+            [
+              1.119518,
+              3.995338
+            ],
+            [
+              0.702221,
+              3.184993
+            ],
+            [
+              0.469611,
+              3.370607
+            ],
+            [
+              0.421751,
+              2.782507
+            ]
+          ]
+        }
+      },
+      "ratios": {
+        "first_random_speedup": 1.0398040383567675,
+        "second_random_speedup": 0.8997016521998582,
+        "native_second_speedup_vs_frozen": 3.9952695654980914
+      },
+      "random_on_off_outputs_and_gradients_bitwise_equal": true,
+      "baseline_forward_bitwise_equal": true
+    },
+    {
+      "T": 128,
+      "D": 8,
+      "B": 4,
+      "G": 2,
+      "scope": "full_layer",
+      "methods": {
+        "baseline_second": {
+          "forward_median_ms": 1.881823,
+          "backward_median_ms": 16.350981,
+          "forward_backward_median_ms": 18.075346,
+          "samples_forward_backward_ms": [
+            [
+              1.809275,
+              18.491528
+            ],
+            [
+              1.881823,
+              13.520933
+            ],
+            [
+              1.592414,
+              16.350981
+            ],
+            [
+              4.005616,
+              22.176142
+            ],
+            [
+              1.528332,
+              14.486719
+            ],
+            [
+              2.040276,
+              16.03507
+            ],
+            [
+              2.032855,
+              18.056038
+            ]
+          ]
+        },
+        "first_exact": {
+          "forward_median_ms": 0.907864,
+          "backward_median_ms": 2.198365,
+          "forward_backward_median_ms": 3.504026,
+          "samples_forward_backward_ms": [
+            [
+              1.943562,
+              2.198365
+            ],
+            [
+              0.556491,
+              1.891583
+            ],
+            [
+              0.598087,
+              1.636671
+            ],
+            [
+              0.907864,
+              2.596162
+            ],
+            [
+              0.555166,
+              1.737046
+            ],
+            [
+              1.833378,
+              2.788577
+            ],
+            [
+              2.629346,
+              2.727697
+            ]
+          ]
+        },
+        "first_random": {
+          "forward_median_ms": 0.555938,
+          "backward_median_ms": 2.093791,
+          "forward_backward_median_ms": 2.596954,
+          "samples_forward_backward_ms": [
+            [
+              1.189257,
+              2.407632
+            ],
+            [
+              0.503163,
+              2.093791
+            ],
+            [
+              0.544937,
+              1.890972
+            ],
+            [
+              2.105922,
+              2.264064
+            ],
+            [
+              0.555938,
+              3.165059
+            ],
+            [
+              0.508883,
+              1.705991
+            ],
+            [
+              0.73283,
+              1.780552
+            ]
+          ]
+        },
+        "second_exact": {
+          "forward_median_ms": 0.695948,
+          "backward_median_ms": 3.03939,
+          "forward_backward_median_ms": 3.629871,
+          "samples_forward_backward_ms": [
+            [
+              1.446591,
+              5.719434
+            ],
+            [
+              0.85146,
+              4.244449
+            ],
+            [
+              0.534518,
+              3.03939
+            ],
+            [
+              0.527955,
+              2.864324
+            ],
+            [
+              0.695948,
+              2.933923
+            ],
+            [
+              0.57664,
+              3.18737
+            ],
+            [
+              0.724129,
+              2.818964
+            ]
+          ]
+        },
+        "second_random": {
+          "forward_median_ms": 0.659202,
+          "backward_median_ms": 3.372873,
+          "forward_backward_median_ms": 4.032075,
+          "samples_forward_backward_ms": [
+            [
+              0.659202,
+              3.372873
+            ],
+            [
+              0.606431,
+              3.154515
+            ],
+            [
+              0.766885,
+              3.086134
+            ],
+            [
+              0.735613,
+              3.969307
+            ],
+            [
+              0.641385,
+              3.000975
+            ],
+            [
+              0.686263,
+              4.937641
+            ],
+            [
+              0.610426,
+              4.120782
+            ]
+          ]
+        }
+      },
+      "ratios": {
+        "first_random_speedup": 1.3492830446746458,
+        "second_random_speedup": 0.9002488792991202,
+        "native_second_speedup_vs_frozen": 4.4828893311756355
+      },
+      "random_on_off_outputs_and_gradients_bitwise_equal": true,
+      "baseline_forward_bitwise_equal": true
+    },
+    {
+      "T": 1024,
+      "D": 8,
+      "B": 1,
+      "G": 1,
+      "scope": "hard_component",
+      "methods": {
+        "baseline_second": {
+          "forward_median_ms": 1.022548,
+          "backward_median_ms": 6.143859,
+          "forward_backward_median_ms": 7.1664069999999995,
+          "samples_forward_backward_ms": [
+            [
+              1.039846,
+              5.804748
+            ],
+            [
+              1.05816,
+              5.248126
+            ],
+            [
+              1.259894,
+              9.295909
+            ],
+            [
+              0.999068,
+              6.699534
+            ],
+            [
+              1.022548,
+              6.143859
+            ],
+            [
+              0.952219,
+              5.701903
+            ],
+            [
+              0.937907,
+              7.191838
+            ]
+          ]
+        },
+        "first_exact": {
+          "forward_median_ms": 0.575867,
+          "backward_median_ms": 3.185246,
+          "forward_backward_median_ms": 3.63186,
+          "samples_forward_backward_ms": [
+            [
+              0.696555,
+              3.440289
+            ],
+            [
+              0.575867,
+              4.267275
+            ],
+            [
+              0.504674,
+              2.854724
+            ],
+            [
+              0.379283,
+              2.058872
+            ],
+            [
+              0.837273,
+              3.185246
+            ],
+            [
+              0.394075,
+              3.237785
+            ],
+            [
+              0.64305,
+              2.112868
+            ]
+          ]
+        },
+        "first_random": {
+          "forward_median_ms": 0.460612,
+          "backward_median_ms": 2.229734,
+          "forward_backward_median_ms": 2.857506,
+          "samples_forward_backward_ms": [
+            [
+              0.403462,
+              1.980604
+            ],
+            [
+              0.376544,
+              2.229734
+            ],
+            [
+              0.524012,
+              3.825757
+            ],
+            [
+              0.712081,
+              2.145425
+            ],
+            [
+              0.428956,
+              2.55379
+            ],
+            [
+              0.460612,
+              2.308141
+            ],
+            [
+              0.830717,
+              2.094984
+            ]
+          ]
+        },
+        "second_exact": {
+          "forward_median_ms": 0.4431,
+          "backward_median_ms": 2.867825,
+          "forward_backward_median_ms": 3.488066,
+          "samples_forward_backward_ms": [
+            [
+              1.217058,
+              2.889704
+            ],
+            [
+              0.4431,
+              2.610849
+            ],
+            [
+              0.426432,
+              2.966654
+            ],
+            [
+              1.501367,
+              2.638356
+            ],
+            [
+              0.412675,
+              2.867825
+            ],
+            [
+              0.860263,
+              2.627803
+            ],
+            [
+              0.441031,
+              4.813207
+            ]
+          ]
+        },
+        "second_random": {
+          "forward_median_ms": 0.497916,
+          "backward_median_ms": 3.408769,
+          "forward_backward_median_ms": 3.873458,
+          "samples_forward_backward_ms": [
+            [
+              0.433983,
+              5.837419
+            ],
+            [
+              0.460027,
+              2.58063
+            ],
+            [
+              0.54352,
+              2.814512
+            ],
+            [
+              0.464689,
+              3.408769
+            ],
+            [
+              0.497916,
+              4.446137
+            ],
+            [
+              0.722816,
+              3.792325
+            ],
+            [
+              0.637897,
+              2.938844
+            ]
+          ]
+        }
+      },
+      "ratios": {
+        "first_random_speedup": 1.270989457239985,
+        "second_random_speedup": 0.9005044071731254,
+        "native_second_speedup_vs_frozen": 1.8501315878473445
+      },
+      "random_on_off_outputs_and_gradients_bitwise_equal": true,
+      "baseline_forward_bitwise_equal": true
+    },
+    {
+      "T": 1024,
+      "D": 8,
+      "B": 1,
+      "G": 1,
+      "scope": "full_layer",
+      "methods": {
+        "baseline_second": {
+          "forward_median_ms": 1.389231,
+          "backward_median_ms": 5.368796,
+          "forward_backward_median_ms": 6.758027,
+          "samples_forward_backward_ms": [
+            [
+              1.18645,
+              4.514404
+            ],
+            [
+              1.108344,
+              5.249841
+            ],
+            [
+              3.591112,
+              6.122995
+            ],
+            [
+              1.998181,
+              4.677941
+            ],
+            [
+              1.015415,
+              6.085793
+            ],
+            [
+              1.389231,
+              5.368796
+            ],
+            [
+              1.400982,
+              7.851432
+            ]
+          ]
+        },
+        "first_exact": {
+          "forward_median_ms": 0.744594,
+          "backward_median_ms": 2.556345,
+          "forward_backward_median_ms": 3.7056060000000004,
+          "samples_forward_backward_ms": [
+            [
+              2.33876,
+              1.985976
+            ],
+            [
+              0.577747,
+              1.984018
+            ],
+            [
+              0.588472,
+              3.180337
+            ],
+            [
+              0.744594,
+              2.668527
+            ],
+            [
+              1.214266,
+              2.49134
+            ],
+            [
+              0.915096,
+              3.671416
+            ],
+            [
+              0.666795,
+              2.556345
+            ]
+          ]
+        },
+        "first_random": {
+          "forward_median_ms": 0.682684,
+          "backward_median_ms": 2.271745,
+          "forward_backward_median_ms": 2.864237,
+          "samples_forward_backward_ms": [
+            [
+              0.791921,
+              1.81846
+            ],
+            [
+              0.552732,
+              4.663429
+            ],
+            [
+              0.807916,
+              2.576579
+            ],
+            [
+              0.682684,
+              2.151949
+            ],
+            [
+              0.696232,
+              2.023903
+            ],
+            [
+              0.581633,
+              2.825759
+            ],
+            [
+              0.592492,
+              2.271745
+            ]
+          ]
+        },
+        "second_exact": {
+          "forward_median_ms": 0.696204,
+          "backward_median_ms": 2.714354,
+          "forward_backward_median_ms": 3.3074070000000004,
+          "samples_forward_backward_ms": [
+            [
+              0.572393,
+              2.202535
+            ],
+            [
+              0.958468,
+              4.44695
+            ],
+            [
+              0.880273,
+              3.160983
+            ],
+            [
+              0.586329,
+              2.532352
+            ],
+            [
+              0.696204,
+              2.525244
+            ],
+            [
+              0.804823,
+              2.833332
+            ],
+            [
+              0.593053,
+              2.714354
+            ]
+          ]
+        },
+        "second_random": {
+          "forward_median_ms": 0.919189,
+          "backward_median_ms": 2.935116,
+          "forward_backward_median_ms": 4.572725,
+          "samples_forward_backward_ms": [
+            [
+              0.644786,
+              4.371586
+            ],
+            [
+              0.542972,
+              2.935116
+            ],
+            [
+              0.919189,
+              2.751621
+            ],
+            [
+              1.110475,
+              4.648664
+            ],
+            [
+              0.517335,
+              2.584106
+            ],
+            [
+              2.738655,
+              2.64869
+            ],
+            [
+              1.609552,
+              2.963173
+            ]
+          ]
+        }
+      },
+      "ratios": {
+        "first_random_speedup": 1.293749783973882,
+        "second_random_speedup": 0.7232901606809945,
+        "native_second_speedup_vs_frozen": 1.4778992832501407
+      },
+      "random_on_off_outputs_and_gradients_bitwise_equal": true,
+      "baseline_forward_bitwise_equal": true
+    },
+    {
+      "T": 1024,
+      "D": 16,
+      "B": 2,
+      "G": 4,
+      "scope": "hard_component",
+      "methods": {
+        "baseline_second": {
+          "forward_median_ms": 7.083665,
+          "backward_median_ms": 40.502523,
+          "forward_backward_median_ms": 47.809861,
+          "samples_forward_backward_ms": [
+            [
+              7.256964,
+              39.272294
+            ],
+            [
+              5.778317,
+              43.406207
+            ],
+            [
+              17.951998,
+              47.005695
+            ],
+            [
+              6.609153,
+              41.903922
+            ],
+            [
+              5.728568,
+              39.792025
+            ],
+            [
+              7.083665,
+              35.766962
+            ],
+            [
+              7.307338,
+              40.502523
+            ]
+          ]
+        },
+        "first_exact": {
+          "forward_median_ms": 3.226764,
+          "backward_median_ms": 15.810483,
+          "forward_backward_median_ms": 18.957961,
+          "samples_forward_backward_ms": [
+            [
+              2.325717,
+              15.327719
+            ],
+            [
+              2.802358,
+              15.810483
+            ],
+            [
+              2.677748,
+              16.280213
+            ],
+            [
+              3.74849,
+              15.712942
+            ],
+            [
+              4.038435,
+              18.069773
+            ],
+            [
+              3.226764,
+              15.296104
+            ],
+            [
+              3.609661,
+              16.772802
+            ]
+          ]
+        },
+        "first_random": {
+          "forward_median_ms": 2.876493,
+          "backward_median_ms": 16.3865,
+          "forward_backward_median_ms": 19.257621,
+          "samples_forward_backward_ms": [
+            [
+              4.630801,
+              17.899817
+            ],
+            [
+              2.862698,
+              14.565676
+            ],
+            [
+              3.48329,
+              16.3865
+            ],
+            [
+              2.975751,
+              16.411462
+            ],
+            [
+              2.466487,
+              16.791134
+            ],
+            [
+              2.439825,
+              14.371369
+            ],
+            [
+              2.876493,
+              14.038536
+            ]
+          ]
+        },
+        "second_exact": {
+          "forward_median_ms": 2.798025,
+          "backward_median_ms": 20.63971,
+          "forward_backward_median_ms": 23.93494,
+          "samples_forward_backward_ms": [
+            [
+              2.335379,
+              25.195863
+            ],
+            [
+              3.29523,
+              20.63971
+            ],
+            [
+              2.798025,
+              22.694791
+            ],
+            [
+              2.559278,
+              24.33076
+            ],
+            [
+              2.872598,
+              20.339853
+            ],
+            [
+              3.173583,
+              20.60523
+            ],
+            [
+              2.703623,
+              20.620194
+            ]
+          ]
+        },
+        "second_random": {
+          "forward_median_ms": 2.62812,
+          "backward_median_ms": 19.981102,
+          "forward_backward_median_ms": 22.609222,
+          "samples_forward_backward_ms": [
+            [
+              3.221476,
+              21.473274
+            ],
+            [
+              2.82454,
+              21.049221
+            ],
+            [
+              2.670047,
+              19.136963
+            ],
+            [
+              2.209478,
+              18.34827
+            ],
+            [
+              2.611969,
+              22.361242
+            ],
+            [
+              2.62812,
+              19.981102
+            ],
+            [
+              2.534744,
+              18.436132
+            ]
+          ]
+        }
+      },
+      "ratios": {
+        "first_random_speedup": 0.9844394071313378,
+        "second_random_speedup": 1.0586361618281248,
+        "native_second_speedup_vs_frozen": 2.114617698919494
+      },
+      "random_on_off_outputs_and_gradients_bitwise_equal": true,
+      "baseline_forward_bitwise_equal": true
+    },
+    {
+      "T": 1024,
+      "D": 16,
+      "B": 2,
+      "G": 4,
+      "scope": "full_layer",
+      "methods": {
+        "baseline_second": {
+          "forward_median_ms": 7.838743,
+          "backward_median_ms": 43.632664,
+          "forward_backward_median_ms": 51.523877,
+          "samples_forward_backward_ms": [
+            [
+              7.680271,
+              44.535051
+            ],
+            [
+              8.367726,
+              40.325176
+            ],
+            [
+              6.575206,
+              41.484765
+            ],
+            [
+              9.497877,
+              50.51534
+            ],
+            [
+              7.838743,
+              43.632664
+            ],
+            [
+              10.734982,
+              40.788895
+            ],
+            [
+              7.827511,
+              47.312318
+            ]
+          ]
+        },
+        "first_exact": {
+          "forward_median_ms": 3.734413,
+          "backward_median_ms": 17.100234,
+          "forward_backward_median_ms": 21.236229,
+          "samples_forward_backward_ms": [
+            [
+              3.592451,
+              16.348481
+            ],
+            [
+              3.853953,
+              17.100234
+            ],
+            [
+              4.469574,
+              18.86424
+            ],
+            [
+              2.806898,
+              15.644818
+            ],
+            [
+              3.734413,
+              19.980805
+            ],
+            [
+              3.532404,
+              133.23296
+            ],
+            [
+              4.234746,
+              17.001483
+            ]
+          ]
+        },
+        "first_random": {
+          "forward_median_ms": 3.412419,
+          "backward_median_ms": 15.414853,
+          "forward_backward_median_ms": 19.063277,
+          "samples_forward_backward_ms": [
+            [
+              3.412419,
+              15.414853
+            ],
+            [
+              3.28642,
+              15.799238
+            ],
+            [
+              3.96487,
+              15.098407
+            ],
+            [
+              2.998874,
+              15.236113
+            ],
+            [
+              3.593132,
+              17.197218
+            ],
+            [
+              3.694712,
+              17.247956
+            ],
+            [
+              3.266786,
+              14.445821
+            ]
+          ]
+        },
+        "second_exact": {
+          "forward_median_ms": 3.428923,
+          "backward_median_ms": 19.909709,
+          "forward_backward_median_ms": 23.412148,
+          "samples_forward_backward_ms": [
+            [
+              3.168535,
+              18.783303
+            ],
+            [
+              3.515579,
+              20.989238
+            ],
+            [
+              3.422635,
+              19.547576
+            ],
+            [
+              3.502439,
+              19.909709
+            ],
+            [
+              3.428923,
+              21.016802
+            ],
+            [
+              3.900968,
+              24.796161
+            ],
+            [
+              3.132062,
+              19.571444
+            ]
+          ]
+        },
+        "second_random": {
+          "forward_median_ms": 3.820341,
+          "backward_median_ms": 21.679033,
+          "forward_backward_median_ms": 26.325863,
+          "samples_forward_backward_ms": [
+            [
+              3.859236,
+              23.603657
+            ],
+            [
+              5.269422,
+              21.679033
+            ],
+            [
+              3.240936,
+              21.312462
+            ],
+            [
+              3.820341,
+              19.678714
+            ],
+            [
+              3.86006,
+              20.841582
+            ],
+            [
+              3.557671,
+              22.768192
+            ],
+            [
+              3.262747,
+              30.297373
+            ]
+          ]
+        }
+      },
+      "ratios": {
+        "first_random_speedup": 1.1139862784347099,
+        "second_random_speedup": 0.889321197181646,
+        "native_second_speedup_vs_frozen": 1.9571581376078726
+      },
+      "random_on_off_outputs_and_gradients_bitwise_equal": true,
+      "baseline_forward_bitwise_equal": true
+    },
+    {
+      "T": 8192,
+      "D": 8,
+      "B": 1,
+      "G": 1,
+      "scope": "hard_component",
+      "methods": {
+        "baseline_second": {
+          "forward_median_ms": 5.47825,
+          "backward_median_ms": 41.277322,
+          "forward_backward_median_ms": 47.277283,
+          "samples_forward_backward_ms": [
+            [
+              5.262922,
+              40.138314
+            ],
+            [
+              5.999961,
+              41.277322
+            ],
+            [
+              4.906473,
+              45.889574
+            ],
+            [
+              8.523231,
+              48.986419
+            ],
+            [
+              5.189457,
+              40.607555
+            ],
+            [
+              6.152476,
+              46.025216
+            ],
+            [
+              5.47825,
+              40.71931
+            ]
+          ]
+        },
+        "first_exact": {
+          "forward_median_ms": 2.655267,
+          "backward_median_ms": 26.598521,
+          "forward_backward_median_ms": 28.661425,
+          "samples_forward_backward_ms": [
+            [
+              2.062904,
+              26.598521
+            ],
+            [
+              2.655267,
+              28.788536
+            ],
+            [
+              3.265903,
+              30.050358
+            ],
+            [
+              1.941879,
+              24.197473
+            ],
+            [
+              4.422664,
+              27.721871
+            ],
+            [
+              2.581624,
+              25.540822
+            ],
+            [
+              3.004023,
+              23.801386
+            ]
+          ]
+        },
+        "first_random": {
+          "forward_median_ms": 2.359547,
+          "backward_median_ms": 27.890665,
+          "forward_backward_median_ms": 30.106695,
+          "samples_forward_backward_ms": [
+            [
+              3.245419,
+              25.840435
+            ],
+            [
+              2.075722,
+              27.450244
+            ],
+            [
+              2.359547,
+              27.931077
+            ],
+            [
+              3.007214,
+              24.60092
+            ],
+            [
+              2.21603,
+              27.890665
+            ],
+            [
+              2.747085,
+              28.80905
+            ],
+            [
+              2.30444,
+              29.359443
+            ]
+          ]
+        },
+        "second_exact": {
+          "forward_median_ms": 2.532974,
+          "backward_median_ms": 31.165223,
+          "forward_backward_median_ms": 33.368967,
+          "samples_forward_backward_ms": [
+            [
+              2.319306,
+              28.235199
+            ],
+            [
+              2.532974,
+              28.931241
+            ],
+            [
+              2.801259,
+              33.902305
+            ],
+            [
+              3.009029,
+              38.197378
+            ],
+            [
+              2.203744,
+              31.165223
+            ],
+            [
+              2.128104,
+              29.267392
+            ],
+            [
+              2.549719,
+              31.386038
+            ]
+          ]
+        },
+        "second_random": {
+          "forward_median_ms": 2.506195,
+          "backward_median_ms": 32.325398,
+          "forward_backward_median_ms": 34.590491,
+          "samples_forward_backward_ms": [
+            [
+              2.050926,
+              27.682753
+            ],
+            [
+              3.051112,
+              34.707361
+            ],
+            [
+              2.850191,
+              32.727252
+            ],
+            [
+              2.506195,
+              29.391209
+            ],
+            [
+              2.75849,
+              32.900905
+            ],
+            [
+              2.420693,
+              32.169798
+            ],
+            [
+              2.029331,
+              32.325398
+            ]
+          ]
+        }
+      },
+      "ratios": {
+        "first_random_speedup": 0.9519950628921575,
+        "second_random_speedup": 0.9646861329606451,
+        "native_second_speedup_vs_frozen": 1.366771087464471
+      },
+      "random_on_off_outputs_and_gradients_bitwise_equal": true,
+      "baseline_forward_bitwise_equal": true
+    },
+    {
+      "T": 8192,
+      "D": 8,
+      "B": 1,
+      "G": 1,
+      "scope": "full_layer",
+      "methods": {
+        "baseline_second": {
+          "forward_median_ms": 7.167863,
+          "backward_median_ms": 41.51591,
+          "forward_backward_median_ms": 49.214515,
+          "samples_forward_backward_ms": [
+            [
+              7.698605,
+              41.51591
+            ],
+            [
+              5.473983,
+              40.158952
+            ],
+            [
+              7.666495,
+              39.225595
+            ],
+            [
+              7.999645,
+              41.211777
+            ],
+            [
+              5.763455,
+              50.353101
+            ],
+            [
+              7.066371,
+              43.684685
+            ],
+            [
+              7.167863,
+              42.577109
+            ]
+          ]
+        },
+        "first_exact": {
+          "forward_median_ms": 3.107285,
+          "backward_median_ms": 23.083873,
+          "forward_backward_median_ms": 26.796652,
+          "samples_forward_backward_ms": [
+            [
+              2.616838,
+              21.819269
+            ],
+            [
+              2.673691,
+              21.154835
+            ],
+            [
+              3.306065,
+              20.85168
+            ],
+            [
+              3.218872,
+              29.94476
+            ],
+            [
+              3.107285,
+              24.147135
+            ],
+            [
+              3.712779,
+              23.083873
+            ],
+            [
+              2.665298,
+              26.987886
+            ]
+          ]
+        },
+        "first_random": {
+          "forward_median_ms": 3.150307,
+          "backward_median_ms": 23.939779,
+          "forward_backward_median_ms": 27.860439,
+          "samples_forward_backward_ms": [
+            [
+              2.815705,
+              22.191416
+            ],
+            [
+              3.92066,
+              23.939779
+            ],
+            [
+              3.38053,
+              35.765751
+            ],
+            [
+              2.689752,
+              23.208899
+            ],
+            [
+              2.730291,
+              22.882414
+            ],
+            [
+              3.150307,
+              27.48634
+            ],
+            [
+              7.652365,
+              25.457115
+            ]
+          ]
+        },
+        "second_exact": {
+          "forward_median_ms": 3.285796,
+          "backward_median_ms": 30.718838,
+          "forward_backward_median_ms": 33.86354,
+          "samples_forward_backward_ms": [
+            [
+              3.451774,
+              33.565651
+            ],
+            [
+              3.483979,
+              29.506947
+            ],
+            [
+              7.305586,
+              36.57163
+            ],
+            [
+              3.285796,
+              26.358715
+            ],
+            [
+              3.144702,
+              30.718838
+            ],
+            [
+              3.159185,
+              31.601802
+            ],
+            [
+              2.807236,
+              24.524935
+            ]
+          ]
+        },
+        "second_random": {
+          "forward_median_ms": 2.93628,
+          "backward_median_ms": 27.678093,
+          "forward_backward_median_ms": 31.317677,
+          "samples_forward_backward_ms": [
+            [
+              4.004386,
+              28.331626
+            ],
+            [
+              2.929236,
+              24.017999
+            ],
+            [
+              2.704769,
+              31.28123
+            ],
+            [
+              2.93628,
+              33.441019
+            ],
+            [
+              3.639584,
+              27.678093
+            ],
+            [
+              3.553497,
+              25.159146
+            ],
+            [
+              2.702103,
+              25.910853
+            ]
+          ]
+        }
+      },
+      "ratios": {
+        "first_random_speedup": 0.9618172922544401,
+        "second_random_speedup": 1.0812915657824813,
+        "native_second_speedup_vs_frozen": 1.5714612230019487
+      },
+      "random_on_off_outputs_and_gradients_bitwise_equal": true,
+      "baseline_forward_bitwise_equal": true
+    },
+    {
+      "T": 8192,
+      "D": 16,
+      "B": 1,
+      "G": 1,
+      "scope": "hard_component",
+      "methods": {
+        "baseline_second": {
+          "forward_median_ms": 6.166471,
+          "backward_median_ms": 44.340797,
+          "forward_backward_median_ms": 50.507268,
+          "samples_forward_backward_ms": [
+            [
+              5.832314,
+              53.113838
+            ],
+            [
+              5.35082,
+              49.976508
+            ],
+            [
+              7.187174,
+              41.136027
+            ],
+            [
+              6.166471,
+              44.340797
+            ],
+            [
+              6.574536,
+              35.609059
+            ],
+            [
+              7.408095,
+              35.112025
+            ],
+            [
+              6.041754,
+              68.166631
+            ]
+          ]
+        },
+        "first_exact": {
+          "forward_median_ms": 2.559874,
+          "backward_median_ms": 19.880434,
+          "forward_backward_median_ms": 22.762132,
+          "samples_forward_backward_ms": [
+            [
+              9.317307,
+              35.035565
+            ],
+            [
+              2.043621,
+              16.682777
+            ],
+            [
+              2.881698,
+              19.880434
+            ],
+            [
+              2.468574,
+              19.366463
+            ],
+            [
+              2.559874,
+              25.525702
+            ],
+            [
+              2.279051,
+              18.656088
+            ],
+            [
+              3.566404,
+              23.378682
+            ]
+          ]
+        },
+        "first_random": {
+          "forward_median_ms": 3.228781,
+          "backward_median_ms": 20.342697,
+          "forward_backward_median_ms": 23.637976000000002,
+          "samples_forward_backward_ms": [
+            [
+              2.835818,
+              20.182931
+            ],
+            [
+              3.295279,
+              20.342697
+            ],
+            [
+              2.591907,
+              21.37901
+            ],
+            [
+              4.098301,
+              19.200738
+            ],
+            [
+              4.181444,
+              21.397421
+            ],
+            [
+              2.746116,
+              18.30792
+            ],
+            [
+              3.228781,
+              40.323608
+            ]
+          ]
+        },
+        "second_exact": {
+          "forward_median_ms": 2.735561,
+          "backward_median_ms": 27.899625,
+          "forward_backward_median_ms": 31.650508000000002,
+          "samples_forward_backward_ms": [
+            [
+              2.582378,
+              32.30989
+            ],
+            [
+              2.3155,
+              26.552837
+            ],
+            [
+              2.735561,
+              28.914947
+            ],
+            [
+              3.797405,
+              27.899625
+            ],
+            [
+              3.046171,
+              23.935223
+            ],
+            [
+              2.688377,
+              23.92619
+            ],
+            [
+              4.441299,
+              40.008696
+            ]
+          ]
+        },
+        "second_random": {
+          "forward_median_ms": 2.484356,
+          "backward_median_ms": 24.236032,
+          "forward_backward_median_ms": 26.536635,
+          "samples_forward_backward_ms": [
+            [
+              2.889186,
+              23.157664
+            ],
+            [
+              2.315787,
+              22.38837
+            ],
+            [
+              2.871305,
+              23.527232
+            ],
+            [
+              2.434943,
+              26.635763
+            ],
+            [
+              2.300603,
+              24.236032
+            ],
+            [
+              2.484356,
+              27.911973
+            ],
+            [
+              2.647156,
+              42.170965
+            ]
+          ]
+        }
+      },
+      "ratios": {
+        "first_random_speedup": 0.9629475890829231,
+        "second_random_speedup": 1.1927099272383255,
+        "native_second_speedup_vs_frozen": 1.9033034143176029
+      },
+      "random_on_off_outputs_and_gradients_bitwise_equal": true,
+      "baseline_forward_bitwise_equal": true
+    },
+    {
+      "T": 8192,
+      "D": 16,
+      "B": 1,
+      "G": 1,
+      "scope": "full_layer",
+      "methods": {
+        "baseline_second": {
+          "forward_median_ms": 6.635007,
+          "backward_median_ms": 38.335444,
+          "forward_backward_median_ms": 45.514845,
+          "samples_forward_backward_ms": [
+            [
+              8.072159,
+              51.048779
+            ],
+            [
+              6.071622,
+              68.90073
+            ],
+            [
+              6.440933,
+              35.196246
+            ],
+            [
+              6.711655,
+              33.264936
+            ],
+            [
+              6.10455,
+              38.335444
+            ],
+            [
+              6.635007,
+              39.612007
+            ],
+            [
+              7.675979,
+              37.838866
+            ]
+          ]
+        },
+        "first_exact": {
+          "forward_median_ms": 3.31987,
+          "backward_median_ms": 21.015654,
+          "forward_backward_median_ms": 25.797325999999998,
+          "samples_forward_backward_ms": [
+            [
+              3.480383,
+              23.078371
+            ],
+            [
+              3.31987,
+              16.693901
+            ],
+            [
+              3.056342,
+              26.875872
+            ],
+            [
+              2.80495,
+              22.992376
+            ],
+            [
+              4.859007,
+              21.015654
+            ],
+            [
+              3.769728,
+              14.227852
+            ],
+            [
+              3.268201,
+              19.938079
+            ]
+          ]
+        },
+        "first_random": {
+          "forward_median_ms": 3.254919,
+          "backward_median_ms": 17.482334,
+          "forward_backward_median_ms": 20.737253000000003,
+          "samples_forward_backward_ms": [
+            [
+              4.216278,
+              21.703146
+            ],
+            [
+              4.554187,
+              27.913881
+            ],
+            [
+              3.254919,
+              17.482334
+            ],
+            [
+              3.201766,
+              17.031036
+            ],
+            [
+              2.837088,
+              14.327173
+            ],
+            [
+              2.997298,
+              15.349358
+            ],
+            [
+              4.750756,
+              22.579517
+            ]
+          ]
+        },
+        "second_exact": {
+          "forward_median_ms": 3.505406,
+          "backward_median_ms": 23.503214,
+          "forward_backward_median_ms": 28.113204,
+          "samples_forward_backward_ms": [
+            [
+              3.505406,
+              28.616351
+            ],
+            [
+              14.81873,
+              26.27602
+            ],
+            [
+              2.829616,
+              22.555587
+            ],
+            [
+              4.60999,
+              23.503214
+            ],
+            [
+              2.81201,
+              19.66319
+            ],
+            [
+              3.088472,
+              19.579543
+            ],
+            [
+              3.609717,
+              25.04446
+            ]
+          ]
+        },
+        "second_random": {
+          "forward_median_ms": 3.355497,
+          "backward_median_ms": 26.857662,
+          "forward_backward_median_ms": 30.693124,
+          "samples_forward_backward_ms": [
+            [
+              4.627714,
+              23.026897
+            ],
+            [
+              3.046088,
+              99.965831
+            ],
+            [
+              3.355497,
+              29.015749
+            ],
+            [
+              4.818653,
+              26.862109
+            ],
+            [
+              3.039177,
+              20.678149
+            ],
+            [
+              3.835462,
+              26.857662
+            ],
+            [
+              3.270664,
+              22.348158
+            ]
+          ]
+        }
+      },
+      "ratios": {
+        "first_random_speedup": 1.244008837621839,
+        "second_random_speedup": 0.9159446917166203,
+        "native_second_speedup_vs_frozen": 1.482900372083337
+      },
+      "random_on_off_outputs_and_gradients_bitwise_equal": true,
+      "baseline_forward_bitwise_equal": true
+    },
+    {
+      "T": 8192,
+      "D": 64,
+      "B": 1,
+      "G": 1,
+      "scope": "hard_component",
+      "methods": {
+        "baseline_second": {
+          "forward_median_ms": 14.427094,
+          "backward_median_ms": 67.424338,
+          "forward_backward_median_ms": 82.202056,
+          "samples_forward_backward_ms": [
+            [
+              25.5922,
+              66.762704
+            ],
+            [
+              15.407568,
+              65.820248
+            ],
+            [
+              16.130949,
+              68.078952
+            ],
+            [
+              12.584795,
+              64.784352
+            ],
+            [
+              11.257296,
+              70.94476
+            ],
+            [
+              14.427094,
+              67.424338
+            ],
+            [
+              12.392616,
+              69.847786
+            ]
+          ]
+        },
+        "first_exact": {
+          "forward_median_ms": 7.367019,
+          "backward_median_ms": 65.322401,
+          "forward_backward_median_ms": 74.521229,
+          "samples_forward_backward_ms": [
+            [
+              10.204726,
+              65.322401
+            ],
+            [
+              7.69002,
+              57.867738
+            ],
+            [
+              6.921944,
+              67.864622
+            ],
+            [
+              7.367019,
+              67.15421
+            ],
+            [
+              7.177516,
+              56.220094
+            ],
+            [
+              17.136852,
+              64.196897
+            ],
+            [
+              7.047636,
+              66.755349
+            ]
+          ]
+        },
+        "first_random": {
+          "forward_median_ms": 7.898793,
+          "backward_median_ms": 56.938182,
+          "forward_backward_median_ms": 65.85439199999999,
+          "samples_forward_backward_ms": [
+            [
+              7.369368,
+              74.330853
+            ],
+            [
+              7.760235,
+              58.80352
+            ],
+            [
+              7.875291,
+              70.17446
+            ],
+            [
+              8.854366,
+              50.608689
+            ],
+            [
+              8.91621,
+              56.938182
+            ],
+            [
+              7.898793,
+              55.063719
+            ],
+            [
+              8.639301,
+              55.2132
+            ]
+          ]
+        },
+        "second_exact": {
+          "forward_median_ms": 7.427629,
+          "backward_median_ms": 68.022002,
+          "forward_backward_median_ms": 75.081773,
+          "samples_forward_backward_ms": [
+            [
+              7.427629,
+              68.625247
+            ],
+            [
+              7.03564,
+              63.987514
+            ],
+            [
+              9.952831,
+              66.716404
+            ],
+            [
+              7.059771,
+              68.022002
+            ],
+            [
+              7.647221,
+              68.471538
+            ],
+            [
+              6.540831,
+              68.070423
+            ],
+            [
+              9.514311,
+              63.176405
+            ]
+          ]
+        },
+        "second_random": {
+          "forward_median_ms": 7.44481,
+          "backward_median_ms": 62.597617,
+          "forward_backward_median_ms": 69.850574,
+          "samples_forward_backward_ms": [
+            [
+              8.085227,
+              60.868322
+            ],
+            [
+              12.118525,
+              66.836453
+            ],
+            [
+              7.833737,
+              60.86806
+            ],
+            [
+              6.697885,
+              64.848153
+            ],
+            [
+              6.76877,
+              54.622043
+            ],
+            [
+              7.252957,
+              62.597617
+            ],
+            [
+              7.44481,
+              63.813142
+            ]
+          ]
+        }
+      },
+      "ratios": {
+        "first_random_speedup": 1.1316060590157755,
+        "second_random_speedup": 1.0748912814946947,
+        "native_second_speedup_vs_frozen": 1.1768272083204356
+      },
+      "random_on_off_outputs_and_gradients_bitwise_equal": true,
+      "baseline_forward_bitwise_equal": true
+    },
+    {
+      "T": 8192,
+      "D": 64,
+      "B": 1,
+      "G": 1,
+      "scope": "full_layer",
+      "methods": {
+        "baseline_second": {
+          "forward_median_ms": 16.562656,
+          "backward_median_ms": 76.963748,
+          "forward_backward_median_ms": 94.00249,
+          "samples_forward_backward_ms": [
+            [
+              16.562656,
+              84.265628
+            ],
+            [
+              17.169353,
+              81.310061
+            ],
+            [
+              15.531832,
+              75.711463
+            ],
+            [
+              14.685663,
+              76.14542
+            ],
+            [
+              15.599902,
+              76.471527
+            ],
+            [
+              16.580131,
+              80.419786
+            ],
+            [
+              17.038742,
+              76.963748
+            ]
+          ]
+        },
+        "first_exact": {
+          "forward_median_ms": 12.06246,
+          "backward_median_ms": 73.47578,
+          "forward_backward_median_ms": 85.667662,
+          "samples_forward_backward_ms": [
+            [
+              11.822047,
+              77.859053
+            ],
+            [
+              12.520159,
+              75.296763
+            ],
+            [
+              10.378158,
+              73.456172
+            ],
+            [
+              12.191882,
+              73.47578
+            ],
+            [
+              12.06246,
+              69.22301
+            ],
+            [
+              11.167428,
+              77.287286
+            ],
+            [
+              12.070901,
+              67.153428
+            ]
+          ]
+        },
+        "first_random": {
+          "forward_median_ms": 11.38634,
+          "backward_median_ms": 66.06933,
+          "forward_backward_median_ms": 79.183202,
+          "samples_forward_backward_ms": [
+            [
+              12.213881,
+              66.969321
+            ],
+            [
+              14.221623,
+              64.978401
+            ],
+            [
+              11.184299,
+              66.527593
+            ],
+            [
+              15.713498,
+              66.06933
+            ],
+            [
+              11.38634,
+              61.894779
+            ],
+            [
+              10.169834,
+              72.072983
+            ],
+            [
+              11.159565,
+              66.06357
+            ]
+          ]
+        },
+        "second_exact": {
+          "forward_median_ms": 12.219923,
+          "backward_median_ms": 77.192637,
+          "forward_backward_median_ms": 89.587118,
+          "samples_forward_backward_ms": [
+            [
+              15.363272,
+              80.88466
+            ],
+            [
+              15.006716,
+              85.861778
+            ],
+            [
+              11.143293,
+              78.443825
+            ],
+            [
+              13.876675,
+              76.718882
+            ],
+            [
+              11.761514,
+              73.770438
+            ],
+            [
+              10.25924,
+              77.192637
+            ],
+            [
+              12.219923,
+              73.937054
+            ]
+          ]
+        },
+        "second_random": {
+          "forward_median_ms": 11.986362,
+          "backward_median_ms": 70.938519,
+          "forward_backward_median_ms": 83.043502,
+          "samples_forward_backward_ms": [
+            [
+              11.61454,
+              66.675272
+            ],
+            [
+              11.986362,
+              81.197041
+            ],
+            [
+              12.111815,
+              73.364844
+            ],
+            [
+              11.175246,
+              66.57322
+            ],
+            [
+              11.780193,
+              69.995693
+            ],
+            [
+              12.216447,
+              71.730772
+            ],
+            [
+              12.104983,
+              70.938519
+            ]
+          ]
+        }
+      },
+      "ratios": {
+        "first_random_speedup": 1.0818918638829484,
+        "second_random_speedup": 1.0787974476317244,
+        "native_second_speedup_vs_frozen": 1.131966833479638
+      },
+      "random_on_off_outputs_and_gradients_bitwise_equal": true,
+      "baseline_forward_bitwise_equal": true
+    }
+  ]
+}
