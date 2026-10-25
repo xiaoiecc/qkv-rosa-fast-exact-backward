@@ -21,47 +21,50 @@ stated otherwise.
 
 | Symbol | Meaning | Shape or domain |
 |---|---|---|
-| $T$ | Sequence length | Nonnegative integer |
-| $D$ | Bits per symbol, dimensions per payload | $1\le D\le64$ |
-| $Q_t,K_t$ | Packed hard symbols | Unsigned $D$-bit words |
-| $V_{s,j}$ | Payload bits | $T\times D$, 0 or 1 |
-| $e_0,e_1$ | Empty payload and signed-payload scale | $D$ |
-| $g_t$ | Given upstream vector `grad_y[t]` | $D$ |
-| $(L_t,r_t)$ | Selected match length and K endpoint | Lexicographic route |
-| $C^Q,C^K,C^V$ | Single-bit flip credits | Each $T\times D$ |
+| $`T`$ | Sequence length | Nonnegative integer |
+| $`D`$ | Bits per symbol, dimensions per payload | $`1\le D\le64`$ |
+| $`Q_t,K_t`$ | Packed hard symbols | Unsigned $`D`$-bit words |
+| $`V_{s,j}`$ | Payload bits | $`T\times D`$, 0 or 1 |
+| $`e_0,e_1`$ | Empty payload and signed-payload scale | $`D`$ |
+| $`g_t`$ | Given upstream vector `grad_y[t]` | $`D`$ |
+| $`(L_t,r_t)`$ | Selected match length and K endpoint | Lexicographic route |
+| $`C^Q,C^K,C^V`$ | Single-bit flip credits | Each $`T\times D`$ |
 
-At output row $t$, only endpoints $r<t$ are legal. Define
+At output row $`t`$, only endpoints $`r<t`$ are legal. Define
 
-$$
-F_t(r)=\operatorname{LCSuffix}(Q[0..t],K[0..r]),
+```math
+F_t(r)=\mathrm{LCSuffix}(Q[0..t],K[0..r]),
 \qquad (L_t,r_t)=\max_{r<t}(F_t(r),r).
-$$
+```
 
 Longer matches win. Among equally long matches, later endpoints win. Normalize
-every zero-length candidate to $(0,-1)$, so an empty match cannot select a
+every zero-length candidate to $`(0,-1)`$, so an empty match cannot select a
 payload merely because its endpoint is later. The maximum of an empty
-candidate set is also $(0,-1)$; in particular, $y_0=e_0$.
+candidate set is also $`(0,-1)`$; in particular, $`y_0=e_0`$.
 
-With $P_s=(2V_s-1)\odot e_1$, the output is
+With $`P_s=(2V_s-1)\odot e_1`$, the output is
 
-$$
-y_t=\begin{cases}e_0,&r_t=-1,\\P_{r_t+1},&r_t\ge0.\end{cases}
-$$
+```math
+y_t=\begin{cases}
+e_0,&r_t=-1,\\
+P_{r_t+1},&r_t\ge0.
+\end{cases}
+```
 
 The `+1` is part of the architecture: retrieve the payload following the
-matched K suffix. Because $r<t$, selecting $V_t$ is legal; selecting a K
-endpoint at $t$ is not.
+matched K suffix. Because $`r<t`$, selecting $`V_t`$ is legal; selecting a K
+endpoint at $`t`$ is not.
 
 ### Our hand-checkable example
 
-Take $D=1$, $Q=K=01010$. At $t=4$, the candidate lengths at endpoints
+Take $`D=1`$, $`Q=K=01010`$. At $`t=4`$, the candidate lengths at endpoints
 0, 1, 2, 3 are respectively 1, 0, 3, 0. Endpoint 4 would match five symbols but
-is not causal. The winner is $(3,2)$, selecting $P_3$.
+is not causal. The winner is $`(3,2)`$, selecting $`P_3`$.
 
-Flip $Q_{4,0}$. The Q prefix becomes `01011`. Endpoints 1 and 3 both match
-one symbol, so the winner becomes $(1,3)$, selecting $P_4$. If
-$V_3=0,V_4=1,e_1=2,g_4=3$, this flip contributes $3(2-(-2))=12$.
-Earlier rows cannot depend on $Q_4$.
+Flip $`Q_{4,0}`$. The Q prefix becomes `01011`. Endpoints 1 and 3 both match
+one symbol, so the winner becomes $`(1,3)`$, selecting $`P_4`$. If
+$`V_3=0,V_4=1,e_1=2,g_4=3`$, this flip contributes $`3(2-(-2))=12`$.
+Earlier rows cannot depend on $`Q_4`$.
 
 ![The causal match and its one-bit counterfactual](images/02-route-partition.svg)
 
@@ -72,12 +75,12 @@ matching code.
 
 ## 2. The expensive definition, and a map of its repeated work
 
-The credit of bit $(s,j)$ in $X\in\{Q,K,V\}$ is defined by
+The credit of bit $`(s,j)`$ in $`X\in\{Q,K,V\}`$ is defined by
 
-$$
+```math
 \boxed{C^X_{s,j}=\sum_t g_t^\top
-\left(y_t^{\operatorname{flip}(X_{s,j})}-y_t\right).}
-$$
+\left(y_t^{\mathrm{flip}(X_{s,j})}-y_t\right).}
+```
 
 The independent oracle in
 [`rosa_reference.py`](conv_rosa_transformer/rosa_reference.py) implements that
@@ -94,16 +97,16 @@ for each of the 3*T*D single-bit flips:
         select the payload and accumulate its projected difference
 ```
 
-The suffix walks cost $O(T^3)$ per forward. Including payload-vector work,
-all flips cost $O(DT^4+D^2T^2)$, usually abbreviated to $O(DT^4)$ for
+The suffix walks cost $`O(T^3)`$ per forward. Including payload-vector work,
+all flips cost $`O(DT^4+D^2T^2)`$, usually abbreviated to $`O(DT^4)`$ for
 fixed or small D.
 
 ![The nested brute-force work and its common subproblems](images/01-repeated-work.svg)
 
-A natural first thought is to compute all original $F_t(r)$ by
-$F_t(r)=1+F_{t-1}(r-1)$ on equality and zero otherwise. That is a valid
-$O(T^2)$ dynamic program. But rerunning it after every flip still repeats
-whole tables. It reduces the all-flip total to $O(DT^3+D^2T^2)$, but a large
+A natural first thought is to compute all original $`F_t(r)`$ by
+$`F_t(r)=1+F_{t-1}(r-1)`$ on equality and zero otherwise. That is a valid
+$`O(T^2)`$ dynamic program. But rerunning it after every flip still repeats
+whole tables. It reduces the all-flip total to $`O(DT^3+D^2T^2)`$, but a large
 table does not explain which terms can be shared between owners. We need a
 decomposition of the changed answer.
 
@@ -122,22 +125,22 @@ full alignment table.
 
 ### “Exact backward” is a finite difference, not a threshold derivative
 
-All other bits and the supplied $g$ stay fixed in the definition. This is a
+All other bits and the supplied $`g`$ stay fixed in the definition. This is a
 counterfactual difference of hard outputs projected onto an upstream vector.
 The ordinary derivative of threshold quantization is zero almost everywhere;
 it is a different object. For a nonlinear downstream loss, the supplied
 upstream vector is its local linear functional, not an exact loss rerun.
 
-The layer separately maps credit to logits. For $b=\mathbf1[z>0]$, orient
-the flip difference as $\Delta_{1-0}=(1-2b)C$. The `bernoulli` mapping uses
-$p=\sigma(z/\tau)$ and returns
+The layer separately maps credit to logits. For $`b=\mathbf1[z>0]`$, orient
+the flip difference as $`\Delta_{1-0}=(1-2b)C`$. The `bernoulli` mapping uses
+$`p=\sigma(z/\tau)`$ and returns
 
-$$
+```math
 \frac{p(1-p)}{\tau}\Delta_{1-0}.
-$$
+```
 
 This differentiates the conditional two-endpoint interpolation with other
-bits and $g$ fixed. The `identity` mapping returns $\Delta_{1-0}$.
+bits and $`g`$ fixed. The `identity` mapping returns $`\Delta_{1-0}`$.
 These are explicit training choices; neither changes the returned bit-credit
 definition or the hard forward.
 
@@ -147,12 +150,12 @@ definition or the hard forward.
 
 A V flip cannot change Q/K matches. It affects just one selected component:
 
-$$
+```math
 C^V_{s,j}=-2(2V_{s,j}-1)e_{1,j}
 \sum_{t:r_t+1=s}g_{t,j}.
-$$
+```
 
-One route scatter computes all V credits in $O(TD)$. We no longer need one
+One route scatter computes all V credits in $`O(TD)`$. We no longer need one
 hard forward per V bit.
 
 ### A Q/K edit has only two kinds of surviving match
@@ -166,32 +169,32 @@ match must originally have had a mismatch at the owner: flipping a bit would
 destroy an originally equal symbol. Every other symbol in that repaired
 alignment must still be equal. Hence
 
-$$
-\boxed{\operatorname{route}_{\rm flip}
-=\max(\operatorname{route}_{\rm delete},
-      \operatorname{route}_{\rm repair}).}
-$$
+```math
+\boxed{\mathrm{route}_{\rm flip}
+=\max(\mathrm{route}_{\rm delete},
+      \mathrm{route}_{\rm repair}).}
+```
 
 This partitions all possible matches, so the decomposition is complete. The
 deletion route is shared by all D bits at that owner.
 
-Let an alignment $(t,r)$ have $a$ matching symbols immediately to the
+Let an alignment $`(t,r)`$ have $`a`$ matching symbols immediately to the
 right of its nearest mismatch. If
-$Q_{t-a}\mathbin{\mathrm{xor}}K_{r-a}=2^j$, bit j repairs it. Define
+$`Q_{t-a}\mathbin{\mathrm{xor}}K_{r-a}=2^j`$, bit j repairs it. Define
 
-$$
+```math
 u=t-a,\quad s=r-a,\quad
-b=\operatorname{LCSuffix}(Q[0..u-1],K[0..s-1]).
-$$
+b=\mathrm{LCSuffix}(Q[0..u-1],K[0..s-1]).
+```
 
-The full candidate is $(a+1+b,r)$, with Q owner u and K owner s. Every new
+The full candidate is $`(a+1+b,r)`$, with Q owner u and K owner s. Every new
 one-bit match has this description. Shorter candidates at the same endpoint
 can be discarded, because its longest candidate dominates them.
 
-In our example, flipping $Q_4$ deletes every nonempty suffix at row 4.
-The alignment ending at K endpoint 3 has $a=b=0$, and XOR equal to 1. Its
-repair route is $(1,3)$. The same alignment corresponds to K owner 3, but
-that owner's deletion still retains $(3,2)$; its shorter repair cannot win.
+In our example, flipping $`Q_4`$ deletes every nonempty suffix at row 4.
+The alignment ending at K endpoint 3 has $`a=b=0`$, and XOR equal to 1. Its
+repair route is $`(1,3)`$. The same alignment corresponds to K owner 3, but
+that owner's deletion still retains $`(3,2)`$; its shorter repair cannot win.
 Sharing a candidate does not mean sharing its final owner credit.
 
 Numerically, add the common deletion-minus-baseline contribution first. Then
@@ -200,22 +203,25 @@ without subtracting the baseline twice.
 
 ## 4. Derive the deletion envelope from candidate geometry
 
-Fix row t, abbreviate $F=F_t$, and let the baseline be $(L,r_0)$. Define
+Fix row t, abbreviate $`F=F_t`$, and let the baseline be $`(L,r_0)`$. Define
 
-$$
+```math
 R[h]=\max\{r<t:F(r)\ge h\},\qquad 1\le h\le L.
-$$
+```
 
 ### Q owner: cap the length
 
-For $u\le t$, forbidding Q owner u caps every surviving suffix at
-$t-u$. Its best length is $h=\min(L,t-u)$. Among endpoints supporting
+For $`u\le t`$, forbidding Q owner u caps every surviving suffix at
+$`t-u`$. Its best length is $`h=\min(L,t-u)`$. Among endpoints supporting
 that length, the latest is R[h]:
 
-$$
-\operatorname{DelQ}(u)=
-\begin{cases}(0,-1),&h=0,\$h,R[h]),&h>0.\end{cases}
-$$
+```math
+\mathrm{DelQ}(u)=
+\begin{cases}
+(0,-1),&h=0,\\
+(h,R[h]),&h>0.
+\end{cases}
+```
 
 Only owners in the selected baseline suffix can change deletion. Future
 owners and owners before that suffix retain the baseline. As u increases,
@@ -224,19 +230,19 @@ monotone cursor instead of a binary search per bit.
 
 ### K owner: split endpoints at the owner
 
-For $s<t$, an endpoint to the left of s cannot cross it. An endpoint on
-its right may retain only the $r-s$ symbols strictly after it. Therefore
+For $`s<t`$, an endpoint to the left of s cannot cross it. An endpoint on
+its right may retain only the $`r-s`$ symbols strictly after it. Therefore
 
-$$
+```math
 A(s)=\max_{r<s}(F(r),r),\qquad
 H(s)=\max_{s\le r<t}(\min(F(r),r-s),r),
-$$
+```
 
-$$
-\operatorname{DelK}(s)=\max(A(s),H(s)).
-$$
+```math
+\mathrm{DelK}(s)=\max(A(s),H(s)).
+```
 
-Only $s\in[r_0-L+1,r_0]$ can destroy the baseline match. Outside that
+Only $`s\in[r_0-L+1,r_0]`$ can destroy the baseline match. Outside that
 interval the best route remains legal, and deletion cannot improve it.
 
 For `01010` at row 4, all values can be checked by four endpoints:
@@ -253,8 +259,8 @@ For `01010` at row 4, all values can be checked by four endpoints:
 A is nondecreasing as its endpoint set grows. H is nonincreasing as its set
 shrinks and each surviving length cap decreases. Both statements hold in the
 full lexicographic order, not just in length. Their maximum has a valley.
-If p is a global minimum owner, the minimum over $[a,b]$ is attained at
-$\operatorname{clamp}(p,a,b)$. This will let us reject whole repair groups
+If p is a global minimum owner, the minimum over $`[a,b]`$ is attained at
+$`\mathrm{clamp}(p,a,b)`$. This will let us reject whole repair groups
 whose best candidate cannot beat even the least deletion route in their owner
 span. Notice the tie at s=1: H wins because endpoint 2 is later than 0.
 
@@ -267,16 +273,16 @@ tie-break. Before changing the representation, ask why adjacent records differ.
 Suppose Q currently ends in h copies of symbol c, and a maximal K run of c
 starts at l. For an endpoint r in that run:
 
-- If $r-l+1<h$, K leaves the run first, so $F(r)=r-l+1$.
-- If $r-l+1>h$, Q leaves first, so $F(r)=h$.
-- At $r=l+h-1$, both leave together. Earlier symbols may keep matching,
+- If $`r-l+1<h`$, K leaves the run first, so $`F(r)=r-l+1`$.
+- If $`r-l+1>h`$, Q leaves first, so $`F(r)=h`$.
+- At $`r=l+h-1`$, both leave together. Earlier symbols may keep matching,
   so that one endpoint needs a genuine suffix query.
 
 Every other endpoint obeys
 
-$$
+```math
 \boxed{F(r)=\min(h,r-l+1).}
-$$
+```
 
 ![One exact exception to a whole run formula](images/04-run-formula.svg)
 
@@ -288,9 +294,9 @@ that boundary makes compression safe.
 The generator emits a consecutive sequence of improving endpoints as an
 owner interval with
 
-$$
+```math
 A(s)=(f(s),s-1),\qquad f(s)=\min(c,s-o),
-$$
+```
 
 where c is its length cap and o its origin. If the exception establishes a
 length above the cap, subsequent shorter endpoints in that run cannot set new
@@ -303,21 +309,21 @@ For positive A length f, H wins equal-length ties because its endpoint is on
 or to the right of the owner. A wins exactly when no H candidate supports
 length f, equivalently
 
-$$
+```math
 s+f(s)\ge R[f(s)]+1.
-$$
+```
 
-On an R step with endpoint value r, substitute $f(s)=\min(c,s-o)$:
+On an R step with endpoint value r, substitute $`f(s)=\min(c,s-o)`$:
 
-$$
+```math
 s+c\ge r+1,\qquad 2s-o\ge r+1.
-$$
+```
 
 The first possible owner is
 
-$$
+```math
 \max\left(r+1-c,\left\lceil\frac{r+1+o}{2}\right\rceil\right),
-$$
+```
 
 intersected with the current A interval and the part whose lengths lie on the
 R step. Both cursors move forward. Merge cost is linear in actual records,
@@ -328,26 +334,26 @@ endpoint and constant/growing length.
 ### Moving endpoints need a vector identity
 
 If contraction later visits every implicit owner, record compression merely
-postpones the same work. For endpoint $s-1$, however, the payload is $P_s$.
+postpones the same work. For endpoint $`s-1`$, however, the payload is $`P_s`$.
 Such segments have a nonempty baseline. Write its bit as
-$b_{t,j}=V_{r_0+1,j}$. The row contribution is
+$`b_{t,j}=V_{r_0+1,j}`$. The row contribution is
 
-$$
+```math
 2\sum_j e_{1,j}g_{t,j}(V_{s,j}-b_{t,j}).
-$$
+```
 
 Keep two owner-range gradient buckets per dimension, indexed by baseline bit.
-On $[a,b]$, add $g_{t,j}$ to bucket $b_{t,j}$ through two boundary
+On $`[a,b]`$, add $`g_{t,j}`$ to bucket $`b_{t,j}`$ through two boundary
 updates. After taking owner prefixes, let the bucket sums be
-$G_{s,j,0},G_{s,j,1}$. Contract once:
+$`G_{s,j,0},G_{s,j,1}`$. Contract once:
 
-$$
+```math
 \boxed{2\sum_j e_{1,j}
 \left[V_{s,j}G_{s,j,0}-(1-V_{s,j})G_{s,j,1}\right].}
-$$
+```
 
-This costs $O(D)$ per formula interval plus $O(TD)$ final work, using at
-most $2(T+1)D$ doubles allocated on demand. Equal bits have coefficient zero
+This costs $`O(D)`$ per formula interval plus $`O(TD)`$ final work, using at
+most $`2(T+1)D`$ doubles allocated on demand. Equal bits have coefficient zero
 before arithmetic. Formula segments must not also subtract baseline through
 the scalar K difference array: these buckets already include it. Their sums
 still use floating-point arithmetic; this identity is not a general
@@ -362,8 +368,8 @@ a state. Suffix links lead toward shorter suffixes. In a depth-first terminal
 order of that tree, each state's endpoint set occupies a contiguous interval.
 
 The algorithm builds one SAM of full K. At row t it activates endpoint t−1,
-then consumes $Q_t$. The index knows the future but every answer filters
-by $r<t$. Static earliest endpoints can certify existence; causal latest
+then consumes $`Q_t`$. The index knows the future but every answer filters
+by $`r<t`$. Static earliest endpoints can certify existence; causal latest
 endpoint queries settle ties. Original root transitions and every one-bit Q
 root alternative are prepared deterministically, so an absent causal target
 rejects a birth without searching for an impossible repair.
@@ -386,13 +392,13 @@ Maintain a doubly linked list of active endpoints in terminal order. Build
 the complete list, then delete endpoints in reverse time order. A deleted
 node's own neighbor pointers are preserved while its neighbors are linked
 together. Reversing these operations gives its exact insertion neighbors
-when it becomes active, so activation takes $O(1)$.
+when it becomes active, so activation takes $`O(1)`$.
 
 If a state's earliest endpoint is below t, that node is an active anchor in
 its terminal interval. Walk left and right until the interval boundaries.
 Every causal occurrence is reached once, and no future one is visited.
-Preprocessing takes $O(T)$ time and space; reporting $C_v$ endpoints
-costs $O(1+C_v)$. The maximum tree still has its separate update cost, so
+Preprocessing takes $`O(T)`$ time and space; reporting $`C_v`$ endpoints
+costs $`O(1+C_v)`$. The maximum tree still has its separate update cost, so
 the entire SAM advance is not constant time.
 
 ### Exact certificates before general endpoint queries
@@ -401,7 +407,7 @@ Three local proofs can answer a latest-endpoint request directly:
 
 1. Static `last < t`: all occurrences are already visible.
 2. Count equals `last - first + 1`: the endpoint set is an integer interval,
-   so its causal maximum is $\min(\text{last},t-1)$.
+   so its causal maximum is $`\min(\text{last},t-1)`$.
 3. A true direct transition extends the previous latest endpoint by one and
    reaches the tight latest-endpoint bound. This is not used after suffix-link
    fallback, where the same bound need not apply.
@@ -420,12 +426,12 @@ A live Q branch already identifies the suffix that would also match if the
 aligned K bit were flipped. For Q owner u, a causal endpoint r of its edited
 suffix maps to
 
-$$
+```math
 s=r-(t-u)
-$$
+```
 
-as K owner. A left-side suffix query recovers full length $t-u+1+b$.
-Maintain the maximum candidate per $(s,j)$, then compare it with that
+as K owner. A left-side suffix query recovers full length $`t-u+1+b`$.
+Maintain the maximum candidate per $`(s,j)`$, then compare it with that
 owner's exact K deletion route.
 
 Before reporting, the minimum deletion route over the possible owner span
@@ -451,19 +457,19 @@ The remainder must be an occurrence of today's complete edited suffix, hence
 r′−h=r₀. Only one future alignment is possible, and causality persists because
 r₀+h<t₀+h.
 
-If the current longest repair is $(L_0,r_0)$, define
+If the current longest repair is $`(L_0,r_0)`$, define
 
-$$
+```math
 \alpha=L_0-t_0,\quad\beta=r_0-t_0<0,\qquad
-\tau=t_0+\operatorname{LCE}(Q[t_0+1..],K[r_0+1..]).
-$$
+\tau=t_0+\mathrm{LCE}(Q[t_0+1..],K[r_0+1..]).
+```
 
 Its whole closed lifetime obeys
 
-$$
-\boxed{\operatorname{repair}(t)=(t+\alpha,t+\beta),
+```math
+\boxed{\mathrm{repair}(t)=(t+\alpha,t+\beta),
 \qquad t_0\le t\le\tau.}
-$$
+```
 
 The earlier left boundary is already fixed; appending equal characters adds
 one to both coordinates. The first mismatch retires the branch permanently:
@@ -492,12 +498,12 @@ still make J large.
 
 For Q owner u, the K owner throughout the interval is
 
-$$
+```math
 s=(t+\beta)-(t-u)=u+\beta.
-$$
+```
 
-Group intervals by $(s,j)$ in a max-heap with fixed priority
-$(\alpha,\beta)$. Adding t to both coordinates preserves route order.
+Group intervals by $`(s,j)`$ in a max-heap with fixed priority
+$`(\alpha,\beta)`$. Adding t to both coordinates preserves route order.
 Insert at birth and lazily pop expired tops. Each active key contributes one
 winner per row, then joins ordinary candidates and deletion in the same max.
 There is no per-input dispatch, and no repeated discovery of these K owners.
@@ -506,13 +512,13 @@ There is no per-input dispatch, and no repeated discovery of these K owners.
 
 A repair containing Q owner u has length at least t−u+1, while its Q deletion
 has length at most t−u. Thus the repair wins for its whole lifetime. Let
-$\Delta_t(u)$ be the common Q deletion-minus-baseline contribution. Add
+$`\Delta_t(u)`$ be the common Q deletion-minus-baseline contribution. Add
 
-$$
+```math
 \sum_{t=t_0}^{\tau}
 \left(g_t^\top P_{t+\beta+1}-g_t^\top y_t\right)
 -\sum_{t=t_0}^{\tau}\Delta_t(u).
-$$
+```
 
 The second sum is a range-add/point-query problem: common deletion writes
 owner intervals, while a detached branch needs one owner's cumulative value.
@@ -523,28 +529,28 @@ When no live snapshot consumer exists, these tree updates are unnecessary.
 
 Route eventization does not eliminate all numerical terms. Their count is
 
-$$
+```math
 \mathcal H=\sum_c(\tau_c-t_{0,c}+1).
-$$
+```
 
-Keep $\mathcal H$ in the cost model even when every corresponding SAM
+Keep $`\mathcal H`$ in the cost model even when every corresponding SAM
 advance has disappeared.
 
 ## 9. Share payload scores with a finite memory budget
 
-Routes selecting the same V bit vector at row t share $g_t^\top P$. Let U
+Routes selecting the same V bit vector at row t share $`g_t^\top P`$. Let U
 be the number of payload classes. Ordinary queries calculate requested scores
 lazily within the row. Finished intervals also query older rows; caching all
-$T\times U$ scores would defeat the memory goal.
+$`T\times U`$ scores would defeat the memory goal.
 
-Admit at most 4D classes to a history cache. If $U\le4D$, admit all.
+Admit at most 4D classes to a history cache. If $`U\le4D`$, admit all.
 Otherwise admit only classes of frequency at least
-$\lceil T/(4D)\rceil$. For admitted count $U_h$,
+$`\lceil T/(4D)\rceil`$. For admitted count $`U_h`$,
 
-$$
+```math
 U_h\left\lceil\frac{T}{4D}\right\rceil\le T
 \quad\Longrightarrow\quad U_h\le4D.
-$$
+```
 
 The table has at most 4TD double entries and is allocated only when an interval
 needs it. Entries are computed on demand; ordinary row scores populate the
@@ -552,16 +558,16 @@ same table. Nonadmitted classes execute the same dot product without a history
 slot. No approximation or different matcher is involved.
 
 With X additional interval dot products actually computed, this part costs
-$O(\mathcal H+DX)$, plus residual-component work. If all classes are
-admitted, $X\le TU$. Cache hits do not remove the $\mathcal H$ visits.
+$`O(\mathcal H+DX)`$, plus residual-component work. If all classes are
+admitted, $`X\le TU`$. Cache hits do not remove the $`\mathcal H`$ visits.
 The runtime counters `payload_dot_components` and `singleton_dot_components`
 must be added to count both sources of payload dot products; fixed empty
-scores are separate $O(TD)$ work.
+scores are separate $`O(TD)`$ work.
 
 ## 10. A real-number identity is not yet a safe floating-point program
 
 Grouping updates into intervals changes the order of cancellation. The sum
-$2\cdot10^{16}+2+2-2\cdot10^{16}=4$ can become zero under ordinary
+$`2\cdot10^{16}+2+2-2\cdot10^{16}=4`$ can become zero under ordinary
 binary64 addition. Subtracting two rounded global prefixes also introduces
 large history outside the requested interval.
 
@@ -576,15 +582,15 @@ ordinary correction, B its interval repair-minus-baseline sum, Dᵢ common
 deletion inside the interval, and Dₐₗₗ common deletion over all rows. Preserve
 E=A+B−Dᵢ in the expired birth-snapshot slot, then compute
 
-$$
-\operatorname{round}_{64}(E+D_{\rm all}).
-$$
+```math
+\mathrm{round}_{64}(E+D_{\rm all}).
+```
 
 Separately rounding E and Dₐₗₗ can still lose the answer:
-$20000000000000002-19999999999999998=4$, but separately rounded operands
+$`20000000000000002-19999999999999998=4`$, but separately rounded operands
 can yield zero. The detached key never reenters ordinary states, so reusing
 its snapshot does not overwrite a future update or require another full
-$TD$ matrix of accumulators.
+$`TD`$ matrix of accumulators.
 
 The common object holds two doubles and a pointer, normally 24 bytes. Its
 update uses `TwoSum`, combines residuals without loss, orders them to meet
@@ -610,41 +616,41 @@ interval merges, and V scatters complete the outputs.
 
 The following parameters count actual execution, not the number of conceptual
 alignments a compressed record represents. Put
-$\ell=\max(1,\lceil\log_2(T+1)\rceil)$ and
-$\eta=\max(1,\log_2(\sigma_K+1))$, where $\sigma_K$ is K's alphabet size.
+$`\ell=\max(1,\lceil\log_2(T+1)\rceil)`$ and
+$`\eta=\max(1,\log_2(\sigma_K+1))`$, where $`\sigma_K`$ is K's alphabet size.
 
 | Parameter | Work counted |
 |---|---|
-| $A_*$ | Ordinary Q advance attempts, including retirement attempts |
-| $B$ | Successful Q births; all $TD$ birth conditions still get checked |
-| $C$ | Causal endpoints actually reported for ordinary K repair |
-| $W_*$ | Total deletion-generation cost, including records and the full costs of probes/indexed queries |
-| $M$ | Detached intervals, at most $TD$ |
-| $J$ | Run blocks inspected for interval lifetimes |
-| $E$ | Active K interval heap keys, summed over rows |
-| $\mathcal H$ | Total interval lifetime coverage |
-| $G$ | Moving-endpoint numerical owner intervals |
-| $S,X$ | Ordinary and additional interval dot products actually performed |
-| $F_{\rm exp}$ | Actual expansion work, including components and Fenwick paths |
+| $`A_*`$ | Ordinary Q advance attempts, including retirement attempts |
+| $`B`$ | Successful Q births; all $`TD`$ birth conditions still get checked |
+| $`C`$ | Causal endpoints actually reported for ordinary K repair |
+| $`W_*`$ | Total deletion-generation cost, including records and the full costs of probes/indexed queries |
+| $`M`$ | Detached intervals, at most $`TD`$ |
+| $`J`$ | Run blocks inspected for interval lifetimes |
+| $`E`$ | Active K interval heap keys, summed over rows |
+| $`\mathcal H`$ | Total interval lifetime coverage |
+| $`G`$ | Moving-endpoint numerical owner intervals |
+| $`S,X`$ | Ordinary and additional interval dot products actually performed |
+| $`F_{\rm exp}`$ | Actual expansion work, including components and Fenwick paths |
 
 A conservative time bound is
 
-$$
+```math
 O\!\left(T\ell+TD+UD+W_*+(T+A_*+B)\ell\eta+C\ell
 +M\log(M+1)+J+E\ell+\mathcal H+D(S+X+G)+F_{\rm exp}\right).
-$$
+```
 
-The $W_*$ term includes query costs; it is not merely the number of A records
-or indexed jumps. Heap insertion and expiration cost $O(M\log(M+1))$ altogether. Fenwick
-paths and component manipulation belong to $F_{\rm exp}$, not a fictional
+The $`W_*`$ term includes query costs; it is not merely the number of A records
+or indexed jumps. Heap insertion and expiration cost $`O(M\log(M+1))`$ altogether. Fenwick
+paths and component manipulation belong to $`F_{\rm exp}`$, not a fictional
 single constant-time addition. Bounded cache allocation and two gradient
 buckets are included in the TD term. Space is
 
-$$
+```math
 O(TD+UD+T\log(T+1)+P_{\rm exp}),
-$$
+```
 
-where $P_{\rm exp}$ counts extra stored residuals. Lazy indexes still incur
+where $`P_{\rm exp}`$ counts extra stored residuals. Lazy indexes still incur
 their worst-case space charge. No quadratic alignment matrix is stored.
 
 For fixed machine-word D, the structural worst case remains quadratic up to
@@ -653,19 +659,19 @@ This is not a general near-linear theorem or a claim of global optimality.
 
 ### Two structures that show the difference between control and arithmetic
 
-For $Q=K=0^T$, deletion emits only a constant number of formulas per row.
-That module's construction is $O(T)$, and its contraction is $O(TD)$.
+For $`Q=K=0^T`$, deletion emits only a constant number of formulas per row.
+That module's construction is $`O(T)`$, and its contraction is $`O(TD)`$.
 Shared SAM/root preprocessing retains its cost.
 
-For $Q=0^T,K=10^{T-1}$, $T\ge3$, ordinary Q advances vanish:
-$A_*=0$, $M=J=T-2$, $E=T-1$. However,
+For $`Q=0^T,K=10^{T-1}`$, $`T\ge3`$, ordinary Q advances vanish:
+$`A_*=0`$, $`M=J=T-2`$, $`E=T-1`$. However,
 
-$$
+```math
 \mathcal H=\frac{T(T-1)}2-1.
-$$
+```
 
 The unresolved numerical operation is a collection of interval correlations
-$\sum_{t=a}^b g_t^\top P_{t+\beta+1}$, with differing lifetimes and offsets.
+$`\sum_{t=a}^b g_t^\top P_{t+\beta+1}`$, with differing lifetimes and offsets.
 A full-shift convolution formula alone does not solve all these interval
 queries with small constants and controlled rounding.
 
@@ -703,7 +709,7 @@ Useful exercises before modifying a data structure:
 3. Construct a short edited pattern with two static occurrences, only one of
    which is currently causal. Explain why a temporary uniqueness test fails.
 4. For the unique-continuation example, derive the fixed K owner for every
-   Q flip and count $\mathcal H$ directly. Which work is eventized and
+   Q flip and count $`\mathcal H`$ directly. Which work is eventized and
    which work is still a sum?
 5. Place a small term between two large opposite terms. Check what is lost
    by rounding a Fenwick node, a snapshot, or the final correction too early.
