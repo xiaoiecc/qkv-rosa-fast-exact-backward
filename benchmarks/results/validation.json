@@ -1,0 +1,85 @@
+{
+  "status": "PASS",
+  "exhaustive": true,
+  "seconds": 16.780277354002465,
+  "tests_run": 27,
+  "skipped": 1,
+  "source_unchanged": true,
+  "source_sha256": {
+    "conv_rosa_transformer/rosa_core.py": "a88f24b3f5eb66799bb865faab8a41991c23ed9a0d02322910bacecd7c83c9c9",
+    "conv_rosa_transformer/build.py": "2b8d99aa72bad85bbe3d4be87e903d5d738f384e64ed784563ea2a8c60b94ee7",
+    "conv_rosa_transformer/rosa_layer.py": "505939ea557045fd424d212db4e0b72fc948ea079ff5220a0573def5b9170b36",
+    "conv_rosa_transformer/csrc/unified_core.cpp": "e4c4231f3bfb0b480ed87f533f84d5d2ad807340c91b6226c1ad18193cd5ada2",
+    "conv_rosa_transformer/csrc/delete_indexed.h": "73d49dc58dbc34b10dc8a69288ea9163e60aba3cfc2812c8f927099762b73dea",
+    "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+    "conv_rosa_transformer/csrc/sam_q.h": "67c2980c7258b1c6b6b9be06700843e62fb2565fc22e44c6c212277234efc596",
+    "conv_rosa_transformer/csrc/sam_routes.h": "8b92b7f502f4740c3dc811dcb66ea395dbf8447d7715f93e1f3a078e506fb481"
+  },
+  "coverage": {
+    "all_bit_core": {
+      "binary_integer_inputs": 5461,
+      "floating_inputs": 160,
+      "structured_inputs": 16,
+      "wide_inputs": 25,
+      "max_abs_error": 1.0658141036401503e-14,
+      "floating_atol": 1e-10,
+      "floating_rtol": 1e-10
+    },
+    "expansion_fraction": {
+      "exact_representation_checks": 4052,
+      "correct_rounding_checks": 4052,
+      "max_components": 61,
+      "results_with_more_than_two_components": 3822
+    },
+    "expansion_ordinary": {
+      "updates": 1000000,
+      "spills": 0,
+      "max_components": 2
+    },
+    "constant_forward": {
+      "inputs": 540,
+      "strict_zero_qk_elements": 232128
+    },
+    "minimal_constant_witnesses": {
+      "inputs": 2
+    },
+    "nonconstant_cancellation": {
+      "exact_target_cases": 9
+    },
+    "snapshot_cancellation": {
+      "exact_target_cases": 24
+    },
+    "causal_occurrences": {
+      "status": "PASS",
+      "input_cases": 6030,
+      "rows": 50359,
+      "state_queries": 1466677,
+      "causal_memberships": 7858789,
+      "latest_queries": 2933354
+    },
+    "corridor_routes": {
+      "status": "PASS",
+      "inputs": 5950,
+      "baseline_rows": 38412,
+      "Q_flip_routes": 1267260,
+      "K_flip_routes": 1108192,
+      "static_singleton_corridors": 4305,
+      "run_LCE_lifetimes": 4305,
+      "heap_winner_checks": 8172,
+      "expired_heap_items": 1155
+    },
+    "delete_routes": {
+      "status": "PASS",
+      "numeric_mode": "baseline_bit_two_buckets",
+      "header": "conv_rosa_transformer/csrc/delete_indexed.h",
+      "inputs": 23054,
+      "rows": 206564,
+      "route_checks": 5782250,
+      "range_checks": 7205159,
+      "numeric_checks": 413128,
+      "a_runs": 239687,
+      "k_runs": 241964,
+      "owner_ranges": 18653
+    }
+  }
+}

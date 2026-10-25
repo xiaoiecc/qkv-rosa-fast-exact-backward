@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="462" viewBox="0 0 900 462" role="img">
+<title>The deletion geometry: A rises, H falls</title>
+<desc>Q = K = 01010, t = 4, F(r) = [1, 0, 3, 0]. The plot shows length; the table retains endpoints.</desc>
+<defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7" fill="#56657a"/></marker></defs>
+<rect width="900" height="100%" fill="#f8fafc"/>
+<g font-family="DejaVu Sans, Noto Sans CJK SC, Microsoft YaHei, sans-serif">
+<text x="28" y="36" font-size="23" fill="#172033" text-anchor="start" font-weight="700">The deletion geometry: A rises, H falls</text>
+<text x="28" y="61" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">Q = K = 01010, t = 4, F(r) = [1, 0, 3, 0]. The plot shows length; the table retains endpoints.</text>
+<rect x="28" y="87" width="485" height="299" rx="10" fill="white" stroke="#d8e1ec"/>
+<line x1="77" y1="332" x2="472" y2="332" stroke="#d8e1ec" stroke-width="1.5"/>
+<text x="60" y="337" font-size="13" fill="#56657a" text-anchor="middle" font-weight="400">0</text>
+<line x1="77" y1="269" x2="472" y2="269" stroke="#d8e1ec" stroke-width="1.5"/>
+<text x="60" y="274" font-size="13" fill="#56657a" text-anchor="middle" font-weight="400">1</text>
+<line x1="77" y1="206" x2="472" y2="206" stroke="#d8e1ec" stroke-width="1.5"/>
+<text x="60" y="211" font-size="13" fill="#56657a" text-anchor="middle" font-weight="400">2</text>
+<line x1="77" y1="143" x2="472" y2="143" stroke="#d8e1ec" stroke-width="1.5"/>
+<text x="60" y="148" font-size="13" fill="#56657a" text-anchor="middle" font-weight="400">3</text>
+<text x="88" y="357" font-size="14" fill="#172033" text-anchor="middle" font-weight="400">0</text>
+<text x="205" y="357" font-size="14" fill="#172033" text-anchor="middle" font-weight="400">1</text>
+<text x="322" y="357" font-size="14" fill="#172033" text-anchor="middle" font-weight="400">2</text>
+<text x="439" y="357" font-size="14" fill="#172033" text-anchor="middle" font-weight="400">3</text>
+<text x="78" y="115" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">Length</text>
+<text x="470" y="376" font-size="12" fill="#56657a" text-anchor="end" font-weight="400">K owner s</text>
+<path d="M88,332 L205,269 L322,269 L439,143" fill="none" stroke="#0f766e" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="88" cy="332" r="4" fill="#0f766e"/>
+<circle cx="205" cy="269" r="4" fill="#0f766e"/>
+<circle cx="322" cy="269" r="4" fill="#0f766e"/>
+<circle cx="439" cy="143" r="4" fill="#0f766e"/>
+<path d="M88,206 L205,269 L322,332 L439,332" fill="none" stroke="#7c3aed" stroke-width="3" stroke-linejoin="round"/>
+<circle cx="88" cy="206" r="4" fill="#7c3aed"/>
+<circle cx="205" cy="269" r="4" fill="#7c3aed"/>
+<circle cx="322" cy="332" r="4" fill="#7c3aed"/>
+<circle cx="439" cy="332" r="4" fill="#7c3aed"/>
+<text x="375" y="135" font-size="18" fill="#0f766e" text-anchor="start" font-weight="700">A</text>
+<text x="82" y="188" font-size="18" fill="#7c3aed" text-anchor="start" font-weight="700">H</text>
+<rect x="536" y="87" width="336" height="299" rx="10" fill="white" stroke="#d8e1ec"/>
+<text x="553" y="119" font-size="14" fill="#56657a" text-anchor="start" font-weight="400">s</text>
+<text x="604" y="119" font-size="14" fill="#0f766e" text-anchor="middle" font-weight="700">A(s)</text>
+<text x="684" y="119" font-size="14" fill="#7c3aed" text-anchor="middle" font-weight="700">H(s)</text>
+<text x="798" y="119" font-size="14" fill="#2563eb" text-anchor="middle" font-weight="700">max(A,H)</text>
+<text x="553" y="158" font-size="14" fill="#172033" text-anchor="start" font-weight="400">0</text>
+<text x="604" y="158" font-size="14" fill="#172033" text-anchor="middle" font-weight="400">(0, -1)</text>
+<text x="684" y="158" font-size="14" fill="#172033" text-anchor="middle" font-weight="400">(2, 2)</text>
+<text x="798" y="158" font-size="14" fill="#2563eb" text-anchor="middle" font-weight="400">(2, 2)</text>
+<text x="553" y="200" font-size="14" fill="#172033" text-anchor="start" font-weight="400">1</text>
+<text x="604" y="200" font-size="14" fill="#172033" text-anchor="middle" font-weight="400">(1, 0)</text>
+<text x="684" y="200" font-size="14" fill="#172033" text-anchor="middle" font-weight="400">(1, 2)</text>
+<text x="798" y="200" font-size="14" fill="#2563eb" text-anchor="middle" font-weight="400">(1, 2)</text>
+<rect x="545" y="218" width="317" height="35" rx="6" fill="#fff4db" stroke="#f5cf89"/>
+<text x="553" y="242" font-size="14" fill="#172033" text-anchor="start" font-weight="400">2</text>
+<text x="604" y="242" font-size="14" fill="#172033" text-anchor="middle" font-weight="400">(1, 0)</text>
+<text x="684" y="242" font-size="14" fill="#172033" text-anchor="middle" font-weight="400">(0, -1)</text>
+<text x="798" y="242" font-size="14" fill="#2563eb" text-anchor="middle" font-weight="400">(1, 0)</text>
+<text x="553" y="284" font-size="14" fill="#172033" text-anchor="start" font-weight="400">3</text>
+<text x="604" y="284" font-size="14" fill="#172033" text-anchor="middle" font-weight="400">(3, 2)</text>
+<text x="684" y="284" font-size="14" fill="#172033" text-anchor="middle" font-weight="400">(0, -1)</text>
+<text x="798" y="284" font-size="14" fill="#2563eb" text-anchor="middle" font-weight="400">(3, 2)</text>
+<text x="553" y="328" font-size="12" fill="#56657a" text-anchor="start" font-weight="400">At s=1, H wins the length tie.</text>
+<text x="553" y="350" font-size="12" fill="#56657a" text-anchor="start" font-weight="400">At s=2, the full route is minimal.</text>
+<text x="28" y="414" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">Minimum deletion over an owner interval: clamp a global valley owner into that interval, then query once.</text>
+<text x="28" y="436" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">Equal lengths do not erase endpoint order: (1,2) at s=1 is greater than (1,0) at s=2.</text>
+</g>
+</svg>

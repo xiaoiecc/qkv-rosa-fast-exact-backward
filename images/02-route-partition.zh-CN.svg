@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="500" viewBox="0 0 900 500" role="img">
+<title>先选硬路由，再把翻转分成删除与修复</title>
+<desc>固定例子 Q = K = 01010，t = 4。所有路由都比较完整的 (长度, 终点)。</desc>
+<defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7" fill="#56657a"/></marker></defs>
+<rect width="900" height="100%" fill="#f8fafc"/>
+<g font-family="DejaVu Sans, Noto Sans CJK SC, Microsoft YaHei, sans-serif">
+<text x="28" y="36" font-size="23" fill="#172033" text-anchor="start" font-weight="700">先选硬路由，再把翻转分成删除与修复</text>
+<text x="28" y="61" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">固定例子 Q = K = 01010，t = 4。所有路由都比较完整的 (长度, 终点)。</text>
+<rect x="28" y="86" width="409" height="228" rx="10" fill="white" stroke="#d8e1ec"/>
+<rect x="463" y="86" width="409" height="228" rx="10" fill="white" stroke="#d8e1ec"/>
+<text x="48" y="116" font-size="18" fill="#172033" text-anchor="start" font-weight="700">原始前向</text>
+<text x="48" y="164" font-size="15" fill="#172033" text-anchor="start" font-weight="700">Q</text>
+<rect x="104" y="137" width="38" height="39" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="123.0" y="164" font-size="20" fill="#172033" text-anchor="middle" font-weight="700">0</text>
+<rect x="148" y="137" width="38" height="39" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="167.0" y="164" font-size="20" fill="#172033" text-anchor="middle" font-weight="700">1</text>
+<rect x="192" y="137" width="38" height="39" rx="6" fill="#dff5ef" stroke="#0f766e"/>
+<text x="211.0" y="164" font-size="20" fill="#0f766e" text-anchor="middle" font-weight="700">0</text>
+<rect x="236" y="137" width="38" height="39" rx="6" fill="#dff5ef" stroke="#0f766e"/>
+<text x="255.0" y="164" font-size="20" fill="#0f766e" text-anchor="middle" font-weight="700">1</text>
+<rect x="280" y="137" width="38" height="39" rx="6" fill="#dff5ef" stroke="#0f766e"/>
+<text x="299.0" y="164" font-size="20" fill="#0f766e" text-anchor="middle" font-weight="700">0</text>
+<text x="48" y="215" font-size="15" fill="#172033" text-anchor="start" font-weight="700">K</text>
+<rect x="104" y="188" width="38" height="39" rx="6" fill="#dff5ef" stroke="#0f766e"/>
+<text x="123.0" y="215" font-size="20" fill="#0f766e" text-anchor="middle" font-weight="700">0</text>
+<rect x="148" y="188" width="38" height="39" rx="6" fill="#dff5ef" stroke="#0f766e"/>
+<text x="167.0" y="215" font-size="20" fill="#0f766e" text-anchor="middle" font-weight="700">1</text>
+<rect x="192" y="188" width="38" height="39" rx="6" fill="#dff5ef" stroke="#0f766e"/>
+<text x="211.0" y="215" font-size="20" fill="#0f766e" text-anchor="middle" font-weight="700">0</text>
+<rect x="236" y="188" width="38" height="39" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="255.0" y="215" font-size="20" fill="#172033" text-anchor="middle" font-weight="700">1</text>
+<rect x="280" y="188" width="38" height="39" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="299.0" y="215" font-size="20" fill="#172033" text-anchor="middle" font-weight="700">0</text>
+<text x="48" y="262" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">route = (3, 2) → payload P₃</text>
+<text x="48" y="284" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">r = 4 不可见，尽管能匹配 5 个字符</text>
+<text x="483" y="116" font-size="18" fill="#172033" text-anchor="start" font-weight="700">仅翻转 Q[4]</text>
+<text x="483" y="164" font-size="15" fill="#172033" text-anchor="start" font-weight="700">Q</text>
+<rect x="539" y="137" width="38" height="39" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="558.0" y="164" font-size="20" fill="#172033" text-anchor="middle" font-weight="700">0</text>
+<rect x="583" y="137" width="38" height="39" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="602.0" y="164" font-size="20" fill="#172033" text-anchor="middle" font-weight="700">1</text>
+<rect x="627" y="137" width="38" height="39" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="646.0" y="164" font-size="20" fill="#172033" text-anchor="middle" font-weight="700">0</text>
+<rect x="671" y="137" width="38" height="39" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="690.0" y="164" font-size="20" fill="#172033" text-anchor="middle" font-weight="700">1</text>
+<rect x="715" y="137" width="38" height="39" rx="6" fill="#dff5ef" stroke="#0f766e"/>
+<text x="734.0" y="164" font-size="20" fill="#0f766e" text-anchor="middle" font-weight="700">1</text>
+<rect x="713" y="135" width="42" height="43" rx="8" fill="none" stroke="#b45309"/>
+<text x="483" y="215" font-size="15" fill="#172033" text-anchor="start" font-weight="700">K</text>
+<rect x="539" y="188" width="38" height="39" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="558.0" y="215" font-size="20" fill="#172033" text-anchor="middle" font-weight="700">0</text>
+<rect x="583" y="188" width="38" height="39" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="602.0" y="215" font-size="20" fill="#172033" text-anchor="middle" font-weight="700">1</text>
+<rect x="627" y="188" width="38" height="39" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="646.0" y="215" font-size="20" fill="#172033" text-anchor="middle" font-weight="700">0</text>
+<rect x="671" y="188" width="38" height="39" rx="6" fill="#dff5ef" stroke="#0f766e"/>
+<text x="690.0" y="215" font-size="20" fill="#0f766e" text-anchor="middle" font-weight="700">1</text>
+<rect x="715" y="188" width="38" height="39" rx="6" fill="white" stroke="#d8e1ec"/>
+<text x="734.0" y="215" font-size="20" fill="#172033" text-anchor="middle" font-weight="700">0</text>
+<text x="483" y="262" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">route = (1, 3) → payload P₄</text>
+<text x="483" y="284" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">长度同为 1 时，终点 3 胜过终点 1</text>
+<rect x="28" y="338" width="247" height="101" rx="10" fill="#eef2ff" stroke="#c7d2fe"/>
+<text x="46" y="367" font-size="16" fill="#7c3aed" text-anchor="start" font-weight="700">共同删除</text>
+<text x="46" y="396" font-size="14" fill="#172033" text-anchor="start" font-weight="400">Q owner 4 → (0, −1)</text>
+<text x="46" y="422" font-size="11" fill="#56657a" text-anchor="start" font-weight="400">禁止跨 owner；不移动序列</text>
+<rect x="328" y="338" width="247" height="101" rx="10" fill="#e3f5ee" stroke="#b5ddce"/>
+<text x="346" y="367" font-size="15" fill="#0f766e" text-anchor="start" font-weight="700">修复最近一处失配</text>
+<text x="346" y="396" font-size="14" fill="#172033" text-anchor="start" font-weight="400">a = b = 0 → (1, 3)</text>
+<text x="346" y="422" font-size="12" fill="#56657a" text-anchor="start" font-weight="400">Q[4] xor K[3] = 1</text>
+<line x1="284" y1="385" x2="316" y2="385" stroke="#56657a" stroke-width="1.5" marker-end="url(#arrow)"/>
+<text x="300" y="368" font-size="12" fill="#56657a" text-anchor="middle" font-weight="400">max</text>
+<line x1="589" y1="385" x2="625" y2="385" stroke="#56657a" stroke-width="1.5" marker-end="url(#arrow)"/>
+<rect x="638" y="338" width="234" height="101" rx="10" fill="#e3efff" stroke="#bfdbfe"/>
+<text x="656" y="367" font-size="16" fill="#2563eb" text-anchor="start" font-weight="700">翻转信用</text>
+<text x="656" y="398" font-size="18" fill="#2563eb" text-anchor="start" font-weight="700">g₄(P₄ − P₃) = 12</text>
+<text x="656" y="422" font-size="12" fill="#56657a" text-anchor="start" font-weight="400">V₃=0, V₄=1, e₁=2, g₄=3</text>
+<text x="28" y="472" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">两类匹配的并集完备。路由长度变化本身不等于 payload 变化。</text>
+</g>
+</svg>

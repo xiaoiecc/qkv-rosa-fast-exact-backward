@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="461" viewBox="0 0 900 461" role="img">
+<title>A unique occurrence fixes an affine future</title>
+<desc>Q = 00000, K = 10000. The short edited pattern 1 occurs exactly once in full K, at endpoint 0.</desc>
+<defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7" fill="#56657a"/></marker></defs>
+<rect width="900" height="100%" fill="#f8fafc"/>
+<g font-family="DejaVu Sans, Noto Sans CJK SC, Microsoft YaHei, sans-serif">
+<text x="28" y="36" font-size="23" fill="#172033" text-anchor="start" font-weight="700">A unique occurrence fixes an affine future</text>
+<text x="28" y="61" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">Q = 00000, K = 10000. The short edited pattern 1 occurs exactly once in full K, at endpoint 0.</text>
+<rect x="28" y="87" width="573" height="277" rx="10" fill="white" stroke="#d8e1ec"/>
+<text x="49" y="122" font-size="14" fill="#56657a" text-anchor="start" font-weight="400">Time t</text>
+<text x="232" y="122" font-size="16" fill="#172033" text-anchor="middle" font-weight="700">1</text>
+<text x="333" y="122" font-size="16" fill="#172033" text-anchor="middle" font-weight="700">2</text>
+<text x="434" y="122" font-size="16" fill="#172033" text-anchor="middle" font-weight="700">3</text>
+<text x="535" y="122" font-size="16" fill="#172033" text-anchor="middle" font-weight="700">4</text>
+<text x="48" y="183" font-size="15" fill="#172033" text-anchor="start" font-weight="700">flip Q[1]</text>
+<rect x="193" y="155" width="381" height="47" rx="8" fill="#e3f5ee" stroke="#b5ddce"/>
+<text x="232" y="185" font-size="17" fill="#0f766e" text-anchor="middle" font-weight="700">(1,0)</text>
+<text x="333" y="185" font-size="17" fill="#0f766e" text-anchor="middle" font-weight="700">(2,1)</text>
+<text x="434" y="185" font-size="17" fill="#0f766e" text-anchor="middle" font-weight="700">(3,2)</text>
+<text x="535" y="185" font-size="17" fill="#0f766e" text-anchor="middle" font-weight="700">(4,3)</text>
+<text x="48" y="216" font-size="12" fill="#56657a" text-anchor="start" font-weight="400">alpha=0, beta=-1</text>
+<text x="48" y="271" font-size="15" fill="#172033" text-anchor="start" font-weight="700">flip Q[2]</text>
+<rect x="294" y="243" width="280" height="47" rx="8" fill="#eef2ff" stroke="#c7d2fe"/>
+<text x="333" y="273" font-size="17" fill="#7c3aed" text-anchor="middle" font-weight="700">(1,0)</text>
+<text x="434" y="273" font-size="17" fill="#7c3aed" text-anchor="middle" font-weight="700">(2,1)</text>
+<text x="535" y="273" font-size="17" fill="#7c3aed" text-anchor="middle" font-weight="700">(3,2)</text>
+<text x="48" y="304" font-size="12" fill="#56657a" text-anchor="start" font-weight="400">alpha=-1, beta=-2</text>
+<rect x="624" y="87" width="248" height="277" rx="10" fill="white" stroke="#d8e1ec"/>
+<text x="643" y="118" font-size="17" fill="#2563eb" text-anchor="start" font-weight="700">One fixed K owner</text>
+<text x="643" y="153" font-size="15" fill="#172033" text-anchor="start" font-weight="400">s = u + beta = 0</text>
+<text x="643" y="183" font-size="15" fill="#172033" text-anchor="start" font-weight="400">key = (s, bit) = (0, 0)</text>
+<line x1="643" y1="208" x2="851" y2="208" stroke="#d8e1ec" stroke-width="1.5"/>
+<text x="643" y="236" font-size="15" fill="#56657a" text-anchor="start" font-weight="400">Heap priority</text>
+<text x="643" y="266" font-size="19" fill="#2563eb" text-anchor="start" font-weight="700">(alpha, beta)</text>
+<text x="643" y="303" font-size="12" fill="#56657a" text-anchor="start" font-weight="400">One live winner per row</text>
+<text x="643" y="325" font-size="12" fill="#56657a" text-anchor="start" font-weight="400">Merge with repair and deletion</text>
+<text x="28" y="397" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">Trajectory: (L(t), r(t)) = (t+alpha, t+beta). One forward LCE fixes the lifetime; a failed branch cannot revive.</text>
+<text x="28" y="419" font-size="13" fill="#56657a" text-anchor="start" font-weight="400">These two intervals still contain 4+3 numerical terms. Fewer control events do not remove all correlation sums.</text>
+</g>
+</svg>

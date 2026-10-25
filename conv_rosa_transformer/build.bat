@@ -1,7 +1,16 @@
 @echo off
-rem Build/run helper for the rosa C++ extension on Windows.
-rem Usage: build.bat your_script.py [args...]
-rem Adjust the vcvars64.bat path below to your Visual Studio / Build Tools install.
-cd /d %~dp0
-call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat" >nul 2>&1
-python %*
+rem Run in an x64 Visual Studio developer command prompt.
+rem Usage: build.bat [your_script.py arguments...]
+cd /d "%~dp0"
+if defined CXX goto run
+where cl >nul 2>nul
+if errorlevel 1 (
+  echo Open an x64 Native Tools Command Prompt for Visual Studio, then retry.
+  exit /b 1
+)
+:run
+if "%~1"=="" (
+  python build.py
+) else (
+  python %*
+)
