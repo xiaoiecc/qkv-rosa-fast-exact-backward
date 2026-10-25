@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="520" viewBox="0 0 1040 520" role="img" aria-labelledby="title description">
+  <title id="title">Exact omitted-block root join</title>
+  <desc id="description">Eight-bit words Q=10110100 and K=10100100 differ only at bit 4. A={7,4,2,0}, B={6,5,3,1}. Omitting A gives the same B key 0100. Omitting B gives different A keys 1110 and 1010. Full XOR is 00010000. Each bucket inspects at most four members or performs four complete-word lookups.</desc>
+  <g font-family="DejaVu Sans, sans-serif">
+    <rect x="0" y="0" width="1040" height="520" rx="0" fill="#f8fafc" stroke="#f8fafc" stroke-width="1" />
+    <text x="28" y="36" font-size="23" fill="#172033" font-weight="700" text-anchor="start">Exact omitted-block root join</text>
+    <text x="28" y="62" font-size="15" fill="#56657a" font-weight="400" text-anchor="start" font-family="DejaVu Sans Mono, monospace">D = 8     A = {7, 4, 2, 0}     B = {6, 5, 3, 1}</text>
+    <rect x="28" y="82" width="475" height="245" rx="10" fill="white" stroke="#d8e1ec" stroke-width="1" />
+    <rect x="521" y="82" width="491" height="245" rx="10" fill="white" stroke="#d8e1ec" stroke-width="1" />
+    <text x="48" y="113" font-size="18" fill="#172033" font-weight="700" text-anchor="start">One-bit pair</text>
+    <rect x="275" y="97" width="22" height="22" rx="4" fill="#dff5ef" stroke="#0f766e" stroke-width="1" />
+    <text x="307" y="113" font-size="15" fill="#0f766e" font-weight="700" text-anchor="start">A</text>
+    <rect x="355" y="97" width="22" height="22" rx="4" fill="#eef2ff" stroke="#5546ad" stroke-width="1" />
+    <text x="387" y="113" font-size="15" fill="#5546ad" font-weight="700" text-anchor="start">B</text>
+    <text x="59" y="157" font-size="14" fill="#56657a" font-weight="400" text-anchor="start" font-family="DejaVu Sans Mono, monospace">j</text>
+    <text x="48" y="199" font-size="20" fill="#172033" font-weight="700" text-anchor="start" font-family="DejaVu Sans Mono, monospace">Q</text>
+    <rect x="98" y="171" width="38" height="40" rx="6" fill="#dff5ef" stroke="#0f766e" stroke-width="1" />
+    <text x="117" y="199" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">1</text>
+    <text x="117" y="157" font-size="14" fill="#56657a" font-weight="400" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">7</text>
+    <rect x="144" y="171" width="38" height="40" rx="6" fill="#eef2ff" stroke="#5546ad" stroke-width="1" />
+    <text x="163" y="199" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">0</text>
+    <text x="163" y="157" font-size="14" fill="#56657a" font-weight="400" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">6</text>
+    <rect x="190" y="171" width="38" height="40" rx="6" fill="#eef2ff" stroke="#5546ad" stroke-width="1" />
+    <text x="209" y="199" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">1</text>
+    <text x="209" y="157" font-size="14" fill="#56657a" font-weight="400" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">5</text>
+    <rect x="236" y="171" width="38" height="40" rx="6" fill="#dff5ef" stroke="#0f766e" stroke-width="1" />
+    <text x="255" y="199" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">1</text>
+    <text x="255" y="157" font-size="14" fill="#56657a" font-weight="400" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">4</text>
+    <rect x="282" y="171" width="38" height="40" rx="6" fill="#eef2ff" stroke="#5546ad" stroke-width="1" />
+    <text x="301" y="199" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">0</text>
+    <text x="301" y="157" font-size="14" fill="#56657a" font-weight="400" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">3</text>
+    <rect x="328" y="171" width="38" height="40" rx="6" fill="#dff5ef" stroke="#0f766e" stroke-width="1" />
+    <text x="347" y="199" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">1</text>
+    <text x="347" y="157" font-size="14" fill="#56657a" font-weight="400" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">2</text>
+    <rect x="374" y="171" width="38" height="40" rx="6" fill="#eef2ff" stroke="#5546ad" stroke-width="1" />
+    <text x="393" y="199" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">0</text>
+    <text x="393" y="157" font-size="14" fill="#56657a" font-weight="400" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">1</text>
+    <rect x="420" y="171" width="38" height="40" rx="6" fill="#dff5ef" stroke="#0f766e" stroke-width="1" />
+    <text x="439" y="199" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">0</text>
+    <text x="439" y="157" font-size="14" fill="#56657a" font-weight="400" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">0</text>
+    <text x="48" y="251" font-size="20" fill="#172033" font-weight="700" text-anchor="start" font-family="DejaVu Sans Mono, monospace">K</text>
+    <rect x="98" y="223" width="38" height="40" rx="6" fill="#dff5ef" stroke="#0f766e" stroke-width="1" />
+    <text x="117" y="251" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">1</text>
+    <rect x="144" y="223" width="38" height="40" rx="6" fill="#eef2ff" stroke="#5546ad" stroke-width="1" />
+    <text x="163" y="251" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">0</text>
+    <rect x="190" y="223" width="38" height="40" rx="6" fill="#eef2ff" stroke="#5546ad" stroke-width="1" />
+    <text x="209" y="251" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">1</text>
+    <rect x="236" y="223" width="38" height="40" rx="6" fill="#dff5ef" stroke="#0f766e" stroke-width="1" />
+    <text x="255" y="251" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">0</text>
+    <rect x="282" y="223" width="38" height="40" rx="6" fill="#eef2ff" stroke="#5546ad" stroke-width="1" />
+    <text x="301" y="251" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">0</text>
+    <rect x="328" y="223" width="38" height="40" rx="6" fill="#dff5ef" stroke="#0f766e" stroke-width="1" />
+    <text x="347" y="251" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">1</text>
+    <rect x="374" y="223" width="38" height="40" rx="6" fill="#eef2ff" stroke="#5546ad" stroke-width="1" />
+    <text x="393" y="251" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">0</text>
+    <rect x="420" y="223" width="38" height="40" rx="6" fill="#dff5ef" stroke="#0f766e" stroke-width="1" />
+    <text x="439" y="251" font-size="21" fill="#172033" font-weight="700" text-anchor="middle" font-family="DejaVu Sans Mono, monospace">0</text>
+    <rect x="233" y="168" width="44" height="98" rx="8" fill="none" stroke="#b45309" stroke-width="2" />
+    <text x="48" y="301" font-size="16" fill="#0f766e" font-weight="700" text-anchor="start" font-family="DejaVu Sans Mono, monospace">Q xor K = 00010000 = 2⁴</text>
+    <text x="541" y="113" font-size="17" fill="#172033" font-weight="700" text-anchor="start">Keep every bit outside the omitted block</text>
+    <text x="541" y="144" font-size="15" fill="#0f766e" font-weight="700" text-anchor="start">omit A  →  keep B  (6,5,3,1)</text>
+    <rect x="541" y="157" width="451" height="43" rx="6" fill="#dff5ef" stroke="#0f766e" stroke-width="1" />
+    <text x="557" y="186" font-size="20" fill="#172033" font-weight="400" text-anchor="start" font-family="DejaVu Sans Mono, monospace">Q: 0100   K: 0100</text>
+    <text x="851" y="185" font-size="14" fill="#0f766e" font-weight="700" text-anchor="start">same key</text>
+    <text x="541" y="232" font-size="15" fill="#5546ad" font-weight="700" text-anchor="start">omit B  →  keep A  (7,4,2,0)</text>
+    <rect x="541" y="245" width="451" height="43" rx="6" fill="#eef2ff" stroke="#5546ad" stroke-width="1" />
+    <text x="557" y="274" font-size="20" fill="#172033" font-weight="400" text-anchor="start" font-family="DejaVu Sans Mono, monospace">Q: 1110   K: 1010</text>
+    <text x="851" y="273" font-size="14" fill="#5546ad" font-weight="700" text-anchor="start">different keys</text>
+    <rect x="28" y="345" width="984" height="145" rx="10" fill="white" stroke="#d8e1ec" stroke-width="1" />
+    <text x="48" y="375" font-size="17" fill="#172033" font-weight="700" text-anchor="start">Bucket cap: m = 4 requested bits in A; c = distinct K words in its bucket</text>
+    <rect x="48" y="390" width="450" height="77" rx="7" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1" />
+    <rect x="518" y="390" width="474" height="77" rx="7" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1" />
+    <text x="65" y="418" font-size="17" fill="#075985" font-weight="700" text-anchor="start">c ≤ 4  →  inspect c complete words</text>
+    <text x="65" y="448" font-size="15" fill="#172033" font-weight="400" text-anchor="start">accept only nonzero, one-bit XOR</text>
+    <text x="535" y="418" font-size="17" fill="#075985" font-weight="700" text-anchor="start">c &gt; 4  →  probe 4 complete words</text>
+    <text x="535" y="448" font-size="15" fill="#172033" font-weight="400" text-anchor="start" font-family="DejaVu Sans Mono, monospace">Q xor 2ʲ,  j ∈ {7, 4, 2, 0}</text>
+    <text x="520" y="514" font-size="15" fill="#56657a" font-weight="400" text-anchor="middle">Across both blocks:  min(c_A, 4) + min(c_B, 4) ≤ 8.</text>
+  </g>
+</svg>
