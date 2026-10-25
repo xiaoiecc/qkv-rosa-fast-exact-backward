@@ -1,5 +1,37 @@
 # Correctness tests
 
+## Native training and exact randomized roots
+
+Run `python tests/run.py --exhaustive` from the repository root. The native
+validation snapshot records 88 tests with one CUDA skip, including exhaustive
+route/credit oracles; later randomized-join coverage was run separately.
+[Validation report](../research/results/native_cpp_validation.json) and
+[curated-tree audit](../research/results/native_curated_audit.json) retain
+commands, source hashes and exact scopes. Counts overlap.
+
+New tests cover both credit orders, both logit mappings, empty inputs, bit63,
+first/second × exact randomization off/on, independent random streams, selected
+joint corners, the real two-bit zero-signal barrier, native versus frozen
+Python arithmetic with explicit tolerances, ordinary optimizers, checkpoint,
+GradScaler and strict weight restoration. Native off/on equality is bitwise;
+old Python migration equality is tolerance-based.
+
+`tests/frozen_training_oracle.py` loads the test-only frozen layer snapshot.
+It is never a runtime backend. Production code has no dependency on research;
+two small research compatibility shims remain solely for existing oracle tests.
+The newest root tests exercise direct/two-block/four-block plans and complete
+selected/sampled/forced trajectories. The exact random flag never enables
+approximate repair sampling.
+
+The ordinary training evidence separately checks every update and downstream
+Dropout RNG. It also retains the native migration's held-out-loss regression:
+[results](../docs/native-results.md). CUDA-specific integration remains skipped
+in this CPU environment. Passing API checks is not evidence of native GPU
+kernels or model generalization.
+
+## Original independent oracle design
+
+
 Run from the repository root with Python, NumPy, PyTorch, and a C++17 compiler:
 
 ```bash
