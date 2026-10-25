@@ -9,9 +9,11 @@
 #include <tuple>
 #include <vector>
 #include "sam_q.h"
+#include "forward.h"
 #include "sam_routes.h"
 #include "delete_indexed.h"
 #include "exact_expansion.h"
+#include "pair_candidates.h"
 
 using PackedRoute = uint64_t;
 static inline PackedRoute pack_route(int length, int end) {
@@ -57,11 +59,21 @@ struct CorridorHeap {
 #define ROSA_EXPORT extern "C"
 #endif
 
-ROSA_EXPORT int rosa_uniform(
+// Both entry points use this route discovery and contraction. The optional
+// quadratic model changes only the numerical score of an already fixed route.
+// A compile-time flag leaves the ordinary VJP's arithmetic unchanged.
+template<bool Quadratic>
+static int uniform_impl(
     int n, int d, const uint64_t* q, const uint64_t* k,
-    const uint8_t* v, const double* grad, const double* emb0, const double* emb1,
+    const uint8_t* v, const double* grad, const double* diagonal,
+    const double* emb0, const double* emb1,
     double* cq, double* ck, double* cv, int32_t* lengths, int32_t* routes,
-    uint64_t* counters) {
+    uint64_t* counters, uint64_t repair_mask=~uint64_t(0),
+    double* q_deletion=nullptr, double* k_deletion=nullptr,
+    uint64_t* selection_counters=nullptr, int repair_budget=-1,
+    uint64_t sampling_seed=0, uint64_t forced_mask=0,
+    bool randomized_roots=false,
+    uint64_t root_seed=rosa_exact::SamQRepairs::process_hash_seed()) {
   try {
     if(n<0 || n >= (1<<28) || d<1 || d>64) return 1;
     const size_t nd=size_t(n)*d;
@@ -69,6 +81,7 @@ ROSA_EXPORT int rosa_uniform(
     std::fill(cq,cq+nd,0.0); std::fill(ck,ck+nd,0.0); std::fill(cv,cv+nd,0.0);
     std::fill(lengths,lengths+n,0); std::fill(routes,routes+n,-1);
     std::fill(counters,counters+23,uint64_t(0));
+    if(selection_counters)std::fill(selection_counters,selection_counters+5,uint64_t(0));
     if(!n) return 0;
 
     std::map<uint64_t,int> payload_map;
@@ -82,9 +95,22 @@ ROSA_EXPORT int rosa_uniform(
       payload_id[s]=res.first->second;
     }
     const int np=int(payload_words.size()); counters[0]=np;
-    std::vector<double> payload(size_t(np)*d),scores(np);
-    for(int p=0;p<np;++p) for(int j=0;j<d;++j)
-      payload[size_t(p)*d+j]=((payload_words[p]>>j)&1) ? emb1[j] : -emb1[j];
+    std::vector<double> payload,scores(np);
+    if constexpr(!Quadratic) {
+      payload.resize(size_t(np)*d);
+      for(int p=0;p<np;++p) for(int j=0;j<d;++j)
+        payload[size_t(p)*d+j]=((payload_words[p]>>j)&1) ? emb1[j] : -emb1[j];
+    }
+    // A diagonal output metric changes only row scores. There are just two
+    // possible signed payload values per coordinate, so precompute their
+    // baseline-relative costs once per row. This is algebraically equivalent
+    // to scoring (g-h*Y)*P + h*P^2/2, but avoids subtracting huge common scores
+    // when e0 and e1 are nearly equal. Baseline scores are exactly zero.
+    // Ordinary contraction needs only this row. Allocate the two-cost history
+    // only when a deferred corridor is born; no corridor can request earlier
+    // rows than its own birth, so those earlier rows need never be retained.
+    std::vector<double> bit_costs,row_bit_costs;
+    if constexpr(Quadratic)row_bit_costs.resize(2*d);
     std::vector<int> score_stamp(np,-1);
     std::vector<rosa_exact::ExactExpansion> qdiff(n+1);
     std::vector<double> kdiff(n+1,0);
@@ -93,7 +119,14 @@ ROSA_EXPORT int rosa_uniform(
     std::vector<size_t> ktouched;
     ktouched.reserve(n);
 
-    rosa_exact::SamQRepairs qsam(q,k,n,d);
+    rosa_exact::SamQRepairs qsam(q,k,n,d,repair_mask,repair_budget,sampling_seed,forced_mask,root_seed,randomized_roots);
+    if(selection_counters) {
+      selection_counters[0]=qsam.query_symbol_count();
+      selection_counters[1]=qsam.root_repair_entries();
+      selection_counters[2]=qsam.transition_working_bytes();
+      selection_counters[3]=qsam.supported_repair_mask();
+      selection_counters[4]=qsam.selected_repair_mask();
+    }
     rosa_exact::SamRoutes index(qsam,q,k);
     rosa_exact::IndexedDeleteRow del(q,k,n);
     std::vector<int> qrun_end(n),krun_end(n),finish_head(n,-1),heap_at_key(nd,-1),active_heaps;
@@ -127,6 +160,7 @@ ROSA_EXPORT int rosa_uniform(
       if(!detached.empty()) {
         qdeletion.init(n);
         if(heavy_count && corridor_cache.empty())corridor_cache.assign(size_t(n)*heavy_count,uncomputed);
+        if constexpr(Quadratic)if(bit_costs.empty())bit_costs.resize(2*nd);
       }
       for(const auto&z:detached) {
         ++qdeletion.active;qdeletion.max_owner=std::max(qdeletion.max_owner,z.owner);
@@ -160,13 +194,30 @@ ROSA_EXPORT int rosa_uniform(
       counters[13]+=del.a_expanded_record_count();
       const double* g=grad+size_t(t)*d;
       double empty_score=0;
-      for(int j=0;j<d;++j)empty_score+=g[j]*emb0[j];
+      double* row_costs=nullptr;
+      if constexpr(Quadratic) {
+        const size_t offset=size_t(t)*d;
+        const uint64_t baseline_word=base.end<0 ? 0 : payload_words[payload_id[base.end+1]];
+        row_costs=bit_costs.empty() ? row_bit_costs.data() : bit_costs.data()+2*offset;
+        for(int j=0;j<d;++j) {
+          const double h=diagonal[offset+j];
+          const double y=base.end<0 ? emb0[j] : ((baseline_word>>j)&1 ? emb1[j] : -emb1[j]);
+          const double negative=-emb1[j]-y,positive=emb1[j]-y;
+          row_costs[2*j]=g[j]*negative+(0.5*h*negative)*negative;
+          row_costs[2*j+1]=g[j]*positive+(0.5*h*positive)*positive;
+          const double empty=emb0[j]-y;
+          empty_score+=g[j]*empty+(0.5*h*empty)*empty;
+        }
+      } else for(int j=0;j<d;++j)empty_score+=g[j]*emb0[j];
       auto score_end=[&](int r)->double {
         if(r<0)return empty_score;
         const int id=payload_id[r+1];
         if(score_stamp[id]!=t) {
           double value=0;
-          for(int j=0;j<d;++j)value+=g[j]*payload[size_t(id)*d+j];
+          if constexpr(Quadratic) {
+            const uint64_t word=payload_words[id];
+            for(int j=0;j<d;++j)value+=row_costs[2*j+int((word>>j)&1)];
+          } else for(int j=0;j<d;++j)value+=g[j]*payload[size_t(id)*d+j];
           scores[id]=value;score_stamp[id]=t;counters[4]+=d;
           if(qdeletion.active && heavy_slot[id]>=0)
             corridor_cache[size_t(t)*heavy_count+heavy_slot[id]]=value;
@@ -197,7 +248,8 @@ ROSA_EXPORT int rosa_uniform(
         const uint64_t base_word=payload_words[payload_id[base.end+1]];
         for(int j=0;j<d;++j) {
           const int bucket=2*j+int((base_word>>j)&1);
-          left[bucket]+=g[j];right[bucket]-=g[j];
+          const double value=Quadratic ? row_costs[2*j+int(!((base_word>>j)&1))] : g[j];
+          left[bucket]+=value;right[bucket]-=value;
         }
         ++counters[14];counters[15]+=z.hi-z.lo+1;
       }
@@ -279,10 +331,16 @@ ROSA_EXPORT int rosa_uniform(
           double row=slot<0?uncomputed:corridor_cache[size_t(x)*heavy_count+slot];
           if(std::isnan(row)) {
             const int payload_class=payload_id[payload_position];
-            const double* gx=grad+size_t(x)*d;
-            const double* px=payload.data()+size_t(payload_class)*d;
             row=0;
-            for(int j=0;j<d;++j)row+=gx[j]*px[j];
+            if constexpr(Quadratic) {
+              const double* costs=bit_costs.data()+2*size_t(x)*d;
+              const uint64_t word=payload_words[payload_class];
+              for(int j=0;j<d;++j)row+=costs[2*j+int((word>>j)&1)];
+            } else {
+              const double* gx=grad+size_t(x)*d;
+              const double* px=payload.data()+size_t(payload_class)*d;
+              for(int j=0;j<d;++j)row+=gx[j]*px[j];
+            }
             counters[21]+=d;
             if(slot>=0)corridor_cache[size_t(x)*heavy_count+slot]=row;
           }
@@ -300,8 +358,13 @@ ROSA_EXPORT int rosa_uniform(
       }
       if(baseline) {
         const size_t offset=size_t(base.end+1)*d;
-        const double* p=payload.data()+size_t(payload_id[base.end+1])*d;
-        for(int j=0;j<d;++j)cv[offset+j]+=-2*g[j]*p[j];
+        if constexpr(Quadratic) {
+          const uint64_t word=payload_words[payload_id[base.end+1]];
+          for(int j=0;j<d;++j)cv[offset+j]+=row_costs[2*j+int(!((word>>j)&1))];
+        } else {
+          const double* p=payload.data()+size_t(payload_id[base.end+1])*d;
+          for(int j=0;j<d;++j)cv[offset+j]+=-2*g[j]*p[j];
+        }
       }
     }
     counters[16]=index.materialized_index_flags();
@@ -327,9 +390,12 @@ ROSA_EXPORT int rosa_uniform(
           const bool bit=(word>>j)&1;
           // Only the opposite baseline bit can contribute. Matching bits
           // have an identically zero coefficient even at huge magnitudes.
-          owner_score+=(bit?2:-2)*emb1[j]*accumulated_kgrad[2*j+int(!bit)];
+          if constexpr(Quadratic)owner_score+=accumulated_kgrad[2*j+int(!bit)];
+          else owner_score+=(bit?2:-2)*emb1[j]*accumulated_kgrad[2*j+int(!bit)];
         }
       }
+      if(q_deletion)q_deletion[s]=common_q;
+      if(k_deletion)k_deletion[s]=ksum+owner_score;
       for(int j=0;j<d;++j) {
         cq[size_t(s)*d+j]+=common_q;ck[size_t(s)*d+j]+=ksum+owner_score;
       }
@@ -342,26 +408,105 @@ ROSA_EXPORT int rosa_uniform(
     // when range-difference prefix sums leave a roundoff cancellation residue.
     std::fill(cq,cq+d,0.0);
     std::fill(ck+size_t(n-1)*d,ck+nd,0.0);
+    if(q_deletion)q_deletion[0]=0.0;
+    if(k_deletion)k_deletion[n-1]=0.0;
     return 0;
   }catch(const std::bad_alloc&){return 2;}
    catch(const std::exception&){return 3;}
 }
 
-// The layer's hard forward shares the exact same causal baseline scan.
-// d=0 suppresses repair construction; it does not select another matcher.
+// Preserve the original C ABI and its first-order numerical path.
+ROSA_EXPORT int rosa_uniform(
+    int n, int d, const uint64_t* q, const uint64_t* k,
+    const uint8_t* v, const double* grad, const double* emb0, const double* emb1,
+    double* cq, double* ck, double* cv, int32_t* lengths, int32_t* routes,
+    uint64_t* counters) {
+  return uniform_impl<false>(n,d,q,k,v,grad,nullptr,emb0,emb1,
+                             cq,ck,cv,lengths,routes,counters);
+}
+
+// Finite-flip credit of the supplied diagonal quadratic model. This does not
+// estimate curvature and is not the Hessian of the hard threshold operation.
+ROSA_EXPORT int rosa_quadratic(
+    int n, int d, const uint64_t* q, const uint64_t* k,
+    const uint8_t* v, const double* grad, const double* diagonal,
+    const double* emb0, const double* emb1,
+    double* cq, double* ck, double* cv, int32_t* lengths, int32_t* routes,
+    uint64_t* counters) {
+  return uniform_impl<true>(n,d,q,k,v,grad,diagonal,emb0,emb1,
+                            cq,ck,cv,lengths,routes,counters);
+}
+
+// Compute every deletion baseline and V credit exactly, but discover repair
+// alternatives only for selected complete bit lanes. A K owner/bit maximizes
+// over multiple Q-side candidates, so sampling individual candidates instead
+// would be biased. The returned unselected Q/K entries are their exact common
+// deletion baseline; selected entries equal the full engine's finite credit.
+ROSA_EXPORT int rosa_selected(
+    int n, int d, uint64_t repair_mask,
+    const uint64_t* q, const uint64_t* k,
+    const uint8_t* v, const double* grad, const double* diagonal,
+    const double* emb0, const double* emb1,
+    double* cq, double* ck, double* cv, int32_t* lengths, int32_t* routes,
+    uint64_t* counters, double* q_deletion, double* k_deletion,
+    uint64_t* selection_counters) {
+  if(diagonal)
+    return uniform_impl<true>(n,d,q,k,v,grad,diagonal,emb0,emb1,
+        cq,ck,cv,lengths,routes,counters,repair_mask,q_deletion,k_deletion,selection_counters);
+  return uniform_impl<false>(n,d,q,k,v,grad,nullptr,emb0,emb1,
+      cq,ck,cv,lengths,routes,counters,repair_mask,q_deletion,k_deletion,selection_counters);
+}
+
+// Support-certified repair sampling. All root joins are built once, exact
+// impossible lanes are removed, then only complete selected repair lanes run.
+// The numerical output is still unweighted selected credits plus baselines;
+// the public wrapper applies known conditional inclusion probabilities.
+ROSA_EXPORT int rosa_budgeted(
+    int n, int d, int repair_budget, uint64_t sampling_seed, uint64_t forced_mask,
+    const uint64_t* q, const uint64_t* k,
+    const uint8_t* v, const double* grad, const double* diagonal,
+    const double* emb0, const double* emb1,
+    double* cq, double* ck, double* cv, int32_t* lengths, int32_t* routes,
+    uint64_t* counters, double* q_deletion, double* k_deletion,
+    uint64_t* selection_counters) {
+  if(repair_budget<1 || repair_budget>d)return 1;
+  if(diagonal)
+    return uniform_impl<true>(n,d,q,k,v,grad,diagonal,emb0,emb1,
+        cq,ck,cv,lengths,routes,counters,~uint64_t(0),q_deletion,k_deletion,
+        selection_counters,repair_budget,sampling_seed,forced_mask);
+  return uniform_impl<false>(n,d,q,k,v,grad,nullptr,emb0,emb1,
+      cq,ck,cv,lengths,routes,counters,~uint64_t(0),q_deletion,k_deletion,
+      selection_counters,repair_budget,sampling_seed,forced_mask);
+}
+
+// The forward uses the same SAM semantics with only baseline state.
+// Ordinary suffix-link fallback is amortized linear; no repair indexes are built.
 ROSA_EXPORT int rosa_matching_stats(
     int n, const uint64_t* q, const uint64_t* k,
     int32_t* lengths, int32_t* routes) {
   try {
     if (n<0 || n>=(1<<28)) return 1;
-    rosa_exact::SamQRepairs scan(q,k,n,0);
-    for(int t=0;t<n;++t) {
-      scan.advance(t);
-      const auto route=scan.baseline();
-      lengths[t]=route.length;
-      routes[t]=route.end;
-    }
+    rosa_exact::SamForward scan(q,k,n);
+    scan.run(lengths,routes);
     return 0;
   } catch (const std::exception&) { return 2; }
     catch (...) { return 3; }
 }
+
+// The single native proposal path; only candidate selection is randomized.
+ROSA_EXPORT int rosa_pair_candidates(
+    int n,int d,const uint64_t*q,const uint64_t*k,const int32_t*rows,int row_count,
+    const uint8_t*q_allowed,const uint8_t*k_allowed,int max_pairs,uint64_t seed,
+    int bucket_cap,int occurrence_cap,int scan,int candidate_cap,
+    uint64_t*pairs,uint64_t*trace,uint64_t*counts,double*timings) {
+  try {
+    if(n<0 || n>=(1<<28) || d<1 || d>64 || row_count<0 || row_count>n ||
+       max_pairs<0 || bucket_cap<1 || occurrence_cap<1 || scan<1 || candidate_cap<max_pairs) return 1;
+    if(!candidate_cap && max_pairs)return 1;
+    return rosa_exact::propose_pair_candidates(n,d,q,k,rows,row_count,q_allowed,k_allowed,
+        max_pairs,seed,bucket_cap,occurrence_cap,scan,candidate_cap,pairs,trace,counts,timings);
+  }catch(const std::bad_alloc&){return 2;}catch(const std::exception&){return 3;}catch(...){return 4;}
+}
+
+// Batched ordinary-training API; reuses uniform_impl and the lean matcher.
+#include "training_impl.h"
