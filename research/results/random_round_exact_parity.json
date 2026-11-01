@@ -1,0 +1,454 @@
+{
+  "status": "PASS",
+  "base": "b510fd9479946f10e46ced1a6265695cbc131d0a",
+  "cases": [
+    {
+      "T": 0,
+      "D": 4,
+      "family": "iid",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 0,
+      "D": 4,
+      "family": "iid",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 0,
+      "D": 4,
+      "family": "constant",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 0,
+      "D": 4,
+      "family": "constant",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 0,
+      "D": 4,
+      "family": "periodic",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 0,
+      "D": 4,
+      "family": "periodic",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 0,
+      "D": 4,
+      "family": "sparse_adjoint",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 0,
+      "D": 4,
+      "family": "sparse_adjoint",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 1,
+      "D": 64,
+      "family": "iid",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 1,
+      "D": 64,
+      "family": "iid",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 1,
+      "D": 64,
+      "family": "constant",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 1,
+      "D": 64,
+      "family": "constant",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 1,
+      "D": 64,
+      "family": "periodic",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 1,
+      "D": 64,
+      "family": "periodic",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 1,
+      "D": 64,
+      "family": "sparse_adjoint",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 1,
+      "D": 64,
+      "family": "sparse_adjoint",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 29,
+      "D": 1,
+      "family": "iid",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 29,
+      "D": 1,
+      "family": "iid",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 29,
+      "D": 1,
+      "family": "constant",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 29,
+      "D": 1,
+      "family": "constant",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 29,
+      "D": 1,
+      "family": "periodic",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 29,
+      "D": 1,
+      "family": "periodic",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 29,
+      "D": 1,
+      "family": "sparse_adjoint",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 29,
+      "D": 1,
+      "family": "sparse_adjoint",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 41,
+      "D": 4,
+      "family": "iid",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 41,
+      "D": 4,
+      "family": "iid",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 41,
+      "D": 4,
+      "family": "constant",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 41,
+      "D": 4,
+      "family": "constant",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 41,
+      "D": 4,
+      "family": "periodic",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 41,
+      "D": 4,
+      "family": "periodic",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 41,
+      "D": 4,
+      "family": "sparse_adjoint",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 41,
+      "D": 4,
+      "family": "sparse_adjoint",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 131,
+      "D": 8,
+      "family": "iid",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 131,
+      "D": 8,
+      "family": "iid",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 131,
+      "D": 8,
+      "family": "constant",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 131,
+      "D": 8,
+      "family": "constant",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 131,
+      "D": 8,
+      "family": "periodic",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 131,
+      "D": 8,
+      "family": "periodic",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 131,
+      "D": 8,
+      "family": "sparse_adjoint",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 131,
+      "D": 8,
+      "family": "sparse_adjoint",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 127,
+      "D": 16,
+      "family": "iid",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 127,
+      "D": 16,
+      "family": "iid",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 127,
+      "D": 16,
+      "family": "constant",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 127,
+      "D": 16,
+      "family": "constant",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 127,
+      "D": 16,
+      "family": "periodic",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 127,
+      "D": 16,
+      "family": "periodic",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 127,
+      "D": 16,
+      "family": "sparse_adjoint",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 127,
+      "D": 16,
+      "family": "sparse_adjoint",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 261,
+      "D": 64,
+      "family": "iid",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 261,
+      "D": 64,
+      "family": "iid",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 261,
+      "D": 64,
+      "family": "constant",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 261,
+      "D": 64,
+      "family": "constant",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 261,
+      "D": 64,
+      "family": "periodic",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 261,
+      "D": 64,
+      "family": "periodic",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 261,
+      "D": 64,
+      "family": "sparse_adjoint",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 261,
+      "D": 64,
+      "family": "sparse_adjoint",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 257,
+      "D": 2,
+      "family": "iid",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 257,
+      "D": 2,
+      "family": "iid",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 257,
+      "D": 2,
+      "family": "constant",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 257,
+      "D": 2,
+      "family": "constant",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 257,
+      "D": 2,
+      "family": "periodic",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 257,
+      "D": 2,
+      "family": "periodic",
+      "order": "second",
+      "bytewise_equal": true
+    },
+    {
+      "T": 257,
+      "D": 2,
+      "family": "sparse_adjoint",
+      "order": "first",
+      "bytewise_equal": true
+    },
+    {
+      "T": 257,
+      "D": 2,
+      "family": "sparse_adjoint",
+      "order": "second",
+      "bytewise_equal": true
+    }
+  ]
+}

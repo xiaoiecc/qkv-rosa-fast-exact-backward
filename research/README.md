@@ -1,37 +1,122 @@
-# Reproducible native-training study
+# Reproducing the randomized-backward study
 
-The retained study fixes the previous selected learning rule, then compares
-native integration and an exact randomized search toggle. It preserves every
-seed and negative result; it does not select a favorable training checkpoint.
-[English report](../docs/native-results.md) · [中文报告](../docs/native-results.zh-CN.md).
+[Results](../docs/randomized-results.md) · [中文结果](../docs/randomized-results.zh-CN.md)
+· [Derivation](../docs/randomized-backward.md)
+· [Final manifest](results/randomized_final_manifest.json)
 
-| Script | Purpose |
+The PR contains one final runtime. The larger research tree, old runtime
+snapshots, captures and rejected candidate helpers are supplied in a separate
+study archive. They are evidence and reproduction inputs, not selectable
+production backends. Production code does not import `research`.
+
+The online reference is `b510fd9479946f10e46ced1a6265695cbc131d0a`; the intermediate
+row sampler is `5e3e9f81965242492ae5a3870efd3cfbbca4bf9e` (P1). Final measured native
+SHA-256 is `a732d50fd3f12342320f19306b6a5292b3d6aa829ff2c3a8b43d64e28dfc9cb5`.
+The manifest distinguishes final measurements from historical runs. Do not
+rename an earlier report as a result of the current runtime.
+
+## Entry points and measurement scopes
+
+| Script | Purpose and scope |
 |---|---|
-| native_random_toy.py | Shared task/model definitions; no alternate runtime |
-| native_random_training.py | Fresh-seed ordinary model/loss/backward/Adam runs |
-| native_random_summary.py | Aggregate all saved seeds and compare every on/off update |
-| native_random_mode_contract.py | First/second, Dropout and framework-RNG invariance |
-| native_random_noise_ceiling.py | Oracle best importance weights for residual thinning; analytical error, not claimed speed |
-| native_random_roundoff_trace.py | Trace the worst held-out MSE seed to first hard-bit divergence |
+| `benchmarks/random_final_native.py` | All 26 cases, five methods, nine interleaved repetitions of complete public native backward; includes validation, metric/proposals, credits, joint replays, mapping, V/embedding accumulation and trace reporting |
+| `training_round_phase2.py` | Paired ordinary model forward/loss/backward/Adam; one fresh process per method, shared seeds/data/settings, source and loaded-library hashes |
+| `training_round_channel_native.py` | Public-API channel controls: raw logits, Q-only/shared QK parameter gradients and input gradients; diagnostic call times are not the formal performance benchmark |
+| `training_round_final_report.py` | Summarizes the four retained final training reports, including every failure; runs no new training |
 
-The external frozen baseline is f6d7c4b73d7040b1b33860f5a2649c3cd3036cc5, included
-as `baseline-f6` in the companion download. It is not a public upstream commit.
-For example, with this checkout next to that directory:
+Private credit-core timings exclude surrounding native work. The native timer
+excludes model projections/forward, loss, optimizer and compilation. Whole-step
+training includes those model/optimizer operations, but excludes data generation,
+evaluation, compilation and diagnostic logging. These scopes must not be mixed.
+
+## Environment
+
+Use Python, NumPy, PyTorch and a GCC/Clang-compatible C++17 compiler. Run commands
+from the repository root. The recorded runs used Linux CPU affinity; select a
+logical CPU available on your machine. Limit numerical-library threads before
+starting Python:
 
 ```bash
-python research/native_random_training.py --implementation baseline --baseline-root ../baseline-f6 --cpu 0 --output build/training_baseline.json
-python research/native_random_training.py --implementation native --baseline-root ../baseline-f6 --cpu 0 --output build/training_native.json
-python research/native_random_mode_contract.py --cpu 0 --output build/mode_contract.json
-python research/native_random_noise_ceiling.py --baseline-root ../baseline-f6 --cpu 0 --output build/noise_ceiling.json
-python research/native_random_roundoff_trace.py --baseline-root ../baseline-f6 --cpu 0 --output build/roundoff_trace.json
+export OPENBLAS_NUM_THREADS=1
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
 ```
 
-Use `--help` for explicit seeds, tasks and outputs. The summary script consumes
-the checked-in final report names in `research/results`; its stored summary
-records raw-file hashes. Do not replace a measured report with a new run while
-continuing to present its old summary as the same evidence.
+The training scripts also set Torch intra/inter-op threads to one. Main native
+runs used CPU 8; training and channel controls used CPU 2. These CPU results do
+not measure GPU kernels. Compilation happens outside the reported timers.
 
-The small `joint_bits.py` and `causal_candidates.py` modules are compatibility
-imports used by tests, not runtime implementations. The full earlier research
-archive remains in the downloadable companion package rather than adding all
-its historical trials to the PR. Production paths import no research code.
+## Complete native backward
+
+Restore the frozen online and P1 trees from the study archive. Restore captured
+inputs under the recorded `research/results/training_round_captures_context512`,
+`training_round_captures_prefix4096` and `training_round_captures_prefix64_2048`
+directories, preserving their `index.json`, `.npz` and metadata `.json` files.
+Then, replacing checkout paths and CPU as needed:
+
+```bash
+python benchmarks/random_final_native.py --online-root ../online-b510fd9 --phase1-root ../phase1-5e3e9f8 --cpu 8 --repeats 9 --output build/random_final_native_rerun.json
+```
+
+The retained [native report](../benchmarks/results/random_final_native.json)
+contains all samples, per-draw errors, selected-joint comparisons, source hashes,
+library hashes and the unchanged-source check. It compares online exact, current
+exact, P1 row32, current row32/full channels and current row32/eight channels.
+Large errors and slower cases remain in the table.
+
+## Ordinary training with the current public API
+
+This command needs only the current runtime and shared task scripts; explicitly
+listing methods avoids the driver's default historical P1 comparison:
+
+```bash
+python research/training_round_phase2.py --methods exact final final_channels --channels 8 --rows 32 --order second --tasks prefix_copy64_fresh --queries 2048 --examples 1 --steps 20 --lr .003 --seeds 2401 2402 --cpu 2 --output build/final_training_rerun.json
+```
+
+`exact` uses default exact randomized search. `final` uses explicit approximation
+with 32 row samples and all spectral channels. `final_channels` additionally
+sets the channel budget to 8. Use `--order first` to test the first-order rule.
+To include the historical method, add `row_phase1` to `--methods` and provide
+`--phase1-root ../phase1-5e3e9f8`. To repeat the longer structural stress, use
+`--queries 4096 --seeds 1101 --methods exact final_channels`.
+
+Each update still has one model forward and one backward. The reported loss is
+the row mean of `0.5 * sum(error**2)`, not per-coordinate MSE. Twenty-update prefix
+runs test a persistent expensive structure, not general convergence. The final
+report preserves the first-order failure and the fresh seed where eight-channel
+sampling was slower and less accurate than full channels.
+
+## Channel controls and report generation
+
+The capture below and its adjacent metadata JSON are supplied in the study
+archive. The public probe covers balanced, dominant-channel and tangent adjoints
+in both credit orders. It reports Q alone as well as Q/K together, since an exact
+large K gradient can hide a poor Q estimate:
+
+```bash
+python research/training_round_channel_native.py --capture research/results/training_round_captures_prefix64_2048/prefix_copy64_fresh_second_s1101_p0.npz --budgets 0 8 --draws 16 --cpu 2 --output build/final_channel_controls_rerun.json
+python research/training_round_final_report.py
+```
+
+The second command reads the four fixed `training_round_final_channels_*.json`
+reports named in that script and rewrites their summary, not their measurements.
+Keep reruns under new output paths. Do not overwrite a measured file and keep
+presenting its old summary as the same evidence.
+
+For packaging, the pure NumPy `adjoint` and `summary` functions were moved
+**without changing their bodies** into `training_round_probe_utils.py`. This
+removes the public channel probe's import dependency on private prototypes.
+The measured reports retain the original script hashes; the study archive
+preserves the original entry point at
+`research/snapshots/reproduction-original/training_round_channel_native.py`.
+No production source or measured numerical function changed in this relocation.
+
+## Retained history
+
+The P1 59-run study and nonlinear-stem failure remain historical evidence in the
+study archive. The intermediate 600-update context comparison matched P1; its
+aggregate has `SOURCE_CHANGED` and is not a final frozen timing result. Older
+native-migration reports likewise retain their own source identities. The
+manifest and [results report](../docs/randomized-results.md) explain these limits.
+Small bindings used by independent oracle tests remain in the PR; they are not
+alternative runtime implementations. See [test instructions](../tests/README.md).

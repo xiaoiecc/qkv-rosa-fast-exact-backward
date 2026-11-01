@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="500" viewBox="0 0 1100 500" role="img">
+<title>A deletion query from three sparse endpoints</title><desc>Nonzero suffix matches are (endpoint,length)=(1,1),(5,3),(8,2). The latest-endpoint staircase is R(1)=R(2)=8 and R(3)=5. For deletion owner 4, lengths 1 and 2 are feasible and length 3 is not. The deletion route is (length,endpoint)=(2,8).</desc>
+<defs><style>text{font-family:Inter,Arial,"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#243448}.small{font-size:16px}.tick{font-size:15px;fill:#607085}.head{font-size:19px;font-weight:600}.math{font-family:"DejaVu Sans",Arial,"Noto Sans CJK SC",sans-serif;font-size:18px}.grid{stroke:#dce5ee;stroke-width:1;stroke-dasharray:4 5}.axis{stroke:#8b9bad;stroke-width:1.5}</style></defs>
+<rect width="1100" height="500" rx="16" fill="#f7f9fc"/>
+<text x="34" y="42" font-size="25" font-weight="700">A deletion query from three sparse endpoints</text>
+<rect x="32" y="68" width="480" height="330" rx="12" fill="white" stroke="#dce5ee"/>
+<rect x="536" y="68" width="532" height="330" rx="12" fill="white" stroke="#dce5ee"/>
+<text class="head" x="56" y="100">Equal-word endpoints at t = 9</text>
+<text class="head" x="560" y="100">Latest endpoint for each required length</text>
+<text class="small" x="56" y="131">Fₜ(r): suffix length</text>
+<path class="axis" fill="none" d="M95 150V345H470"/>
+<line class="grid" x1="95" y1="285" x2="470" y2="285"/>
+<text class="tick" x="75" y="290">1</text>
+<line class="grid" x1="95" y1="225" x2="470" y2="225"/>
+<text class="tick" x="75" y="230">2</text>
+<line class="grid" x1="95" y1="165" x2="470" y2="165"/>
+<text class="tick" x="75" y="170">3</text>
+<rect x="137" y="285" width="36" height="60" rx="5" fill="#337cc1"/>
+<text class="math" text-anchor="middle" x="155" y="276">1</text>
+<text class="tick" text-anchor="middle" x="155" y="368">1</text>
+<rect x="297" y="165" width="36" height="180" rx="5" fill="#7255b5"/>
+<text class="math" text-anchor="middle" x="315" y="156">3</text>
+<text class="tick" text-anchor="middle" x="315" y="368">5</text>
+<rect x="417" y="225" width="36" height="120" rx="5" fill="#337cc1"/>
+<text class="math" text-anchor="middle" x="435" y="216">2</text>
+<text class="tick" text-anchor="middle" x="435" y="368">8</text>
+<text class="math" x="477" y="369">r</text>
+<text class="tick" x="75" y="350">0</text>
+<text class="small" x="560" y="131">R(h): latest endpoint</text>
+<path class="axis" fill="none" d="M605 155V345H1000"/>
+<line class="grid" x1="605" y1="345" x2="1000" y2="345"/>
+<text class="tick" x="580" y="350">0</text>
+<line class="grid" x1="605" y1="265" x2="1000" y2="265"/>
+<text class="tick" x="580" y="270">4</text>
+<line class="grid" x1="605" y1="245" x2="1000" y2="245"/>
+<text class="tick" x="580" y="250">5</text>
+<line class="grid" x1="605" y1="225" x2="1000" y2="225"/>
+<text class="tick" x="580" y="230">6</text>
+<line class="grid" x1="605" y1="205" x2="1000" y2="205"/>
+<text class="tick" x="580" y="210">7</text>
+<line class="grid" x1="605" y1="185" x2="1000" y2="185"/>
+<text class="tick" x="580" y="190">8</text>
+<path d="M620 185H860V245H980" fill="none" stroke="#337cc1" stroke-width="4"/>
+<path d="M650 250L950 200" fill="none" stroke="#bc7b23" stroke-width="2.5" stroke-dasharray="7 5"/>
+<text class="small" x="917" y="183" fill="#986119">r = h + 4</text>
+<text class="math" x="730" y="169" text-anchor="middle">R(1) = R(2) = 8</text>
+<text class="math" x="891" y="277">R(3) = 5</text>
+<text class="tick" text-anchor="middle" x="680" y="368">1</text>
+<circle cx="680" cy="185" r="7" fill="#18866a" stroke="white" stroke-width="2"/>
+<text class="tick" text-anchor="middle" x="800" y="368">2</text>
+<circle cx="800" cy="185" r="7" fill="#18866a" stroke="white" stroke-width="2"/>
+<text class="tick" text-anchor="middle" x="920" y="368">3</text>
+<path d="M914 239L926 251M914 251L926 239" stroke="#c74a49" stroke-width="3"/>
+<text class="math" x="1007" y="369">h</text>
+<text class="math" x="36" y="437">Delete K owner s = 4: keep a suffix only when R(h) − h ≥ 4.</text>
+<text class="math" x="36" y="471">A(4) = (1, 1); the largest feasible h is 2, so the answer is (2, 8).</text>
+</svg>

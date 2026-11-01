@@ -1,5 +1,8 @@
 # Native training and exact randomization: results and limits
 
+> These are historical integration measurements. Exact randomization is now on by default; see the [current study](randomized-results.md).
+
+
 [中文](native-results.zh-CN.md) · [Integration and derivation](native-training.md) · [Randomization proof](exact-randomized.md)
 
 This round freezes batched C++ training and an exact randomized root join.

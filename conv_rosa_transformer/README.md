@@ -1,10 +1,12 @@
 # Conv∥ROSA with batched native training
 
-`NBitQKVRosa(channels, n_bits, credit_order="second", randomized=False)` uses
+`NBitQKVRosa(channels, n_bits, credit_order="second", randomized=True)` uses
 one batched C++ forward and one batched C++ backward. Select `credit_order="first"`
 for original full singleton credit. Second order adds a diameter-scaled trust
 metric and one independent joint block per stream by default. `randomized=True`
-is an exact search accelerator and does not enable repair-lane sampling.
+is the default exact search accelerator. `backward_mode="approximate"` explicitly
+enables shared numerical contraction / residual sampling; see the
+[derivation](../docs/randomized-backward.md) / [中文](../docs/randomized-backward.zh-CN.md).
 
 ```python
 from conv_rosa_transformer.rosa_layer import NBitQKVRosa

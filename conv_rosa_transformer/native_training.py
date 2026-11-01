@@ -31,6 +31,44 @@ class TrainingOptions(ctypes.Structure):
     ]
 
 
+class ApproximationOptions(ctypes.Structure):
+    _fields_ = [
+        ("abi_version", ctypes.c_uint32), ("struct_size", ctypes.c_uint32),
+        ("sample_rows", ctypes.c_int32), ("importance", ctypes.c_int32),
+        ("sample_channels", ctypes.c_int32), ("reserved", ctypes.c_int32),
+        ("seed", ctypes.c_uint64),
+    ]
+
+
+def make_approximation_options(*, backward_mode="exact", approximation_rows=32, approximation_channels=0):
+    if backward_mode not in ("exact", "approximate"):
+        raise ValueError("backward_mode must be exact or approximate")
+    rows=operator.index(approximation_rows)
+    if not 0<rows<2**31:
+        raise ValueError("approximation_rows must be positive and fit int32")
+    channels=operator.index(approximation_channels)
+    if not 0<=channels<=64:
+        raise ValueError("approximation_channels must be between 0 and 64")
+    return None if backward_mode=="exact" else ApproximationOptions(
+        1,ctypes.sizeof(ApproximationOptions),rows,1,channels,0,0)
+
+
+APPROXIMATION_COUNTER_NAMES = (
+    "sampled_rows", "row_endpoints", "row_lce_queries", "row_onebit_pairs",
+    "row_q_touched", "row_k_touched", "row_score_components", "row_deletion_updates",
+    "rebuilt_baseline_rows", "row_index_materializations", "evaluated_rows",
+    "control_neighbor_probes", "control_score_components", "control_intervals",
+    "repair_births", "lce_history_rows",
+    "active_rows", "uncertified_rows", "certificate_bucket_queries",
+    "certificate_member_checks", "certificate_full_pair_probes", "certificate_hash_probes",
+    "certificate_distinct_pairs", "certificate_indexes", "population_rows",
+    "selected_rows", "row_budget", "complete_residual_streams", "extra_joint_replays",
+    "certified_zero_rows", "importance_streams", "full_deletion_calls",
+    "spectral_groups", "spectral_queries", "spectral_rows", "spectral_transforms",
+    "spectral_columns", "spectral_channels", "spectral_exact_fallbacks", "spectral_fallback_rows",
+)
+
+
 TRAINING_COUNTER_NAMES = rosa_core.COUNTER_NAMES + (
     "selected_pairs", "joint_matching_calls", "active_proposal_rows",
     "candidate_events", "supported_repair_lanes", "selected_repair_lanes",
@@ -39,7 +77,7 @@ TRAINING_COUNTER_NAMES = rosa_core.COUNTER_NAMES + (
 )
 
 
-def make_options(*, credit_order="second", randomized=False, tau=1.,
+def make_options(*, credit_order="second", randomized=True, tau=1.,
                  credit_to_logit="bernoulli", joint_pairs=None, joint_rows=32,
                  trust_diagonal=None, joint_row_selection="active",
                  repair_samples=None, proposal_seed=0, repair_seed=0):
@@ -88,6 +126,11 @@ def _library():
         library.rosa_training_forward.restype=ctypes.c_int
         library.rosa_training_backward.argtypes=prefix+[ctypes.c_void_p]*17
         library.rosa_training_backward.restype=ctypes.c_int
+        library.rosa_approximation_defaults.argtypes=[ctypes.POINTER(ApproximationOptions)]
+        library.rosa_approximation_defaults.restype=None
+        library.rosa_training_backward_approx.argtypes=[ctypes.POINTER(TrainingOptions),
+            ctypes.POINTER(ApproximationOptions)]+[ctypes.c_int]*4+[ctypes.c_void_p]*20
+        library.rosa_training_backward_approx.restype=ctypes.c_int
         library._training_api_bound=True
     return library
 
@@ -111,10 +154,12 @@ class TrainingCache:
     lengths: np.ndarray
     routes: np.ndarray
     options: TrainingOptions
+    approximation: ApproximationOptions | None = None
 
 
 def training_forward_numpy(q_logits, k_logits, v_logits, emb0, emb1,
-                           *, options=None, **kwargs):
+                           *, options=None, backward_mode="exact",
+                           approximation_rows=32, approximation_channels=0, **kwargs):
     """One batched C++ hard forward; return output, owned cache and counters.
 
     Logits have [B,G,T,D], embeddings [G,D]. No PyTorch dependency. The cache
@@ -128,6 +173,11 @@ def training_forward_numpy(q_logits, k_logits, v_logits, emb0, emb1,
     if not isinstance(options,TrainingOptions):
         raise TypeError("options must be TrainingOptions")
     options=TrainingOptions.from_buffer_copy(options)
+    approximation=make_approximation_options(backward_mode=backward_mode,
+                                             approximation_rows=approximation_rows,
+                                             approximation_channels=approximation_channels)
+    if approximation is not None and options.repair_budget:
+        raise ValueError("approximate backward cannot be combined with legacy repair_samples")
     qz,kz,vz=[rosa_core._array(x,np.float64) for x in (q_logits,k_logits,v_logits)]
     if qz.ndim!=4 or kz.shape!=qz.shape or vz.shape!=qz.shape:
         raise ValueError("logits require a common [B,G,T,D] shape")
@@ -150,7 +200,7 @@ def training_forward_numpy(q_logits, k_logits, v_logits, emb0, emb1,
     code=_library().rosa_training_forward(ctypes.byref(options),b,groups,n,d,*_pointers(arrays))
     if code:
         raise ValueError("native training forward requires finite inputs") if code==4 else RuntimeError(f"native training forward failed: {code}")
-    cache=TrainingCache(qz,kz,vz,e0,e1,q,k,bits,lengths,routes,options)
+    cache=TrainingCache(qz,kz,vz,e0,e1,q,k,bits,lengths,routes,options,approximation)
     totals=counts.sum(axis=0,dtype=np.uint64)
     stats=dict(backend="native_batched",baseline_matching_calls=int(totals[0]),
         transition_probes=int(totals[1]),hash_probe_steps=int(totals[2]),
@@ -178,16 +228,31 @@ def training_backward_numpy(cache, grad_y, *, trace=False):
     costs=np.full((b*groups,options.joint_pairs,4),np.nan,dtype=np.float64) if trace else None
     arrays=(cache.q,cache.k,cache.v_bits,cache.q_logits,cache.k_logits,cache.v_logits,
             g,cache.emb0,cache.emb1,gq,gk,gv,ge0,ge1,counts,pairs,costs)
-    code=_library().rosa_training_backward(ctypes.byref(options),b,groups,n,d,*_pointers(arrays))
+    approximation_counts=None
+    if cache.approximation is None:
+        code=_library().rosa_training_backward(ctypes.byref(options),b,groups,n,d,*_pointers(arrays))
+    else:
+        approximation_counts=np.zeros((b*groups,len(APPROXIMATION_COUNTER_NAMES)),dtype=np.uint64)
+        code=_library().rosa_training_backward_approx(ctypes.byref(options),
+            ctypes.byref(cache.approximation),b,groups,n,d,
+            *_pointers(arrays+(cache.lengths,cache.routes,approximation_counts)))
     if code:
         raise ValueError("native training backward requires finite inputs") if code==4 else RuntimeError(f"native training backward failed: {code}")
     totals=counts.sum(axis=0,dtype=np.uint64)
     stats=dict(zip(TRAINING_COUNTER_NAMES,map(int,totals)))
     stats.update(backend="native_batched",streams=b*groups,
                  repair_sampling_exact=stats["exact_repair_streams"]==b*groups)
+    stats["backward_mode"]="exact" if cache.approximation is None else "approximate"
+    if approximation_counts is not None:
+        detail=dict(zip(APPROXIMATION_COUNTER_NAMES,map(int,approximation_counts.sum(axis=0,dtype=np.uint64))))
+        stats.update({"approx_"+key:value for key,value in detail.items()})
+        # Complete row coverage is not a claim of exact FFT/channel arithmetic.
+        stats["approximation_complete_residual"]=detail["complete_residual_streams"]==b*groups
+        stats["approximation_channels"]=int(cache.approximation.sample_channels)
+        if trace:stats["approximation_stream_counters"]=approximation_counts
     if trace:stats.update(pair_codes=pairs,pair_costs=costs,stream_counters=counts)
     return gq,gk,gv,ge0,ge1,stats
 
 
-__all__=["TrainingOptions","TrainingCache","make_options",
+__all__=["TrainingOptions","ApproximationOptions","TrainingCache","make_options","make_approximation_options",
          "training_forward_numpy","training_backward_numpy","TRAINING_COUNTER_NAMES"]

@@ -1,0 +1,200 @@
+{
+  "status": "FROZEN_RUNTIME_VERIFIED",
+  "generated_utc": "2026-11-01T07:04:00.172536+00:00",
+  "research_started_utc": "2026-11-01T05:21:50+00:00",
+  "requested_minimum_research_end_utc": "2026-11-01T06:51:50+00:00",
+  "online_repository": "https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward",
+  "online_base": "b510fd9479946f10e46ced1a6265695cbc131d0a",
+  "phase1_reference": "5e3e9f81965242492ae5a3870efd3cfbbca4bf9e",
+  "intermediate_full_spectral_reference": "cda521053ce944035879e70cb00ec5b154c3ab4a",
+  "final_native_library": {
+    "path": "/workspace/scratch/0105199a8474/qkv-rosa-random-research/conv_rosa_transformer/build/exact/rosa_exact_fda2fe6281f10a82.so",
+    "sha256": "a732d50fd3f12342320f19306b6a5292b3d6aa829ff2c3a8b43d64e28dfc9cb5"
+  },
+  "runtime_source_sha256": {
+    "conv_rosa_transformer/__init__.py": "aa263607d3d1dd3409bc58474182ee3ceb512d8664fd0cd02da4e583d168f1f8",
+    "conv_rosa_transformer/build.py": "2b8d99aa72bad85bbe3d4be87e903d5d738f384e64ed784563ea2a8c60b94ee7",
+    "conv_rosa_transformer/causal_candidates.py": "56cdcc4f8be7224016d608d59ac285081cda52f13bfe83fe51000068bfde4fdc",
+    "conv_rosa_transformer/joint_credit.py": "d549df96b4738e55c8923099067459cd41c3003002b6cc5dabb32117c8e76ce0",
+    "conv_rosa_transformer/multiply_demo.py": "27d6ea98b4e6804f59d35f72cd59a1f06f202113be45863eb515448d000e0109",
+    "conv_rosa_transformer/native_training.py": "123ee02ed629b0424bdf39de7de494b848d4c40617d7211d52d1e86876127d21",
+    "conv_rosa_transformer/overfit_test.py": "62231f4a62f5ac73258e510c862a3787e8c9fcd2f885f8b18c501819601122be",
+    "conv_rosa_transformer/rosa_core.py": "3145542210d4fd77cbeb2ef7d6f582e103ad94e6b4024eabbafa6f834ed3e2ea",
+    "conv_rosa_transformer/rosa_layer.py": "f0730ec117646a8d8f055eb3efbcbcf2891fa4b17a11be0f41d875a0184ebdb2",
+    "conv_rosa_transformer/rosa_reference.py": "d5b43210aff0dbabf134878db03780bb9cfa2acfe188c6f0efa9ed5d6c1e31e7",
+    "conv_rosa_transformer/rosa_transformer.py": "5d6dfb59f6ebbc2a10539f128d051d937a22dcef80c9ae16b8fb30ff4f5d2f62",
+    "conv_rosa_transformer/self_test.py": "fea5f2ca387f73abd34342fb641e24c4f335c58ac3329e6d3309ec283f7a160e",
+    "conv_rosa_transformer/csrc/approx_channel_pivotal.h": "a72e48d625622e51c1d9fdcc9480e9b7e884b3ef70cbaf2639c6eb06365be960",
+    "conv_rosa_transformer/csrc/approx_corridor_eligibility.h": "0e5878fefcd7524556a95bd5fd71460b57339d2e99e10b000458eeb3becabaf5",
+    "conv_rosa_transformer/csrc/approx_corridor_fft.h": "e0c38cf3a616f0b28e1533e027d189dbbf59b19e7efbffc0dfea7120bcb6b75f",
+    "conv_rosa_transformer/csrc/approx_indexed_row.h": "beb3ceb762d624798f11d5e2716e4fd043517ba027b662cf5fa2cdbcaf97e6b2",
+    "conv_rosa_transformer/csrc/approx_onegram.h": "fd4247774c6b09cf4eca76c09c58b819ec1749c008932b59cb4bd58269647e5f",
+    "conv_rosa_transformer/csrc/approx_route_helpers.h": "c246fd1ce1c10466d050a89b5b46ee1baa962194158c363a38005ba40d03b86b",
+    "conv_rosa_transformer/csrc/approx_row_certificate.h": "004e90f96c496a0f8392345328b012d8e76b279c3943c8cd78793044e83aeefd",
+    "conv_rosa_transformer/csrc/approx_row_credit.h": "df569f70e4427f6186b684d44583e7f78fdc0ab56a5d47669363137e99801e7d",
+    "conv_rosa_transformer/csrc/approx_sampling.h": "8d1bcfdbd6138281f28b1a83ac3ad0bdd39c5a02109fce20f566426883b91b3e",
+    "conv_rosa_transformer/csrc/delete_indexed.h": "73d49dc58dbc34b10dc8a69288ea9163e60aba3cfc2812c8f927099762b73dea",
+    "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+    "conv_rosa_transformer/csrc/exact_hamming_join.h": "4333e7f7df75b558800b40887c5e8661089dddada999f865bf1f9631f4aa15c1",
+    "conv_rosa_transformer/csrc/exact_payload_identity_batch.h": "75f1d141e8d467808abb7ff89ef0333e9baae89d9421b7a9281312ed367d4944",
+    "conv_rosa_transformer/csrc/forward.h": "76a0d37bfb258de0fb9fcaa2a6ad63a91a997dc5bb98b13aaa0ea606df043c26",
+    "conv_rosa_transformer/csrc/full_word_map.h": "3f886d5ffd63284af5273a8d275049838474071b541de10d0d035ffe6fd0479b",
+    "conv_rosa_transformer/csrc/pair_candidates.h": "26952e61c452cbeb1c7a38f2975fb1560971d895b11ca1255b3961f9a7f76c31",
+    "conv_rosa_transformer/csrc/sam_q.h": "0a4400c12bf4d07e7ea385461085cfdeab886b449b8c6cd35f8d8dc175831dfa",
+    "conv_rosa_transformer/csrc/sam_routes.h": "8b92b7f502f4740c3dc811dcb66ea395dbf8447d7715f93e1f3a078e506fb481",
+    "conv_rosa_transformer/csrc/training.h": "09492edc4c2f725be80e8e7f5be47cc68fd596ceff67f123717a893517eced2f",
+    "conv_rosa_transformer/csrc/training_impl.h": "da0fa121cb6abe7cf16ee328f6d9d9b90aabc099fcaeb6467d060aa62d1d8d08",
+    "conv_rosa_transformer/csrc/unified_core.cpp": "7e603663863038afb112883c10018aada707d5fc0f408b95353f22f7560fe220"
+  },
+  "defaults": {
+    "credit_order": "second",
+    "randomized": true,
+    "backward_mode": "exact",
+    "approximation_rows": 32,
+    "approximation_channels": 0,
+    "channel_budget_zero_means": "all spectral channels; row sampling remains enabled in approximate mode"
+  },
+  "evidence": {
+    "native_cases": 26,
+    "native_repetitions_per_method": 9,
+    "native_methods": 5,
+    "training_runs": 15,
+    "training_updates": 300,
+    "training_runs_include_one_frozen_phase1_reference": true,
+    "historical_phase1_runs": 59,
+    "historical_phase1_updates": 17916
+  },
+  "timing_scope": {
+    "native": "Complete public native backward, including validation/allocation, metric/proposals, joint replays, V/embeddings, logit mapping and tracing; excludes model projections/forward/loss/optimizer/compile.",
+    "training": "Ordinary zero_grad/model forward/projections/loss/backward/Adam; excludes data generation, evaluation, compilation and logging.",
+    "threads": "OpenBLAS/OMP/MKL/Torch 1; native CPU affinity 8, training affinity 2"
+  },
+  "exact_parity": {
+    "final_matrix": "26 cases bytewise equal to online: five gradient arrays and joint codes/costs",
+    "independent_round": "64 online/current cases after derivative caching, before optional channel merge",
+    "zero_channel_compatibility": "20 cases bytewise equal to pre-channel merge"
+  },
+  "validation": {
+    "native_dropin_spectral": "30 relevant tests passed, followed by 5 spectral tests including two added public-API/cache checks; overlapping runs are not summed.",
+    "indexed_rows": "11016 independent comparisons to complete selected-row oracle",
+    "fft_oracle": "40 cases, 491520 queries, 360 groups, 6030 transforms",
+    "fft_numerical_stress": "28 cases",
+    "rolling_payload_identity": "140 cases, 3036100 queries",
+    "pivotal_marginals": "5 experiments of 100000 draws; maximum 2.732 standard errors",
+    "standalone_cpp": "C++17 standalone example compiled and ran with --first --approximate"
+  },
+  "final_reports": [
+    {
+      "path": "benchmarks/results/random_final_native.json",
+      "sha256": "eb133716d2eb432343248e7fcdee6dd2264df839e1b0a0208cb04405da1c7cf0",
+      "bytes": 817765
+    },
+    {
+      "path": "research/results/training_round_final_summary.json",
+      "sha256": "d1074093973b339891f4d9f21d49b9b027dfdc07a06f6861ea00909fb7e9cc93",
+      "bytes": 152649
+    },
+    {
+      "path": "research/results/training_round_final_channels_prefix1101_second.json",
+      "sha256": "5dee7c471663cead318b2be2da28b70269233ff6dc4898ed97f93f9cd912e89d",
+      "bytes": 136730
+    },
+    {
+      "path": "research/results/training_round_final_channels_prefix_fresh_second.json",
+      "sha256": "4a7b4046868bd32b0b5e1b7be1ca0d79d42f4ff085b6061734ff555ca2191ffd",
+      "bytes": 209927
+    },
+    {
+      "path": "research/results/training_round_final_channels_prefix1101_first.json",
+      "sha256": "369952d876e582ad4c27cf43301566ba4f4727465bb37eba119a7bcfc8c25fac",
+      "bytes": 104837
+    },
+    {
+      "path": "research/results/training_round_final_channels_prefix4096_second.json",
+      "sha256": "46d7e0a80215ab5d04a53d1f1452113213ba38b763616c7be9202e8d12d5a05d",
+      "bytes": 65904
+    },
+    {
+      "path": "research/results/training_round_final_channel_controls.json",
+      "sha256": "7efe74e05dc0fddbf0bc8e1fedb87393b40267c67820a4c17c2c6470399b58bf",
+      "bytes": 1690760
+    },
+    {
+      "path": "research/results/training_round_final_channel_controls_full.json",
+      "sha256": "bd3efd0c0b8d8792ad9a48cd54a35e9ffaee8c7ca20ca4643b91d0d950e41d29",
+      "bytes": 159645
+    },
+    {
+      "path": "research/results/random_round_exact_parity.json",
+      "sha256": "dcbd7f06525c1817be1d17635f70e6e28b22ff775c9f593acca7bb122b35d5fb",
+      "bytes": 8054
+    },
+    {
+      "path": "research/results/approx_round_indexed_rows_check.json",
+      "sha256": "920026da7e87e6caccef59f2957815599f99fc7722ace5a7454a78c708d1496b",
+      "bytes": 122
+    },
+    {
+      "path": "research/results/approx_round_channel_pivotal_check.json",
+      "sha256": "4c174620a5ef558a4ba0aa118967d2f61a9089855378af75a8173e78360f8b66",
+      "bytes": 1041
+    },
+    {
+      "path": "research/results/exact_round_fft_sampled_default_parity.json",
+      "sha256": "538143fa1188fc448cef67a1d7387bb03d342a35b509cb9186f4c4e106e6d407",
+      "bytes": 4172
+    },
+    {
+      "path": "research/results/exact_round_fft_oracle.json",
+      "sha256": "77275c82e8b2552a198e23930ffb974d360540efe8103233e67c09ba9a2a0d63",
+      "bytes": 203
+    },
+    {
+      "path": "research/results/exact_round_fft_stability.json",
+      "sha256": "f57d0ce27e7f640bffa9f4a7b26b0ee72592f41805949bf9e74abeab377e8112",
+      "bytes": 16106
+    },
+    {
+      "path": "research/results/exact_round_payload_identity_batch_native.json",
+      "sha256": "30e6d9f23f395fdd4d2d99e282c7f3a5dcc0515697c2c3ec6b88b2f3c3bd628e",
+      "bytes": 8238
+    }
+  ],
+  "historical_reports_in_study_archive": [
+    {
+      "path": "research/results/training_round_formal_summary.json",
+      "sha256": "2f1f25fa2729325586d23a3fb7dd61165f2eec52ba59b22c36970dea58d91eb1",
+      "bytes": 77497
+    },
+    {
+      "path": "research/results/training_round_phase2b_context.json",
+      "sha256": "e2d7060217df4288e06ade7c280a3c617007cc9c8a7677dda8ae4a29fd2e4728",
+      "bytes": 1352852
+    },
+    {
+      "path": "research/results/training_round_posthoc_stem_control.json",
+      "sha256": "e66e1becd564e19693216827ba64ece5f538e71ea6124a9e83544f5b0330c591",
+      "bytes": 256324
+    },
+    {
+      "path": "research/results/training_round_channel_negative_controls.json",
+      "sha256": "3064c9de19644eaa73b10611b21bcc794dc31dcec6a489392171b545b151475d",
+      "bytes": 1146628
+    },
+    {
+      "path": "research/results/training_round_channel_tangent_budget.json",
+      "sha256": "9c7aacbc163dfae962f0249307beb240db6944b8c3133d9be96b550deeb8eb09",
+      "bytes": 463669
+    }
+  ],
+  "limitations": [
+    "Large gains are concentrated on long shared intervals; no universal near-linear backward or universal speedup.",
+    "Default exact search verifies full keys. Approximate full-channel FFT changes floating summation order; it is not an exact-output algorithm.",
+    "Row sampling can exceed 100% raw Q/K error. Eight-channel sampling can fail under first-order cancellation.",
+    "T4096 D64 12.74355x result covers 20 discovery-seed structural-stress updates; hard outputs/losses match but Q/K parameters differ from update one.",
+    "A fresh seed makes channels8 slower and worse than full channels. Unretuned first-order prefix learning fails in all modes.",
+    "Historical nonlinear stem training failed even for exact; arbitrary deep-network convergence remains unverified.",
+    "Joint corner component replays are included; there is no extra whole-model forward and no change to the ordinary training loop.",
+    "CPU implementation; CUDA tensors transfer to CPU. No GPU kernel throughput claim."
+  ]
+}

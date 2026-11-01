@@ -1,0 +1,190 @@
+{
+  "status": "PASS",
+  "scope": "Frozen pre-channel-sampling core versus the minimal sampled-core integration, budget0; exact and full FFT paths, all arrays and counters bytewise.",
+  "header_sha256": "e0c38cf3a616f0b28e1533e027d189dbbf59b19e7efbffc0dfea7120bcb6b75f",
+  "helper_sha256": "a72e48d625622e51c1d9fdcc9480e9b7e884b3ef70cbaf2639c6eb06365be960",
+  "candidate_source_sha256": "1b2b7644f84dfbc5c3c7e5be27992848899615f4d2ba523a53cee317cbb2cdb2",
+  "reference_source_sha256": "d89e2d23a9c3f6c7a948c73d18cec85d69d45a56f46b1aeee824d231fd4f54d3",
+  "rows": [
+    {
+      "case": "shadow",
+      "T": 2048,
+      "D": 64,
+      "second": false,
+      "spectral": false,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "shadow",
+      "T": 2048,
+      "D": 64,
+      "second": false,
+      "spectral": true,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "shadow",
+      "T": 2048,
+      "D": 64,
+      "second": true,
+      "spectral": false,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "shadow",
+      "T": 2048,
+      "D": 64,
+      "second": true,
+      "spectral": true,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "shadow",
+      "T": 1024,
+      "D": 8,
+      "second": false,
+      "spectral": false,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "shadow",
+      "T": 1024,
+      "D": 8,
+      "second": false,
+      "spectral": true,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "shadow",
+      "T": 1024,
+      "D": 8,
+      "second": true,
+      "spectral": false,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "shadow",
+      "T": 1024,
+      "D": 8,
+      "second": true,
+      "spectral": true,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "periodic",
+      "T": 513,
+      "D": 4,
+      "second": false,
+      "spectral": false,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "periodic",
+      "T": 513,
+      "D": 4,
+      "second": false,
+      "spectral": true,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "periodic",
+      "T": 513,
+      "D": 4,
+      "second": true,
+      "spectral": false,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "periodic",
+      "T": 513,
+      "D": 4,
+      "second": true,
+      "spectral": true,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "random",
+      "T": 2049,
+      "D": 8,
+      "second": false,
+      "spectral": false,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "random",
+      "T": 2049,
+      "D": 8,
+      "second": false,
+      "spectral": true,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "random",
+      "T": 2049,
+      "D": 8,
+      "second": true,
+      "spectral": false,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "random",
+      "T": 2049,
+      "D": 8,
+      "second": true,
+      "spectral": true,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "wide",
+      "T": 2048,
+      "D": 64,
+      "second": false,
+      "spectral": false,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "wide",
+      "T": 2048,
+      "D": 64,
+      "second": false,
+      "spectral": true,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "wide",
+      "T": 2048,
+      "D": 64,
+      "second": true,
+      "spectral": false,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    },
+    {
+      "case": "wide",
+      "T": 2048,
+      "D": 64,
+      "second": true,
+      "spectral": true,
+      "budget": 0,
+      "all_values_and_counters_bitwise": true
+    }
+  ]
+}

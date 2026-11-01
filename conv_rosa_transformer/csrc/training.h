@@ -16,6 +16,8 @@ extern "C" {
 #define ROSA_TRAINING_ABI_VERSION 1u
 #define ROSA_TRAINING_COUNTERS 35
 #define ROSA_FORWARD_COUNTERS 4
+#define ROSA_APPROXIMATION_ABI_VERSION 1u
+#define ROSA_APPROXIMATION_COUNTERS 40
 
 typedef struct RosaTrainingOptions {
     uint32_t abi_version;
@@ -34,8 +36,19 @@ typedef struct RosaTrainingOptions {
     uint64_t repair_seed;       /* Independent from proposal randomness. */
 } RosaTrainingOptions;
 
+typedef struct RosaApproximationOptions {
+    uint32_t abi_version;
+    uint32_t struct_size;
+    int32_t sample_rows;        /* Positive correction-row budget per stream. */
+    int32_t importance;         /* 0 uniform strata; 1 norm + uniform floor. */
+    int32_t sample_channels;    /* 0 full FFT; 1..64 explicit PPS channel budget. */
+    int32_t reserved;
+    uint64_t seed;              /* Salt independent of joint proposal RNG. */
+} RosaApproximationOptions;
+
 /* Fill the complete struct with second-order exact defaults. */
 void rosa_training_defaults(RosaTrainingOptions* options);
+void rosa_approximation_defaults(RosaApproximationOptions* options);
 
 /* Return codes: 0 success; 1 invalid shape/options; 2 allocation failure;
  * 3 numerical/core failure; 4 nonfinite input. GradScaler handling belongs
@@ -66,6 +79,26 @@ int rosa_training_backward(
     double* grad_q, double* grad_k, double* grad_v,
     double* grad_emb0, double* grad_emb1, uint64_t* counters,
     uint64_t* pair_codes, double* pair_costs);
+
+/* Optional aggressive contraction. The hard forward and V/embedding gradients
+ * remain exact. A certified cost planner selects shared-boundary FFT sums
+ * or full deletion + a one-symbol repair control with stratified residual rows.
+ * FFT changes floating reduction order; it is never used by the exact API.
+ * Selected joint corners retain complete internal matcher evaluations.
+ * saved_lengths/routes must be from the same forward. Approximation counters
+ * have layout [B*G,40]. Original C ABI above is preserved.
+ */
+int rosa_training_backward_approx(
+    const RosaTrainingOptions* options, const RosaApproximationOptions* approximation,
+    int b, int groups, int n, int d,
+    const uint64_t* q, const uint64_t* k, const uint8_t* v_bits,
+    const double* q_logits, const double* k_logits, const double* v_logits,
+    const double* grad_y, const double* emb0, const double* emb1,
+    double* grad_q, double* grad_k, double* grad_v,
+    double* grad_emb0, double* grad_emb1, uint64_t* counters,
+    uint64_t* pair_codes, double* pair_costs,
+    const int32_t* saved_lengths, const int32_t* saved_routes,
+    uint64_t* approximation_counters);
 
 #ifdef __cplusplus
 }

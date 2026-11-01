@@ -15,9 +15,9 @@ import torch.nn as nn
 from torch.autograd.function import once_differentiable
 
 if __package__:
-    from .native_training import make_options, training_forward_numpy, training_backward_numpy
+    from .native_training import make_options, make_approximation_options, training_forward_numpy, training_backward_numpy
 else:
-    from native_training import make_options, training_forward_numpy, training_backward_numpy
+    from native_training import make_options, make_approximation_options, training_forward_numpy, training_backward_numpy
 
 
 def _native_layout(value, b, t, groups, d):
@@ -51,12 +51,19 @@ class _HardQKVRosaFn(torch.autograd.Function):
         # First-order/no-MC has no draws, including when acceleration is on.
         seeds=torch.randint(0,2**63-1,(2,),device="cpu").tolist() if (
             config["joint_pairs"]>0 or (config["repair_samples"] is not None
-                                       and config["repair_samples"]<d)) else (0,0)
-        options=make_options(**config,proposal_seed=seeds[0],repair_seed=seeds[1])
+                                       and config["repair_samples"]<d)
+            or config["backward_mode"]=="approximate") else (0,0)
+        native_config=dict(config)
+        backward_mode=native_config.pop("backward_mode")
+        approximation_rows=native_config.pop("approximation_rows")
+        approximation_channels=native_config.pop("approximation_channels")
+        options=make_options(**native_config,proposal_seed=seeds[0],repair_seed=seeds[1])
         arrays=[_native_layout(z,b,t,groups,d) for z in (q,k,v)]
         e0=emb0.detach().to(device="cpu",dtype=torch.float64).reshape(groups,d).contiguous().numpy()
         e1=emb1.detach().to(device="cpu",dtype=torch.float64).reshape(groups,d).contiguous().numpy()
-        y,cache,stats=training_forward_numpy(*arrays,e0,e1,options=options)
+        y,cache,stats=training_forward_numpy(*arrays,e0,e1,options=options,
+            backward_mode=backward_mode,approximation_rows=approximation_rows,
+            approximation_channels=approximation_channels)
         ctx.cache,ctx.work,ctx.shape=cache,work,(b,t,groups,d)
         ctx.save_for_backward(q,k,v,emb0,emb1)
         work.update(stats)
@@ -89,10 +96,23 @@ class NBitQKVRosa(nn.Module):
     trust model, not an automatically recovered loss Hessian. The interface
     remains one model forward and one loss.backward(), with no special optimizer.
 
-    ``randomized=True`` enables answer-exact randomized root preparation. It
+    ``randomized=True`` (default) enables answer-exact randomized root preparation. It
     does not thin gradients or change joint proposals. Detailed legacy block
     options remain explicit for reproducible studies. ``repair_samples`` is a
     separate noisy research option and is never implied by ``randomized``.
+
+    ``backward_mode="approximate"`` enables the explicit aggressive mode.
+    A certified cost planner contracts profitable shared-boundary corridors
+    by FFT; otherwise full deletion plus a one-symbol repair control leaves
+    a residual sampled within temporal strata. ``approximation_rows`` sets
+    that per-stream residual budget. Selected row maxima remain complete.
+    V, embeddings and selected joint corners retain complete evaluation.
+    Row sampling is conditionally unbiased in real arithmetic; FFT changes
+    floating reduction order. ``approximation_channels=0`` keeps all FFT
+    channels; a positive budget explicitly samples signed numerical channels
+    with exact constants and fixed-size PPS. It can have high error when the
+    control is weak. There is no universal relative-error or convergence
+    guarantee. The default exact mode never invokes the FFT.
 
     All arithmetic after dense projections uses the batched C++ engine.
     Parameters/state names are unchanged. Save configuration with weights.
@@ -102,7 +122,8 @@ class NBitQKVRosa(nn.Module):
     """
     def __init__(self,channels:int,n_bits:int,init_emb1:float=1.0,bias:bool=True,
                  tau:float=1.0,credit_to_logit:str="bernoulli",*,
-                 credit_order:str="second",randomized:bool=False,
+                 credit_order:str="second",randomized:bool=True,
+                 backward_mode:str="exact",approximation_rows:int=32,approximation_channels:int=0,
                  joint_pairs:int|None=None,joint_rows:int=32,
                  trust_diagonal:float|None=None,joint_row_selection:str="active",
                  repair_samples:int|None=None,stochastic_values:bool=False,
@@ -119,6 +140,12 @@ class NBitQKVRosa(nn.Module):
             credit_to_logit=credit_to_logit,joint_pairs=joint_pairs,joint_rows=joint_rows,
             trust_diagonal=trust_diagonal,joint_row_selection=joint_row_selection,
             repair_samples=repair_samples)
+        make_approximation_options(backward_mode=backward_mode,approximation_rows=approximation_rows,
+            approximation_channels=approximation_channels)
+        if backward_mode=="approximate" and options.repair_budget:
+            raise ValueError("approximate backward cannot be combined with legacy repair_samples")
+        self.backward_mode=backward_mode;self.approximation_rows=operator.index(approximation_rows)
+        self.approximation_channels=operator.index(approximation_channels)
         if options.repair_budget>n_bits:
             raise ValueError("repair_samples must not exceed n_bits")
         self.channels,self.n_bits=channels,n_bits;self.groups=channels//n_bits
@@ -143,7 +170,9 @@ class NBitQKVRosa(nn.Module):
             joint_pairs=self.joint_pairs if self.training else 0,joint_rows=self.joint_rows,
             trust_diagonal=self.trust_diagonal if self.training else 0.,
             joint_row_selection=self.joint_row_selection,
-            repair_samples=self.repair_samples if self.training else None)
+            repair_samples=self.repair_samples if self.training else None,
+            backward_mode=self.backward_mode if self.training else "exact",
+            approximation_rows=self.approximation_rows,approximation_channels=self.approximation_channels)
         self.last_forward_work={}
         return _HardQKVRosaFn.apply(q,k,v,self.emb0,self.emb1,self.n_bits,config,self.last_forward_work)
 

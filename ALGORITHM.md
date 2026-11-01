@@ -891,3 +891,12 @@ batched C++ implementation. The [results](docs/native-results.md) separate
 exact randomization from native integration, and retain the numerical
 migration and held-out loss regressions. The [forward supplement](docs/forward.md) continues to document the
 separate lean matcher and its timings.
+
+
+## 14. Where randomization belongs
+
+Route discovery and numerical summation admit different guarantees. The
+[new supplement](docs/randomized-backward.md) continues from deletion/repair:
+prove zero work first, sample only after a complete maximum, then turn shared
+interval boundaries into convolution. It derives the variance and separates
+route exactness, floating-point reduction error and actual training outcomes.

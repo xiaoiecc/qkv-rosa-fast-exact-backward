@@ -1,0 +1,763 @@
+{
+  "status": "PASS",
+  "scope": "Numerical stress gates for the frozen experimental C++ corridor contraction.",
+  "header_sha256": "01381914aa524e2d828d1db015ead0fd4ac4a7ca867001027381257e54a5308d",
+  "rows": [
+    {
+      "case": "constant_near_equal",
+      "T": 1024,
+      "D": 8,
+      "order": "linear",
+      "maximum_reference": 8.86402062860725e-12,
+      "maximum_absolute_error": 0.0,
+      "relative_to_maximum": 0.0,
+      "fft_stats": [
+        1,
+        1022,
+        523775,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 2.3888220000000002,
+        "fft": 0.874104
+      }
+    },
+    {
+      "case": "constant_near_equal",
+      "T": 1024,
+      "D": 8,
+      "order": "quadratic",
+      "maximum_reference": 8.864221092057159e-12,
+      "maximum_absolute_error": 0.0,
+      "relative_to_maximum": 0.0,
+      "fft_stats": [
+        1,
+        1022,
+        523775,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 2.7058345,
+        "fft": 0.8741135
+      }
+    },
+    {
+      "case": "sparse_near_equal",
+      "T": 1024,
+      "D": 8,
+      "order": "linear",
+      "maximum_reference": 20.977415446766383,
+      "maximum_absolute_error": 4.347633364432113e-12,
+      "relative_to_maximum": 2.0725305152414714e-13,
+      "fft_stats": [
+        1,
+        1022,
+        523775,
+        9,
+        8,
+        8,
+        127,
+        9150
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 2.6271085,
+        "fft": 1.3921725
+      }
+    },
+    {
+      "case": "sparse_near_equal",
+      "T": 1024,
+      "D": 8,
+      "order": "quadratic",
+      "maximum_reference": 19.48032676663114,
+      "maximum_absolute_error": 0.0,
+      "relative_to_maximum": 0.0,
+      "fft_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 3.2753245,
+        "fft": 3.151236
+      }
+    },
+    {
+      "case": "balanced_near_equal",
+      "T": 1024,
+      "D": 8,
+      "order": "linear",
+      "maximum_reference": 272.1343840053634,
+      "maximum_absolute_error": 4.973799150320701e-13,
+      "relative_to_maximum": 1.8276996376256058e-15,
+      "fft_stats": [
+        1,
+        1022,
+        523775,
+        9,
+        8,
+        8,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 6.0380424999999995,
+        "fft": 1.230349
+      }
+    },
+    {
+      "case": "balanced_near_equal",
+      "T": 1024,
+      "D": 8,
+      "order": "quadratic",
+      "maximum_reference": 678.5141385320453,
+      "maximum_absolute_error": 4.547473508864641e-13,
+      "relative_to_maximum": 6.7021057493408e-16,
+      "fft_stats": [
+        1,
+        1022,
+        523775,
+        9,
+        8,
+        8,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 9.401732500000001,
+        "fft": 1.6021675000000002
+      }
+    },
+    {
+      "case": "large_embedding",
+      "T": 1024,
+      "D": 8,
+      "order": "linear",
+      "maximum_reference": 296.2316058051938,
+      "maximum_absolute_error": 3.979039320256561e-13,
+      "relative_to_maximum": 1.3432190361460738e-15,
+      "fft_stats": [
+        1,
+        1022,
+        523775,
+        9,
+        8,
+        8,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 6.5195925,
+        "fft": 1.2363680000000001
+      }
+    },
+    {
+      "case": "large_embedding",
+      "T": 1024,
+      "D": 8,
+      "order": "quadratic",
+      "maximum_reference": 696.4522289555712,
+      "maximum_absolute_error": 5.684341886080801e-13,
+      "relative_to_maximum": 8.161854682560608e-16,
+      "fft_stats": [
+        1,
+        1022,
+        523775,
+        9,
+        8,
+        8,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 9.8529975,
+        "fft": 1.3986874999999999
+      }
+    },
+    {
+      "case": "tiny_adjoint",
+      "T": 1024,
+      "D": 8,
+      "order": "linear",
+      "maximum_reference": 2.917897297216785e-198,
+      "maximum_absolute_error": 6.590698301120915e-213,
+      "relative_to_maximum": 2.258714968277809e-15,
+      "fft_stats": [
+        1,
+        1022,
+        523775,
+        9,
+        8,
+        8,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 7.948384000000001,
+        "fft": 1.2487110000000001
+      }
+    },
+    {
+      "case": "tiny_adjoint",
+      "T": 1024,
+      "D": 8,
+      "order": "quadratic",
+      "maximum_reference": 5.804307391270322e-198,
+      "maximum_absolute_error": 5.1982972515883276e-213,
+      "relative_to_maximum": 8.955930313764166e-16,
+      "fft_stats": [
+        1,
+        1022,
+        523775,
+        9,
+        8,
+        8,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 8.7766005,
+        "fft": 1.4552855
+      }
+    },
+    {
+      "case": "large_adjoint",
+      "T": 1024,
+      "D": 8,
+      "order": "linear",
+      "maximum_reference": 2.9528655185801686e+202,
+      "maximum_absolute_error": 5.493241576908132e+187,
+      "relative_to_maximum": 1.860308755120503e-15,
+      "fft_stats": [
+        1,
+        1022,
+        523775,
+        9,
+        8,
+        8,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 9.777311000000001,
+        "fft": 1.2528375
+      }
+    },
+    {
+      "case": "large_adjoint",
+      "T": 1024,
+      "D": 8,
+      "order": "quadratic",
+      "maximum_reference": 6.661182492216747e+202,
+      "maximum_absolute_error": 5.221298924585947e+187,
+      "relative_to_maximum": 7.838396456915524e-16,
+      "fft_stats": [
+        1,
+        1022,
+        523775,
+        9,
+        8,
+        8,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 8.975574,
+        "fft": 1.376665
+      }
+    },
+    {
+      "case": "complement_columns",
+      "T": 1024,
+      "D": 8,
+      "order": "linear",
+      "maximum_reference": 374.07620600041787,
+      "maximum_absolute_error": 5.115907697472721e-13,
+      "relative_to_maximum": 1.3676110951218872e-15,
+      "fft_stats": [
+        1,
+        1022,
+        523775,
+        2,
+        1,
+        1,
+        1,
+        2
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 7.640796,
+        "fft": 1.2570585
+      }
+    },
+    {
+      "case": "complement_columns",
+      "T": 1024,
+      "D": 8,
+      "order": "quadratic",
+      "maximum_reference": 742.3859218627346,
+      "maximum_absolute_error": 4.547473508864641e-13,
+      "relative_to_maximum": 6.125484569338935e-16,
+      "fft_stats": [
+        1,
+        1022,
+        523775,
+        2,
+        1,
+        1,
+        1,
+        2
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 6.943628,
+        "fft": 0.9899845
+      }
+    },
+    {
+      "case": "constant_near_equal",
+      "T": 2048,
+      "D": 64,
+      "order": "linear",
+      "maximum_reference": 3.225153477615095e-11,
+      "maximum_absolute_error": 0.0,
+      "relative_to_maximum": 0.0,
+      "fft_stats": [
+        1,
+        2046,
+        2096127,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 9.6766975,
+        "fft": 3.567996
+      }
+    },
+    {
+      "case": "constant_near_equal",
+      "T": 2048,
+      "D": 64,
+      "order": "quadratic",
+      "maximum_reference": 3.224770633328321e-11,
+      "maximum_absolute_error": 0.0,
+      "relative_to_maximum": 0.0,
+      "fft_stats": [
+        1,
+        2046,
+        2096127,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 10.319500000000001,
+        "fft": 4.1657575
+      }
+    },
+    {
+      "case": "sparse_near_equal",
+      "T": 2048,
+      "D": 64,
+      "order": "linear",
+      "maximum_reference": 63.46001013177492,
+      "maximum_absolute_error": 0.0,
+      "relative_to_maximum": 0.0,
+      "fft_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 14.2253245,
+        "fft": 15.4457485
+      }
+    },
+    {
+      "case": "sparse_near_equal",
+      "T": 2048,
+      "D": 64,
+      "order": "quadratic",
+      "maximum_reference": 70.89782736614943,
+      "maximum_absolute_error": 0.0,
+      "relative_to_maximum": 0.0,
+      "fft_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 16.1733965,
+        "fft": 16.6761875
+      }
+    },
+    {
+      "case": "balanced_near_equal",
+      "T": 2048,
+      "D": 64,
+      "order": "linear",
+      "maximum_reference": 1419.4060112998375,
+      "maximum_absolute_error": 2.2595258997171186e-12,
+      "relative_to_maximum": 1.591881309314684e-15,
+      "fft_stats": [
+        1,
+        2046,
+        2096127,
+        65,
+        64,
+        64,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 122.3538985,
+        "fft": 8.8540045
+      }
+    },
+    {
+      "case": "balanced_near_equal",
+      "T": 2048,
+      "D": 64,
+      "order": "quadratic",
+      "maximum_reference": 7107.313452995116,
+      "maximum_absolute_error": 2.7284841053187847e-12,
+      "relative_to_maximum": 3.8389809642755596e-16,
+      "fft_stats": [
+        1,
+        2046,
+        2096127,
+        65,
+        64,
+        64,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 144.015456,
+        "fft": 11.0257215
+      }
+    },
+    {
+      "case": "large_embedding",
+      "T": 2048,
+      "D": 64,
+      "order": "linear",
+      "maximum_reference": 1207.1504678620192,
+      "maximum_absolute_error": 2.582822844487964e-12,
+      "relative_to_maximum": 2.1396030679277245e-15,
+      "fft_stats": [
+        1,
+        2046,
+        2096127,
+        65,
+        64,
+        64,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 131.0870315,
+        "fft": 9.5230315
+      }
+    },
+    {
+      "case": "large_embedding",
+      "T": 2048,
+      "D": 64,
+      "order": "quadratic",
+      "maximum_reference": 7339.654150683824,
+      "maximum_absolute_error": 1.8189894035458565e-12,
+      "relative_to_maximum": 2.478303972097083e-16,
+      "fft_stats": [
+        1,
+        2046,
+        2096127,
+        65,
+        64,
+        64,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 139.372091,
+        "fft": 10.7636795
+      }
+    },
+    {
+      "case": "tiny_adjoint",
+      "T": 2048,
+      "D": 64,
+      "order": "linear",
+      "maximum_reference": 1.559562357030618e-197,
+      "maximum_absolute_error": 2.524887236485759e-212,
+      "relative_to_maximum": 1.618971646182269e-15,
+      "fft_stats": [
+        1,
+        2046,
+        2096127,
+        65,
+        64,
+        64,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 131.7492195,
+        "fft": 10.465193
+      }
+    },
+    {
+      "case": "tiny_adjoint",
+      "T": 2048,
+      "D": 64,
+      "order": "quadratic",
+      "maximum_reference": 6.885039074152889e-197,
+      "maximum_absolute_error": 2.37636445786895e-212,
+      "relative_to_maximum": 3.4514901546311546e-16,
+      "fft_stats": [
+        1,
+        2046,
+        2096127,
+        65,
+        64,
+        64,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 140.33620100000002,
+        "fft": 10.7575155
+      }
+    },
+    {
+      "case": "large_adjoint",
+      "T": 2048,
+      "D": 64,
+      "order": "linear",
+      "maximum_reference": 1.242147230774495e+203,
+      "maximum_absolute_error": 2.175541218577478e+188,
+      "relative_to_maximum": 1.7514358722363367e-15,
+      "fft_stats": [
+        1,
+        2046,
+        2096127,
+        65,
+        64,
+        64,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 122.6736535,
+        "fft": 9.9213445
+      }
+    },
+    {
+      "case": "large_adjoint",
+      "T": 2048,
+      "D": 64,
+      "order": "quadratic",
+      "maximum_reference": 6.682008537463537e+203,
+      "maximum_absolute_error": 2.784692759779172e+188,
+      "relative_to_maximum": 4.167448670809735e-16,
+      "fft_stats": [
+        1,
+        2046,
+        2096127,
+        65,
+        64,
+        64,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 140.820211,
+        "fft": 10.293362
+      }
+    },
+    {
+      "case": "complement_columns",
+      "T": 2048,
+      "D": 64,
+      "order": "linear",
+      "maximum_reference": 1847.2117919805855,
+      "maximum_absolute_error": 2.6147972675971687e-12,
+      "relative_to_maximum": 1.4155373406281561e-15,
+      "fft_stats": [
+        1,
+        2046,
+        2096127,
+        2,
+        1,
+        1,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 30.9756985,
+        "fft": 4.1860815
+      }
+    },
+    {
+      "case": "complement_columns",
+      "T": 2048,
+      "D": 64,
+      "order": "quadratic",
+      "maximum_reference": 8315.847140340013,
+      "maximum_absolute_error": 2.7284841053187847e-12,
+      "relative_to_maximum": 3.281065728208208e-16,
+      "fft_stats": [
+        1,
+        2046,
+        2096127,
+        2,
+        1,
+        1,
+        0,
+        0
+      ],
+      "finite": true,
+      "ck_bitwise": true,
+      "cv_bitwise": true,
+      "routes_bitwise": true,
+      "median_ms": {
+        "exact": 31.6088955,
+        "fft": 5.333585
+      }
+    }
+  ]
+}

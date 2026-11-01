@@ -23,10 +23,13 @@ int main(int argc,char** argv) {
     RosaTrainingOptions options;rosa_training_defaults(&options);
     // C options are explicit. The default is order 2, one pair, trust 0.5;
     // selecting order 1 requires clearing both second-order terms.
-    if(argc>1&&std::string(argv[1])=="--first") {
-        options.credit_order=1;
-        options.joint_pairs=0;
-        options.trust_diagonal=0.;
+    bool approximate=false;
+    for(int i=1;i<argc;++i) {
+        const std::string flag(argv[i]);
+        if(flag=="--first") {
+            options.credit_order=1;options.joint_pairs=0;options.trust_diagonal=0.;
+        } else if(flag=="--approximate")approximate=true;
+        else {std::cerr<<"usage: rosa-native [--first] [--approximate]\n";return 1;}
     }
     options.randomized=1;options.proposal_seed=123;options.repair_seed=456;
     int code=rosa_training_forward(&options,B,G,T,D,qz.data(),kz.data(),vz.data(),
@@ -34,7 +37,13 @@ int main(int argc,char** argv) {
         y.data(),forward_counts.data());
     if(code){std::cerr<<"forward error "<<code<<'\n';return code;}
     for(int j=0;j<D;++j)g[(T-1)*D+j]=y[(T-1)*D+j]-1.;
-    code=rosa_training_backward(&options,B,G,T,D,q.data(),k.data(),v.data(),
+    RosaApproximationOptions approximation;rosa_approximation_defaults(&approximation);
+    std::array<uint64_t,ROSA_APPROXIMATION_COUNTERS> approximation_counts{};
+    if(approximate)code=rosa_training_backward_approx(&options,&approximation,
+        B,G,T,D,q.data(),k.data(),v.data(),qz.data(),kz.data(),vz.data(),g.data(),
+        e0.data(),e1.data(),gq.data(),gk.data(),gv.data(),ge0.data(),ge1.data(),
+        backward_counts.data(),nullptr,nullptr,lengths.data(),routes.data(),approximation_counts.data());
+    else code=rosa_training_backward(&options,B,G,T,D,q.data(),k.data(),v.data(),
         qz.data(),kz.data(),vz.data(),g.data(),e0.data(),e1.data(),
         gq.data(),gk.data(),gv.data(),ge0.data(),ge1.data(),backward_counts.data(),nullptr,nullptr);
     if(code){std::cerr<<"backward error "<<code<<'\n';return code;}

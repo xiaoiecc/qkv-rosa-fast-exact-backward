@@ -1,6 +1,10 @@
 #pragma once
 // Included after uniform_impl: the public training API reuses that one engine.
 #include "training.h"
+#include "approx_indexed_row.h"
+#include "approx_corridor_eligibility.h"
+#include "approx_row_certificate.h"
+#include "approx_sampling.h"
 #include <cstring>
 #include <random>
 
@@ -24,6 +28,12 @@ inline bool training_options(const RosaTrainingOptions* o) {
         && std::isfinite(o->trust_diagonal) && o->trust_diagonal>=0
         && (o->credit_order==2 || (!o->joint_pairs && !o->trust_diagonal));
 }
+inline bool approximation_options(const RosaApproximationOptions*o) {
+    return o && o->abi_version==ROSA_APPROXIMATION_ABI_VERSION
+        && o->struct_size==sizeof(RosaApproximationOptions) && o->sample_rows>0
+        && (o->importance==0 || o->importance==1)
+        && o->sample_channels>=0 && o->sample_channels<=64;
+}
 inline bool finite_values(const double* p,size_t count) {
     if(count && !p)return false;
     for(size_t i=0;i<count;++i)if(!std::isfinite(p[i]))return false;
@@ -37,9 +47,31 @@ inline double train_sigmoid(double z,double tau) {
 inline double train_chain(double z,int bit,double credit,const RosaTrainingOptions&o) {
     const double oriented=(bit ? -1.0 : 1.0)*credit;
     if(o.logit_mode)return oriented;
+    // Multiplying a zero credit by the nonnegative finite sigmoid factor
+    // preserves this signed zero. Avoid exp for such coordinates. Extremely
+    // tiny temperatures keep the original arithmetic, including overflow.
+    if(credit==0. && o.tau>=std::numeric_limits<double>::min())return oriented;
     const double p=train_sigmoid(z,o.tau);
     return (p*(1-p)/o.tau)*oriented;
 }
+// The derivative factor depends on the exact logit and the stream's fixed
+// temperature. One cached value per Q/K/V stream avoids repeated exp calls
+// without a dictionary, approximate exponential, or changed multiplication.
+struct TrainFactorCache {
+    uint64_t key=0;double factor=0;bool valid=false;
+    double apply(double z,int bit,double credit,const RosaTrainingOptions&o) {
+        const double oriented=(bit?-1.:1.)*credit;
+        if(o.logit_mode)return oriented;
+        if(credit==0. && o.tau>=std::numeric_limits<double>::min())return oriented;
+        uint64_t bits;std::memcpy(&bits,&z,sizeof(bits));
+        if(!valid||bits!=key) {
+            const double p=train_sigmoid(z,o.tau);factor=p*(1-p)/o.tau;
+            key=bits;valid=true;
+        }
+        return factor*oriented;
+    }
+};
+
 inline double train_radius(const double*e0,const double*e1,int d) {
     double a=0,b=0;
     for(int j=0;j<d;++j) {
@@ -87,14 +119,20 @@ inline int train_stream(const RosaTrainingOptions&o,int n,int d,
     const double*qz,const double*kz,const double*vz,const double*g,
     const double*e0,const double*e1,double*gq,double*gk,double*gv,
     double*ge0,double*ge1,uint64_t*stats,uint64_t*trace,double*cost_trace,
-    uint64_t proposal_seed,uint64_t repair_seed) {
+    uint64_t proposal_seed,uint64_t repair_seed,
+    const RosaApproximationOptions*approximation=nullptr,
+    const int32_t*saved_lengths=nullptr,const int32_t*saved_routes=nullptr,
+    uint64_t*approximation_stats=nullptr) {
     const size_t nd=size_t(n)*d;
     std::fill(stats,stats+ROSA_TRAINING_COUNTERS,uint64_t(0));
+    if(approximation_stats)std::fill(approximation_stats,approximation_stats+ROSA_APPROXIMATION_COUNTERS,uint64_t(0));
     // Zero upstream support implies zero trust, finite credit and embeddings.
     // This is the ordinary zero-adjoint identity, not an input-family kernel.
     if(std::none_of(g,g+nd,[](double value){return value!=0;})) {
         std::fill(gq,gq+nd,0.);std::fill(gk,gk+nd,0.);std::fill(gv,gv+nd,0.);
-        stats[29]=1;stats[30]=nd;stats[31]=o.randomized!=0;return 0;
+        stats[29]=1;stats[30]=nd;stats[31]=o.randomized!=0;
+        if(approximation_stats)approximation_stats[27]=1;
+        return 0;
     }
     std::vector<double> cq(nd),ck(nd),cv(nd),h;
     std::vector<int32_t> lengths(n),routes(n);
@@ -126,7 +164,87 @@ inline int train_stream(const RosaTrainingOptions&o,int n,int d,
     std::vector<double> qb(sampled?n:0),kb(sampled?n:0);
     uint64_t selection[5]={};
     const int budget=sampled ? o.repair_budget : -1;
-    const int code=quadratic
+    int code=0;
+    if(approximation) {
+        std::vector<int32_t> active;bool short_deletion=true;
+        for(int t=0;t<n;++t) {
+            const int length=saved_lengths[t],route=saved_routes[t];
+            if(length<0 || length>t || route<-1 || route>=t ||
+               ((length==0)!=(route<0)) || length>route+1)return 1;
+            bool nonzero=false;for(int j=0;j<d;++j)nonzero|=g[size_t(t)*d+j]!=0;
+            if(nonzero){active.push_back(t);short_deletion&=length<=1;}
+        }
+        const uint64_t random_seed=repair_seed^approximation->seed;
+        const rosa_random::OnegramPlan plan(q,k,n,d,repair_seed);
+        std::vector<int32_t> active_prefix(size_t(n)+1,0);
+        for(int t:active)active_prefix[size_t(t)+1]=1;
+        for(int t=0;t<n;++t)active_prefix[t+1]+=active_prefix[t];
+        const auto contraction=rosa_random::corridor_fft_eligibility(
+            plan,saved_lengths,active_prefix.data(),quadratic);
+        if(contraction.eligible) {
+            // Exact route discovery; only shared long numerical contractions
+            // are reordered. This is confined to the approximate API.
+            code=quadratic
+              ? uniform_impl<true>(n,d,q,k,v,g,h.data(),e0,e1,cq.data(),ck.data(),cv.data(),
+                  lengths.data(),routes.data(),stats,~uint64_t(0),nullptr,nullptr,nullptr,
+                  -1,0,0,o.randomized!=0,repair_seed,approximation_stats+32,approximation->sample_channels,random_seed)
+              : uniform_impl<false>(n,d,q,k,v,g,nullptr,e0,e1,cq.data(),ck.data(),cv.data(),
+                  lengths.data(),routes.data(),stats,~uint64_t(0),nullptr,nullptr,nullptr,
+                  -1,0,0,o.randomized!=0,repair_seed,approximation_stats+32,approximation->sample_channels,random_seed);
+            approximation_stats[16]=active.size();
+            approximation_stats[26]=approximation->sample_rows;
+            approximation_stats[27]=1;
+        } else {
+        // Deletion cannot create a longer exact match. If every active row
+        // has length <= 1, its full deletion credit IS its one-symbol credit.
+        // Otherwise compute complete deletions with the shared exact engine.
+        // Both branches evaluate the same control D_full + R_onegram.
+        if(!short_deletion) {
+            code=quadratic
+                ? uniform_impl<true>(n,d,q,k,v,g,h.data(),e0,e1,cq.data(),ck.data(),cv.data(),
+                    lengths.data(),routes.data(),stats,0,nullptr,nullptr,nullptr,-1,0,0,
+                    o.randomized!=0,repair_seed)
+                : uniform_impl<false>(n,d,q,k,v,g,nullptr,e0,e1,cq.data(),ck.data(),cv.data(),
+                    lengths.data(),routes.data(),stats,0,nullptr,nullptr,nullptr,-1,0,0,
+                    o.randomized!=0,repair_seed);
+            if(code)return code;
+            approximation_stats[31]=1;
+        } else {
+            std::copy(saved_lengths,saved_lengths+n,lengths.data());
+            std::copy(saved_routes,saved_routes+n,routes.data());
+        }
+        // The same full-key class graph supplies the control, its birth
+        // certificate, and the selected rows' complete endpoint candidates.
+        uint64_t control_stats[16]={};
+        if(quadratic)plan.apply<true>(v,g,h.data(),e0,e1,
+            routes.data(),cq.data(),ck.data(),control_stats,short_deletion);
+        else plan.apply<false>(v,g,nullptr,e0,e1,
+            routes.data(),cq.data(),ck.data(),control_stats,short_deletion);
+        const auto&repair_prefix=plan.birth_prefix;
+        std::vector<int32_t> repair_active;
+        for(int t:active)if(repair_prefix[t+1]!=repair_prefix[t-lengths[t]])repair_active.push_back(t);
+        const auto population=rosa_random::uncertified_rows(q,k,n,d,repair_active.data(),
+            int(repair_active.size()),lengths.data(),random_seed,approximation_stats+16);
+        std::vector<int32_t> selected_rows;std::vector<double> row_weights;
+        rosa_random::stratified_rows(population,approximation->sample_rows,g,d,
+            approximation->importance,random_seed,selected_rows,row_weights);
+        const int kept=int(selected_rows.size());
+        if(quadratic)code=rosa_random::indexed_row_repairs<true>(plan,v,g,h.data(),e0,e1,
+            selected_rows.data(),row_weights.data(),kept,lengths.data(),routes.data(),
+            cq.data(),ck.data(),approximation_stats,true);
+        else code=rosa_random::indexed_row_repairs<false>(plan,v,g,nullptr,e0,e1,
+            selected_rows.data(),row_weights.data(),kept,lengths.data(),routes.data(),
+            cq.data(),ck.data(),approximation_stats,true);
+        for(int i=0;i<16;++i)approximation_stats[i]+=control_stats[i];
+        approximation_stats[24]=population.size();approximation_stats[25]=kept;
+        approximation_stats[26]=approximation->sample_rows;
+        approximation_stats[27]=kept==int(population.size());
+        approximation_stats[29]=active.size()-population.size();
+        approximation_stats[30]=approximation->importance;
+        }
+        approximation_stats[16]=active.size();
+    } else {
+        code=quadratic
         ? uniform_impl<true>(n,d,q,k,v,g,h.data(),e0,e1,cq.data(),ck.data(),cv.data(),
             lengths.data(),routes.data(),stats,~uint64_t(0),sampled?qb.data():nullptr,
             sampled?kb.data():nullptr,selection,budget,repair_seed,forced,
@@ -135,6 +253,7 @@ inline int train_stream(const RosaTrainingOptions&o,int n,int d,
             lengths.data(),routes.data(),stats,~uint64_t(0),sampled?qb.data():nullptr,
             sampled?kb.data():nullptr,selection,budget,repair_seed,forced,
             o.randomized!=0,repair_seed);
+    }
     if(code)return code;
     const uint64_t support=selection[3],selected=selection[4];
     if(sampled) {
@@ -150,10 +269,10 @@ inline int train_stream(const RosaTrainingOptions&o,int n,int d,
     }
     stats[23]=pair_count;stats[24]=pair_count;
     stats[27]=pair_popcount(support);stats[28]=pair_popcount(selected);
-    stats[29]=uint64_t(!sampled || selected==support);stats[30]=nd;
+    stats[29]=uint64_t(!approximation && (!sampled || selected==support));stats[30]=nd;
     stats[31]=o.randomized!=0;stats[32]=rows.size();
     // The route penalty protects Q/K. V remains the original linear credit.
-    if(quadratic)std::fill(cv.begin(),cv.end(),0.);
+    if(quadratic || approximation)std::fill(cv.begin(),cv.end(),0.);
     for(int t=0;t<n;++t)for(int j=0;j<d;++j) {
         const size_t x=size_t(t)*d+j;const double gy=g[x];
         if(routes[t]<0)ge0[j]+=gy;
@@ -161,13 +280,15 @@ inline int train_stream(const RosaTrainingOptions&o,int n,int d,
             const size_t source=size_t(routes[t]+1)*d+j;
             const int sign=2*int(v[source])-1;ge1[j]+=gy*sign;
             if(quadratic)cv[source]+=gy*(-2*sign*e1[j]);
+            else if(approximation)cv[source]+=-2*gy*(sign*e1[j]);
         }
     }
+    TrainFactorCache qfactor,kfactor,vfactor;
     for(int t=0;t<n;++t)for(int j=0;j<d;++j) {
         const size_t x=size_t(t)*d+j;
-        gq[x]=train_chain(qz[x],int((q[t]>>j)&1),cq[x],o);
-        gk[x]=train_chain(kz[x],int((k[t]>>j)&1),ck[x],o);
-        gv[x]=train_chain(vz[x],int(v[x]),cv[x],o);
+        gq[x]=qfactor.apply(qz[x],int((q[t]>>j)&1),cq[x],o);
+        gk[x]=kfactor.apply(kz[x],int((k[t]>>j)&1),ck[x],o);
+        gv[x]=vfactor.apply(vz[x],int(v[x]),cv[x],o);
     }
     std::vector<uint64_t> qe,ke;
     std::vector<int32_t> edited_lengths,edited_routes;
@@ -178,8 +299,8 @@ inline int train_stream(const RosaTrainingOptions&o,int n,int d,
             auto& words=code>=nd?qe:ke;const size_t x=size_t(code%nd);
             words[x/d]^=uint64_t(1)<<(x%d);
         };
-        toggle(a);toggle(b);
-        SamForward scan(qe.data(),ke.data(),n,repair_seed);
+        auto replay_cost=[&]() {
+            SamForward scan(qe.data(),ke.data(),n,repair_seed);
         scan.run(edited_lengths.data(),edited_routes.data());
         ExactExpansion joint;
         for(int t=0;t<n;++t) {
@@ -194,8 +315,20 @@ inline int train_stream(const RosaTrainingOptions&o,int n,int d,
                 joint.add(term);++stats[33];
             }
         }
+            return joint.to_double();
+        };
         auto singleton=[&](uint64_t code){return code>=nd?cq[size_t(code-nd)]:ck[size_t(code)];};
-        const double ca=singleton(a),cb=singleton(b),cij=joint.to_double(),interaction=cij-ca-cb;
+        double ca=singleton(a),cb=singleton(b);
+        if(approximation && (!approximation_stats[27] || approximation_stats[33])) {
+            // Restore both chosen singleton corners exactly. Sampling cannot
+            // erase the very block selected to cross a discrete barrier.
+            // Complete/certified residuals already provide those corners.
+            toggle(a);ca=replay_cost();toggle(a);
+            toggle(b);cb=replay_cost();toggle(b);
+            stats[24]+=2;approximation_stats[28]+=2;
+        }
+        toggle(a);toggle(b);
+        const double cij=replay_cost(),interaction=cij-ca-cb;
         const size_t ia=size_t(a%nd),ib=size_t(b%nd);
         const double za=a>=nd?qz[ia]:kz[ia],zb=b>=nd?qz[ib]:kz[ib];
         const int ba=int(((a>=nd?q[ia/d]:k[ia/d])>>(ia%d))&1);
@@ -216,7 +349,13 @@ ROSA_EXPORT void rosa_training_defaults(RosaTrainingOptions*o) {
     if(!o)return;
     std::memset(o,0,sizeof(*o));o->abi_version=ROSA_TRAINING_ABI_VERSION;
     o->struct_size=sizeof(*o);o->credit_order=2;o->joint_pairs=1;o->joint_rows=32;
-    o->active_rows=1;o->tau=1.;o->trust_diagonal=.5;
+    o->active_rows=1;o->tau=1.;o->trust_diagonal=.5;o->randomized=1;
+}
+
+ROSA_EXPORT void rosa_approximation_defaults(RosaApproximationOptions*o) {
+    if(!o)return;
+    std::memset(o,0,sizeof(*o));o->abi_version=ROSA_APPROXIMATION_ABI_VERSION;
+    o->struct_size=sizeof(*o);o->sample_rows=32;o->importance=1;
 }
 
 ROSA_EXPORT int rosa_training_forward(const RosaTrainingOptions*o,int b,int groups,int n,int d,
@@ -249,10 +388,12 @@ ROSA_EXPORT int rosa_training_forward(const RosaTrainingOptions*o,int b,int grou
   }catch(const std::bad_alloc&){return 2;}catch(const std::exception&){return 3;}catch(...){return 3;}
 }
 
-ROSA_EXPORT int rosa_training_backward(const RosaTrainingOptions*o,int b,int groups,int n,int d,
+static int training_backward_impl(const RosaTrainingOptions*o,const RosaApproximationOptions*approximation,
+    int b,int groups,int n,int d,
     const uint64_t*q,const uint64_t*k,const uint8_t*v,const double*qz,const double*kz,const double*vz,
     const double*g,const double*e0,const double*e1,double*gq,double*gk,double*gv,
-    double*ge0,double*ge1,uint64_t*counts,uint64_t*trace,double*cost_trace) {
+    double*ge0,double*ge1,uint64_t*counts,uint64_t*trace,double*cost_trace,
+    const int32_t*saved_lengths,const int32_t*saved_routes,uint64_t*approximation_counts) {
   try {
     if(!rosa_exact::training_options(o)||!rosa_exact::training_shape(b,groups,n,d)||o->repair_budget>d)return 1;
     const size_t streams=size_t(b)*groups,nd=size_t(n)*d,total=streams*nd;
@@ -260,6 +401,14 @@ ROSA_EXPORT int rosa_training_backward(const RosaTrainingOptions*o,int b,int gro
        ||!rosa_exact::finite_values(g,total)||!rosa_exact::finite_values(e0,size_t(groups)*d)
        ||!rosa_exact::finite_values(e1,size_t(groups)*d))return 4;
     if(!ge0||!ge1||(streams&&!counts)||(streams*n&&(!q||!k))||(total&&(!v||!gq||!gk||!gv)))return 1;
+    if(approximation) {
+        if(!rosa_exact::approximation_options(approximation)||o->repair_budget
+           ||(streams&&!approximation_counts)||(streams*n&&(!saved_lengths||!saved_routes)))return 1;
+        for(size_t s=0;s<streams;++s)for(int t=0;t<n;++t) {
+            const size_t at=s*n+t;const int len=saved_lengths[at],route=saved_routes[at];
+            if(len<0||len>t||route < -1||route>=t||(len==0)!=(route<0)||len>route+1)return 1;
+        }
+    }
     std::fill(ge0,ge0+size_t(groups)*d,0.);std::fill(ge1,ge1+size_t(groups)*d,0.);
     for(size_t s=0;s<streams;++s) {
         const size_t base=s*nd,word=s*n,embedding=(s%groups)*d;
@@ -267,9 +416,30 @@ ROSA_EXPORT int rosa_training_backward(const RosaTrainingOptions*o,int b,int gro
         const int code=rosa_exact::train_stream(*o,n,d,q+word,k+word,v+base,qz+base,kz+base,vz+base,
             g+base,e0+embedding,e1+embedding,gq+base,gk+base,gv+base,ge0+embedding,ge1+embedding,
             counts+s*ROSA_TRAINING_COUNTERS,trace?trace+s*size_t(o->joint_pairs)*2:nullptr,
-            cost_trace?cost_trace+s*size_t(o->joint_pairs)*4:nullptr,o->proposal_seed+salt,o->repair_seed+salt);
+            cost_trace?cost_trace+s*size_t(o->joint_pairs)*4:nullptr,o->proposal_seed+salt,o->repair_seed+salt,
+            approximation,saved_lengths?saved_lengths+word:nullptr,saved_routes?saved_routes+word:nullptr,
+            approximation_counts?approximation_counts+s*ROSA_APPROXIMATION_COUNTERS:nullptr);
         if(code)return code;
     }
     return 0;
   }catch(const std::bad_alloc&){return 2;}catch(const std::exception&){return 3;}catch(...){return 3;}
+}
+
+ROSA_EXPORT int rosa_training_backward(const RosaTrainingOptions*o,int b,int groups,int n,int d,
+    const uint64_t*q,const uint64_t*k,const uint8_t*v,const double*qz,const double*kz,const double*vz,
+    const double*g,const double*e0,const double*e1,double*gq,double*gk,double*gv,
+    double*ge0,double*ge1,uint64_t*counts,uint64_t*trace,double*cost_trace) {
+    return training_backward_impl(o,nullptr,b,groups,n,d,q,k,v,qz,kz,vz,g,e0,e1,
+        gq,gk,gv,ge0,ge1,counts,trace,cost_trace,nullptr,nullptr,nullptr);
+}
+
+ROSA_EXPORT int rosa_training_backward_approx(const RosaTrainingOptions*o,
+    const RosaApproximationOptions*approximation,int b,int groups,int n,int d,
+    const uint64_t*q,const uint64_t*k,const uint8_t*v,const double*qz,const double*kz,const double*vz,
+    const double*g,const double*e0,const double*e1,double*gq,double*gk,double*gv,
+    double*ge0,double*ge1,uint64_t*counts,uint64_t*trace,double*cost_trace,
+    const int32_t*saved_lengths,const int32_t*saved_routes,uint64_t*approximation_counts) {
+    if(!approximation)return 1;
+    return training_backward_impl(o,approximation,b,groups,n,d,q,k,v,qz,kz,vz,g,e0,e1,
+        gq,gk,gv,ge0,ge1,counts,trace,cost_trace,saved_lengths,saved_routes,approximation_counts);
 }
