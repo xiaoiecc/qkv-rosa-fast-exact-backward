@@ -152,9 +152,9 @@ first, then reverses the result for display. Its default convolution kernel
 is 32, distinct from the model's generic default of 4. Evaluation reports
 per-digit accuracy and exact product-string accuracy.
 
-The bundled [`multiply_ckpt.pt`](multiply_ckpt.pt),
-[`multiply_metrics.json`](multiply_metrics.json), and
-[`train_log.txt`](train_log.txt) are historical artifacts from the original
+The bundled [`multiply_ckpt.pt`](artifacts/multiply_ckpt.pt),
+[`multiply_metrics.json`](artifacts/multiply_metrics.json), and
+[`train_log.txt`](artifacts/train_log.txt) are historical artifacts from the original
 upstream implementation at commit
 [`32e90e2`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/commit/32e90e272929942a764d696b639409b783c61bb1).
 They have not been rerun as a training-quality evaluation of the current core.
