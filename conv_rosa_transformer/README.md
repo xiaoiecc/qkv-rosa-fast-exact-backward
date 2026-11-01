@@ -53,8 +53,10 @@ convolution and a SwiGLU feed-forward block. Its retrieval layer uses the
 repository's single unified CPU algorithm for hard forward matching and the
 exact single-bit counterfactual Q/K/V credits.
 
-For the algorithm itself, read the [English derivation](../ALGORITHM.md) or
-[中文推导](../ALGORITHM.zh-CN.md). Both derive the implementation from the
+For the algorithm itself, start with the principle-first
+[English guide](../ALGORITHM.md) or [中文推导](../ALGORITHM.zh-CN.md); the
+[exhaustive reference](../docs/algorithm-reference.md) /
+[中文](../docs/algorithm-reference.zh-CN.md) derives every invariant from the
 bit-flip brute-force definition. The root
 [`hard_qkv_rosa_explained.py`](../hard_qkv_rosa_explained.py) is a readable
 entry point into the same runtime; it does not carry a second optimized
