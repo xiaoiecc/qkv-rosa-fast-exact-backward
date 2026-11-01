@@ -1,6 +1,10 @@
 # 从逐位翻转的暴力，推到统一的 QKV-ROSA 反向算法
 
-[English](ALGORITHM.md) · [运行方法](README.md) · [性能数据](benchmarks/README.md)
+[English](algorithm-reference.md) · [运行方法](../README.md) · [性能数据](../benchmarks/README.md)
+
+> 本文是**完整参考版**：按推导顺序列出全部不变量、边界情形、证书与成本参数。
+> 初次阅读请先看原理导读 [ALGORITHM.zh-CN.md](../ALGORITHM.zh-CN.md)，
+> 需要完整证明时再回到本文。
 
 这道题的暴力很好写：翻转一位，重跑前向，把输出变化乘上上游梯度。
 难的是不重跑，还能把同一个答案算出来。
@@ -70,11 +74,11 @@ payload。因果条件 $`r\lt t`$ 允许取到 $`V_t`$，但不允许匹配 K �
 $`V_3=0,V_4=1,e_1=2,g_4=3`$，这一位的信用就是
 $`3(2-(-2))=12`$。前面几行不可能受 Q 的第 4 位影响。
 
-![同一个例子的基准路由、翻转路由及删修分解](images/02-route-partition.zh-CN.svg)
+![同一个例子的基准路由、翻转路由及删修分解](../images/02-route-partition.zh-CN.svg)
 
-插图数据由 [`images/generate_figures.py`](images/generate_figures.py)
+插图数据由 [`images/generate_figures.py`](../images/generate_figures.py)
 中的独立枚举计算；它不导入优化算法。完整数据保存在
-[`images/figure_data.json`](images/figure_data.json)，可以手算后核对。
+[`images/figure_data.json`](../images/figure_data.json)，可以手算后核对。
 
 ## 2. 暴力的四次方，具体花在哪里
 
@@ -86,7 +90,7 @@ $`3(2-(-2))=12`$。前面几行不可能受 Q 的第 4 位影响。
 ```
 
 除了指定 bit，其他输入、embedding 和给定的 $`g`$ 全部不变。
-[`rosa_reference.py`](conv_rosa_transformer/rosa_reference.py) 保留了直接实现：
+[`rosa_reference.py`](../conv_rosa_transformer/rosa_reference.py) 保留了直接实现：
 
 ```text
 枚举 3*T*D 个单 bit 翻转：
@@ -102,7 +106,7 @@ $`3(2-(-2))=12`$。前面几行不可能受 Q 的第 4 位影响。
 所以是 $`O(T^3)`$。再乘 $`TD`$ 次翻转，加上向量输出的工作，得到
 $`O(DT^4+D^2T^2)`$；D 固定或较小时，通常只写主导项 $`O(DT^4)`$。
 
-![逐位重跑中的重复子问题](images/01-repeated-work.zh-CN.svg)
+![逐位重跑中的重复子问题](../images/01-repeated-work.zh-CN.svg)
 
 第一个容易想到的优化是算一张原始匹配表：字符相等时
 $`F_t(r)=F_{t-1}(r-1)+1`$，否则为零。整张表只要 $`O(T^2)`$。
@@ -259,7 +263,7 @@ H(s)=\max_{s\le r\lt t}(\min(F(r),r-s),r),
 | 2 | (1, 0) | (0, −1) | (1, 0) |
 | 3 | (3, 2) | (0, −1) | (3, 2) |
 
-![A/H 包络与完整字典序的谷底](images/03-deletion-envelope.zh-CN.svg)
+![A/H 包络与完整字典序的谷底](../images/03-deletion-envelope.zh-CN.svg)
 
 s 右移时，A 的候选集合扩大，所以不减；H 的候选集合缩小，保留项的长度上限
 也下降，所以不增。这两个结论对完整路由字典序成立。取 max 后得到一个谷形。
@@ -290,7 +294,7 @@ $`\mathrm{clamp}(p,a,b)`$ 取到。
 \boxed{F(r)=\min(h,r-l+1).}
 ```
 
-![不能省掉的同步 run 边界](images/04-run-formula.zh-CN.svg)
+![不能省掉的同步 run 边界](../images/04-run-formula.zh-CN.svg)
 
 图中的辅助例子有 $`h=3,l=2`$。公式给出 1、2、3、3、3、3，
 而边界终点 4 的真实匹配长 5。它提醒我们，压缩的依据是上述分情况证明，
@@ -400,7 +404,7 @@ $`\sum_b\min(c_b,m_b)\le D`$，再加几次桶查询。建索引和哈希碰撞�
 
 规划器根据 Q/K 词表和实际变化的位，估计直接查询、两块、四块的成本。这是
 同一个精确根邻居算法中的查询选择，不是识别 benchmark 家族再换内核。
-估计错了会慢，不会改答案。[随机化补篇](docs/exact-randomized.zh-CN.md) 给出
+估计错了会慢，不会改答案。[随机化补篇](exact-randomized.zh-CN.md) 给出
 候选进入桶的概率、完整的预处理费用，以及实测中没有变快的输入。
 
 独立前向只走一条原始 Q 轨迹。每行匹配长度最多增加 1，每次 suffix-link
@@ -409,7 +413,7 @@ $`\sum_b\min(c_b,m_b)\le D`$，再加几次桶查询。建索引和哈希碰撞�
 最大值树求最新端点。辅助空间为 O(T)。在哈希平均探测代价为常数的假设下，
 扫描为 O(T)，包含一般端点维护的总时间仍为 O(T log T)。哈希命中完整比较
 状态编号和 64 位符号，碰撞只会影响耗时，不会改变答案。
-[前向计时](benchmarks/results/forward.json) 单独测量了这条路径。
+[前向计时](../benchmarks/results/forward.json) 单独测量了这条路径。
 
 普通 Q 分支保存 owner、bit、最长编辑匹配，还保存 `short_state`：
 **从 owner 到当前行、完整包含这次编辑的最短后缀**所在的状态。
@@ -422,7 +426,7 @@ $`\sum_b\min(c_b,m_b)\le D`$，再加几次桶查询。建索引和哈希碰撞�
 K=`01010` 时，`0` 的 endpos 为 {0,2,4}。在 t=4，终点 4 还不可见。
 每次扫完整集合再把 4 过滤掉，是索引表示带来的额外成本。
 
-![只保留已经激活的 terminal 链](images/05-causal-occurrences.zh-CN.svg)
+![只保留已经激活的 terminal 链](../images/05-causal-occurrences.zh-CN.svg)
 
 改成在 terminal 排列上维护仅含已激活节点的双向链。插入位置怎么找？
 不需要另建一个 successor 结构：先从完整链开始，按终点时间逆序删除。
@@ -505,7 +509,7 @@ endpos 集合互不相交。假设两个分支共享终点，在较晚的编辑�
 第一次失配以后不会复活：若更晚又有出现，去掉后面的字符，就会推出失配那行
 也存在出现，与唯一对齐的失配矛盾。
 
-![仿射修复轨迹与固定 K owner](images/06-continuation-intervals.zh-CN.svg)
+![仿射修复轨迹与固定 K owner](../images/06-continuation-intervals.zh-CN.svg)
 
 辅助例子 Q=`00000`、K=`10000` 很直观。短编辑模式 `1` 只在终点 0 出现。
 翻 Q owner 1，行 1 到 4 的路由依次为 (1,0)、(2,1)、(3,2)、(4,3)；
@@ -595,7 +599,7 @@ $`O(\mathcal H+DX)`$，另计精确残差累计。全部类准入时还有 $`X\l
 普通 double 顺序累计却可能得到 0。用两个全局前缀相减，还会把区间外的巨大
 历史带进本来很小的答案。
 
-![残差要保留到共同项与补偿项最终合并之后](images/07-exact-aggregation.zh-CN.svg)
+![残差要保留到共同项与补偿项最终合并之后](../images/07-exact-aggregation.zh-CN.svg)
 
 `ExactExpansion` 把无损变换产生的残差一起保存。Fenwick 节点、点查询、出生与
 结束快照、区间自身的修复和、共同 Q 差分边界，以及最后的 owner 前缀都参与这个
@@ -701,7 +705,7 @@ D 为固定机器字、哈希平均探测代价为常数时，组合结构的最
 个输出格子。按实数算术，每个坐标的均方误差为 $`(1-p_j)R_{s,j}^2/p_j`$。
 实测表明一些输入上的误差仍然很大，因此普通路径保留完整修复，不默认打开
 小预算。甚至事先知道全部残差、使用最优重要性概率，测得的误差仍很大。
-[随机化补篇](docs/exact-randomized.zh-CN.md) 保留这个否定结果。公开的
+[随机化补篇](exact-randomized.zh-CN.md) 保留这个否定结果。公开的
 `randomized=True` 只选择前面的精确根查询，不会启用这个独立的研究抽样器。
 
 ### 两个输入，能看清控制工作与数值工作的区别
@@ -728,23 +732,23 @@ tie-break 相遇时的总分裂次数。这些都是剩余成本，不是二次�
 
 | 数学对象 | 实现位置 |
 |---|---|
-| 独立硬前向、逐 bit 信用定义 | [`rosa_reference.py`](conv_rosa_transformer/rosa_reference.py) |
-| 数组接口、输入检查、原生构建 | [`rosa_core.py`](conv_rosa_transformer/rosa_core.py) |
-| 轻量硬前向、按需建立的最新端点索引 | [`forward.h`](conv_rosa_transformer/csrc/forward.h) |
-| 完整键 SAM 字典、共享 Q root、因果支持集、Q 分支 | [`sam_q.h`](conv_rosa_transformer/csrc/sam_q.h) |
-| 共享公共后缀与端点查询 | [`sam_routes.h`](conv_rosa_transformer/csrc/sam_routes.h) |
-| R 阶梯、A/H 包络、公式 owner 区间 | [`delete_indexed.h`](conv_rosa_transformer/csrc/delete_indexed.h) |
-| 主循环、K 堆、评分共享、数值收缩 | [`unified_core.cpp`](conv_rosa_transformer/csrc/unified_core.cpp) |
-| 保存残差的数值累计 | [`exact_expansion.h`](conv_rosa_transformer/csrc/exact_expansion.h) |
-| 固定预算的因果分带联合位提案 | [`pair_candidates.h`](conv_rosa_transformer/csrc/pair_candidates.h) |
-| 批量训练、度量、联合块与 logit 映射 | [`training_impl.h`](conv_rosa_transformer/csrc/training_impl.h) |
-| 无框架依赖的 C 接口 | [`training.h`](conv_rosa_transformer/csrc/training.h) |
-| 薄层 PyTorch autograd 接入 | [`rosa_layer.py`](conv_rosa_transformer/rosa_layer.py) |
+| 独立硬前向、逐 bit 信用定义 | [`rosa_reference.py`](../conv_rosa_transformer/rosa_reference.py) |
+| 数组接口、输入检查、原生构建 | [`rosa_core.py`](../conv_rosa_transformer/rosa_core.py) |
+| 轻量硬前向、按需建立的最新端点索引 | [`forward.h`](../conv_rosa_transformer/csrc/forward.h) |
+| 完整键 SAM 字典、共享 Q root、因果支持集、Q 分支 | [`sam_q.h`](../conv_rosa_transformer/csrc/sam_q.h) |
+| 共享公共后缀与端点查询 | [`sam_routes.h`](../conv_rosa_transformer/csrc/sam_routes.h) |
+| R 阶梯、A/H 包络、公式 owner 区间 | [`delete_indexed.h`](../conv_rosa_transformer/csrc/delete_indexed.h) |
+| 主循环、K 堆、评分共享、数值收缩 | [`unified_core.cpp`](../conv_rosa_transformer/csrc/unified_core.cpp) |
+| 保存残差的数值累计 | [`exact_expansion.h`](../conv_rosa_transformer/csrc/exact_expansion.h) |
+| 固定预算的因果分带联合位提案 | [`pair_candidates.h`](../conv_rosa_transformer/csrc/pair_candidates.h) |
+| 批量训练、度量、联合块与 logit 映射 | [`training_impl.h`](../conv_rosa_transformer/csrc/training_impl.h) |
+| 无框架依赖的 C 接口 | [`training.h`](../conv_rosa_transformer/csrc/training.h) |
+| 薄层 PyTorch autograd 接入 | [`rosa_layer.py`](../conv_rosa_transformer/rosa_layer.py) |
 
 `python tests/run.py` 运行快速独立检查；
 `python tests/run.py --exhaustive` 加入完整二值穷举和结构 oracle。
-测试范围见 [`tests/README.md`](tests/README.md)，绝对延迟、吞吐、资源与
-原始上游比较见 [`benchmarks/README.md`](benchmarks/README.md)。
+测试范围见 [`tests/README.md`](../tests/README.md)，绝对延迟、吞吐、资源与
+原始上游比较见 [`benchmarks/README.md`](../benchmarks/README.md)。
 
 准备改一个结构之前，可以先试这几个小题：
 
@@ -808,7 +812,7 @@ g^T\delta+\tfrac12h\lVert\delta\rVert^2
 不变；旧惩罚又把唯一有用的联合翻转算成零，两个 logit 便都没有更新信号。
 直径定标恢复了这个联合方向。对应测试实际执行层的 `loss.backward()`。
 
-![联合修改被过强惩罚抹掉的具体例子](images/diameter_barrier.png)
+![联合修改被过强惩罚抹掉的具体例子](../images/diameter_barrier.png)
 
 这是局部模型的性质，不能推出真实下游 loss 必降。下游交叉曲率、共享参数
 造成的同时改动仍可能超出这个模型。实现把该度量用于 Q/K 路线信用，V 保留
@@ -821,16 +825,16 @@ g^T\delta+\tfrac12h\lVert\delta\rVert^2
 组件内部的精确匹配，这个成本必须计入训练时间。活动行选择和上述度量依赖 g，
 其代理更新保持正的 loss 缩放关系，但不再是对任意上游梯度可加的固定 VJP。
 
-[原生组件说明](docs/native-training.zh-CN.md) 推导选定的训练规则及其一阶选项。
+[原生组件说明](native-training.zh-CN.md) 推导选定的训练规则及其一阶选项。
 打包、前后向、对角项、联合提案与重放、logit 映射和 embedding 梯度，都已放进
-一套批量 C++ 实现。[本轮实测](docs/native-results.zh-CN.md) 分开报告精确随机化
-与原生化的收益，也保留浮点迁移和测试损失退步。[前向补篇](docs/forward.zh-CN.md) 仍单独解释
+一套批量 C++ 实现。[本轮实测](native-results.zh-CN.md) 分开报告精确随机化
+与原生化的收益，也保留浮点迁移和测试损失退步。[前向补篇](forward.zh-CN.md) 仍单独解释
 轻量匹配器的证明和计时。
 
 
 ## 14. 随机化该落在哪一层
 
-精确路由与数值求和可以分开考虑。新的[中文补充教程](docs/randomized-backward.zh-CN.md)
+精确路由与数值求和可以分开考虑。新的[中文补充教程](randomized-backward.zh-CN.md)
 从删除—修复分解继续推导：哪些工作可以先证明为零，为什么要在完整取最大值后
 再抽样，以及如何把共享边界的长区间求和变成卷积。它也给出抽样方差、浮点误差
 与实际训练误差之间不能混淆的边界。

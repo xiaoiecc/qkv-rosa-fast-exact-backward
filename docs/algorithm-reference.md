@@ -1,6 +1,11 @@
 # From bit-flip brute force to a unified QKV-ROSA backward
 
-[中文推导](ALGORITHM.zh-CN.md) · [Usage](README.md) · [Measurements](benchmarks/README.md)
+[中文推导](algorithm-reference.zh-CN.md) · [Usage](../README.md) · [Measurements](../benchmarks/README.md)
+
+> This is the **exhaustive reference**: every invariant, edge case, certificate and
+> cost parameter, in derivation order. New readers should start with the
+> principle-first guide, [ALGORITHM.md](../ALGORITHM.md), and return here for the
+> complete proofs.
 
 The starting algorithm is easy to trust: flip one bit, rerun the hard forward,
 and measure the output difference. It also repeats nearly everything. This
@@ -66,11 +71,11 @@ one symbol, so the winner becomes $`(1,3)`$, selecting $`P_4`$. If
 $`V_3=0,V_4=1,e_1=2,g_4=3`$, this flip contributes $`3(2-(-2))=12`$.
 Earlier rows cannot depend on $`Q_4`$.
 
-![The causal match and its one-bit counterfactual](images/02-route-partition.svg)
+![The causal match and its one-bit counterfactual](../images/02-route-partition.svg)
 
-The generator [`images/generate_figures.py`](images/generate_figures.py)
+The generator [`images/generate_figures.py`](../images/generate_figures.py)
 independently enumerates the examples in this guide and writes their data to
-[`images/figure_data.json`](images/figure_data.json). It imports no optimized
+[`images/figure_data.json`](../images/figure_data.json). It imports no optimized
 matching code.
 
 ## 2. The expensive definition, and a map of its repeated work
@@ -83,7 +88,7 @@ The credit of bit $`(s,j)`$ in $`X\in\{Q,K,V\}`$ is defined by
 ```
 
 The independent oracle in
-[`rosa_reference.py`](conv_rosa_transformer/rosa_reference.py) implements that
+[`rosa_reference.py`](../conv_rosa_transformer/rosa_reference.py) implements that
 definition directly. Its literal forward considers every row, every candidate
 endpoint, and then walks left while the characters agree:
 
@@ -101,7 +106,7 @@ The suffix walks cost $`O(T^3)`$ per forward. Including payload-vector work,
 all flips cost $`O(DT^4+D^2T^2)`$, usually abbreviated to $`O(DT^4)`$ for
 fixed or small D.
 
-![The nested brute-force work and its common subproblems](images/01-repeated-work.svg)
+![The nested brute-force work and its common subproblems](../images/01-repeated-work.svg)
 
 A natural first thought is to compute all original $`F_t(r)`$ by
 $`F_t(r)=1+F_{t-1}(r-1)`$ on equality and zero otherwise. That is a valid
@@ -254,7 +259,7 @@ For `01010` at row 4, all values can be checked by four endpoints:
 | 2 | (1, 0) | (0, −1) | (1, 0) |
 | 3 | (3, 2) | (0, −1) | (3, 2) |
 
-![Increasing A, decreasing H, and the full route-order minimum](images/03-deletion-envelope.svg)
+![Increasing A, decreasing H, and the full route-order minimum](../images/03-deletion-envelope.svg)
 
 A is nondecreasing as its endpoint set grows. H is nonincreasing as its set
 shrinks and each surviving length cap decreases. Both statements hold in the
@@ -284,7 +289,7 @@ Every other endpoint obeys
 \boxed{F(r)=\min(h,r-l+1).}
 ```
 
-![One exact exception to a whole run formula](images/04-run-formula.svg)
+![One exact exception to a whole run formula](../images/04-run-formula.svg)
 
 For the illustrated companion input, h=3 and l=2. The ordinary formula gives
 1, 2, 3, 3, 3, 3, but the boundary endpoint 4 actually matches five symbols.
@@ -410,7 +415,7 @@ actual hash collisions still cost time; this is not a whole-backward bound.
 A cost planner chooses direct queries, two blocks or four blocks from the
 observed Q/K vocabulary and varying bits. These are choices inside one exact
 root join, not specialized kernels for benchmark families. The planner can be
-wrong about speed without changing any credit. The [randomized search guide](docs/exact-randomized.md)
+wrong about speed without changing any credit. The [randomized search guide](exact-randomized.md)
 derives its coverage probability, construction costs and measured failures.
 
 The standalone forward follows only the original Q trajectory. Its matched
@@ -422,7 +427,7 @@ certificates or a lazily built range-maximum tree. Auxiliary space is O(T).
 Assuming constant average hash-probe cost, the scan is O(T), and the complete
 algorithm including general endpoint maintenance is O(T log T). Full state
 and 64-bit symbol comparisons make hash collisions a performance concern only.
-The [forward measurements](benchmarks/results/forward.json) time this path
+The [forward measurements](../benchmarks/results/forward.json) time this path
 separately from the backward.
 
 An ordinary Q branch stores owner, bit, longest edited match, and `short_state`:
@@ -437,7 +442,7 @@ an unedited suffix from being mistaken for a repair.
 For K=`01010`, the endpos of `0` is {0,2,4}. At t=4, endpoint 4 is still
 illegal. Paying to discover it in every group is unnecessary.
 
-![The same terminal interval with only causal nodes active](images/05-causal-occurrences.svg)
+![The same terminal interval with only causal nodes active](../images/05-causal-occurrences.svg)
 
 Maintain a doubly linked list of active endpoints in terminal order. Build
 the complete list, then delete endpoints in reverse time order. A deleted
@@ -527,7 +532,7 @@ one to both coordinates. The first mismatch retires the branch permanently:
 a later occurrence would imply an occurrence at that failed row by removing
 its trailing symbols.
 
-![Two continuation intervals share one fixed K owner](images/06-continuation-intervals.svg)
+![Two continuation intervals share one fixed K owner](../images/06-continuation-intervals.svg)
 
 The companion input Q=`00000`, K=`10000` makes the certificate visible. The
 edited symbol `1` has only endpoint 0. Flipping Q owner 1 gives routes
@@ -622,7 +627,7 @@ $`2\cdot10^{16}+2+2-2\cdot10^{16}=4`$ can become zero under ordinary
 binary64 addition. Subtracting two rounded global prefixes also introduces
 large history outside the requested interval.
 
-![Preserve the small residual through snapshots and final cancellation](images/07-exact-aggregation.svg)
+![Preserve the small residual through snapshots and final cancellation](../images/07-exact-aggregation.svg)
 
 `ExactExpansion` retains error-free floating-point residuals through Fenwick
 nodes, point queries, birth/finish snapshots, interval sums, common Q
@@ -745,7 +750,7 @@ payload scoring, or all $`TD`$ output cells. Its mean squared coordinate error
 is $`(1-p_j)R_{s,j}^2/p_j`$ in exact arithmetic. The measured error is too large
 on some inputs to enable a small budget by default. Full repairs remain the
 ordinary path. Even oracle importance probabilities leave large errors on
-the measured inputs. The [randomization guide](docs/exact-randomized.md)
+the measured inputs. The [randomization guide](exact-randomized.md)
 records this rejection. The public `randomized=True` option selects the exact
 root join above and never enables this separate research sampler.
 
@@ -777,23 +782,23 @@ is a quadratic lower bound.
 
 | Mathematical role | Source |
 |---|---|
-| Independent hard forward and all-bit definition | [`rosa_reference.py`](conv_rosa_transformer/rosa_reference.py) |
-| Public arrays, validation, native build | [`rosa_core.py`](conv_rosa_transformer/rosa_core.py) |
-| Lean hard forward and lazy latest endpoints | [`forward.h`](conv_rosa_transformer/csrc/forward.h) |
-| Full-key SAM dictionaries, shared Q roots, causal support, Q branches | [`sam_q.h`](conv_rosa_transformer/csrc/sam_q.h) |
-| Shared suffix and endpoint queries | [`sam_routes.h`](conv_rosa_transformer/csrc/sam_routes.h) |
-| R staircase, A/H, compressed owner intervals | [`delete_indexed.h`](conv_rosa_transformer/csrc/delete_indexed.h) |
-| Row loop, K heaps, score sharing, contraction | [`unified_core.cpp`](conv_rosa_transformer/csrc/unified_core.cpp) |
-| Residual-preserving aggregation | [`exact_expansion.h`](conv_rosa_transformer/csrc/exact_expansion.h) |
-| Bounded causal-band joint proposals | [`pair_candidates.h`](conv_rosa_transformer/csrc/pair_candidates.h) |
-| Batched training, metric, blocks and logit mapping | [`training_impl.h`](conv_rosa_transformer/csrc/training_impl.h) |
-| Framework-independent C interface | [`training.h`](conv_rosa_transformer/csrc/training.h) |
-| Thin PyTorch autograd adapter | [`rosa_layer.py`](conv_rosa_transformer/rosa_layer.py) |
+| Independent hard forward and all-bit definition | [`rosa_reference.py`](../conv_rosa_transformer/rosa_reference.py) |
+| Public arrays, validation, native build | [`rosa_core.py`](../conv_rosa_transformer/rosa_core.py) |
+| Lean hard forward and lazy latest endpoints | [`forward.h`](../conv_rosa_transformer/csrc/forward.h) |
+| Full-key SAM dictionaries, shared Q roots, causal support, Q branches | [`sam_q.h`](../conv_rosa_transformer/csrc/sam_q.h) |
+| Shared suffix and endpoint queries | [`sam_routes.h`](../conv_rosa_transformer/csrc/sam_routes.h) |
+| R staircase, A/H, compressed owner intervals | [`delete_indexed.h`](../conv_rosa_transformer/csrc/delete_indexed.h) |
+| Row loop, K heaps, score sharing, contraction | [`unified_core.cpp`](../conv_rosa_transformer/csrc/unified_core.cpp) |
+| Residual-preserving aggregation | [`exact_expansion.h`](../conv_rosa_transformer/csrc/exact_expansion.h) |
+| Bounded causal-band joint proposals | [`pair_candidates.h`](../conv_rosa_transformer/csrc/pair_candidates.h) |
+| Batched training, metric, blocks and logit mapping | [`training_impl.h`](../conv_rosa_transformer/csrc/training_impl.h) |
+| Framework-independent C interface | [`training.h`](../conv_rosa_transformer/csrc/training.h) |
+| Thin PyTorch autograd adapter | [`rosa_layer.py`](../conv_rosa_transformer/rosa_layer.py) |
 
 Run `python tests/run.py` for quick independent checks, or
 `python tests/run.py --exhaustive` for the full binary enumeration and
-structural oracles. [`tests/README.md`](tests/README.md) states the test gates;
-[`benchmarks/README.md`](benchmarks/README.md) gives absolute CPU latency,
+structural oracles. [`tests/README.md`](../tests/README.md) states the test gates;
+[`benchmarks/README.md`](../benchmarks/README.md) gives absolute CPU latency,
 throughput, resource measurements, and a reproducible upstream comparison.
 
 Useful exercises before modifying a data structure:
@@ -867,7 +872,7 @@ both individual flips preserve the output, and the old penalty also assigns
 zero credit to the useful joint flip. Diameter scaling restores its signal.
 The regression test executes the layer's ordinary `loss.backward()`.
 
-![A useful joint edit erased by an excessive penalty](images/diameter_barrier.png)
+![A useful joint edit erased by an excessive penalty](../images/diameter_barrier.png)
 
 This statement concerns the chosen local model. Unknown downstream cross
 curvature and simultaneous shared-parameter changes still prevent a guarantee
@@ -884,19 +889,19 @@ matching pass; training timings must include it. Active-row selection and the
 metric depend on g. Their surrogate update preserves positive loss scaling,
 but is not a fixed VJP additive in arbitrary incoming gradients.
 
-The [native component guide](docs/native-training.md) derives the selected
+The [native component guide](native-training.md) derives the selected
 rule and its first-order alternative. Packing, both passes, the diagonal,
 proposals, joint replay, logit mapping and embedding gradients now run in one
-batched C++ implementation. The [results](docs/native-results.md) separate
+batched C++ implementation. The [results](native-results.md) separate
 exact randomization from native integration, and retain the numerical
-migration and held-out loss regressions. The [forward supplement](docs/forward.md) continues to document the
+migration and held-out loss regressions. The [forward supplement](forward.md) continues to document the
 separate lean matcher and its timings.
 
 
 ## 14. Where randomization belongs
 
 Route discovery and numerical summation admit different guarantees. The
-[new supplement](docs/randomized-backward.md) continues from deletion/repair:
+[new supplement](randomized-backward.md) continues from deletion/repair:
 prove zero work first, sample only after a complete maximum, then turn shared
 interval boundaries into convolution. It derives the variance and separates
 route exactness, floating-point reduction error and actual training outcomes.
