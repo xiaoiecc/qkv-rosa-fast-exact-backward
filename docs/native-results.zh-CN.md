@@ -1,5 +1,8 @@
 # 原生训练与精确随机化：结果、范围和负例
 
+> 此页是先前集成版本的历史测量；当前默认开启精确随机化，新结果见 [本轮报告](randomized-results.zh-CN.md)。
+
+
 [English](native-results.md) · [接入与推导](native-training.zh-CN.md) · [随机化证明](exact-randomized.zh-CN.md)
 
 本轮固定两项实现：批量 C++ 训练，以及不丢任何根邻居的随机分块查询。

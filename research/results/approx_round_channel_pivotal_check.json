@@ -1,0 +1,40 @@
+{
+  "status": "PASS",
+  "method": "long-double waterfilled fixed-size PPS pivotal after Fisher-Yates random ordering; original inclusion probabilities retained for HT",
+  "header_sha256": "a72e48d625622e51c1d9fdcc9480e9b7e884b3ef70cbaf2639c6eb06365be960",
+  "draws_per_case": 100000,
+  "cases": [
+    {
+      "name": "uniform_64",
+      "N": 64,
+      "budget": 8,
+      "maximum_marginal_z": 2.00798
+    },
+    {
+      "name": "nine_heavy_fiftyfive_tiny",
+      "N": 64,
+      "budget": 8,
+      "maximum_marginal_z": 2.73242
+    },
+    {
+      "name": "one_1e300_rest_1e_minus300",
+      "N": 64,
+      "budget": 8,
+      "maximum_marginal_z": 2.69558
+    },
+    {
+      "name": "all_zero_uniform_fallback",
+      "N": 5,
+      "budget": 2,
+      "maximum_marginal_z": 1.64602
+    },
+    {
+      "name": "logscale_eight",
+      "N": 8,
+      "budget": 7,
+      "maximum_marginal_z": 0.313356
+    }
+  ],
+  "fixed_size_cases": "N=0,1,2,8,64; every budget 0..N; 100 seeds each",
+  "checker": "research/cpp/approx_channel_pivotal_check.cpp"
+}

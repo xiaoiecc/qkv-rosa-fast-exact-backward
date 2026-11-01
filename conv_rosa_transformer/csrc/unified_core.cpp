@@ -1,9 +1,10 @@
+#include "approx_corridor_fft.h"
+#include "exact_payload_identity_batch.h"
 // Exact single-bit QKV-ROSA VJP, unified implementation.
 // One algorithm: live Q repair states, deletion staircases, filtered K repair.
 #include <algorithm>
 #include <cstdint>
 #include <exception>
-#include <map>
 #include <cmath>
 #include <limits>
 #include <tuple>
@@ -14,6 +15,7 @@
 #include "delete_indexed.h"
 #include "exact_expansion.h"
 #include "pair_candidates.h"
+#include "full_word_map.h"
 
 using PackedRoute = uint64_t;
 static inline PackedRoute pack_route(int length, int end) {
@@ -73,7 +75,8 @@ static int uniform_impl(
     uint64_t* selection_counters=nullptr, int repair_budget=-1,
     uint64_t sampling_seed=0, uint64_t forced_mask=0,
     bool randomized_roots=false,
-    uint64_t root_seed=rosa_exact::SamQRepairs::process_hash_seed()) {
+    uint64_t root_seed=rosa_exact::SamQRepairs::process_hash_seed(),
+    uint64_t* spectral_stats=nullptr,int fft_sample_budget=0,uint64_t fft_sample_seed=0) {
   try {
     if(n<0 || n >= (1<<28) || d<1 || d>64) return 1;
     const size_t nd=size_t(n)*d;
@@ -84,15 +87,15 @@ static int uniform_impl(
     if(selection_counters)std::fill(selection_counters,selection_counters+5,uint64_t(0));
     if(!n) return 0;
 
-    std::map<uint64_t,int> payload_map;
+    rosa_exact::FullWordMap payload_map(size_t(n),root_seed^UINT64_C(0xd6e8feb86659fd93));
     std::vector<uint64_t> payload_words;
     std::vector<int> payload_id(n);
     for(int s=0;s<n;++s) {
       uint64_t word=0;
       for(int j=0;j<d;++j)word|=uint64_t(v[size_t(s)*d+j])<<j;
-      auto res=payload_map.emplace(word,int(payload_words.size()));
+      auto res=payload_map.insert(word,int(payload_words.size()));
       if(res.second)payload_words.push_back(word);
-      payload_id[s]=res.first->second;
+      payload_id[s]=res.first;
     }
     const int np=int(payload_words.size()); counters[0]=np;
     std::vector<double> payload,scores(np);
@@ -115,7 +118,7 @@ static int uniform_impl(
     std::vector<rosa_exact::ExactExpansion> qdiff(n+1);
     std::vector<double> kdiff(n+1,0);
     std::vector<double> kgrad_diff;
-    std::vector<PackedRoute> kbest(nd,0);
+    std::vector<PackedRoute> kbest;
     std::vector<size_t> ktouched;
     ktouched.reserve(n);
 
@@ -127,38 +130,103 @@ static int uniform_impl(
       selection_counters[3]=qsam.supported_repair_mask();
       selection_counters[4]=qsam.selected_repair_mask();
     }
+    const bool has_repairs=qsam.selected_repair_mask()!=0;
+    if(has_repairs)kbest.assign(nd,0);
     rosa_exact::SamRoutes index(qsam,q,k);
     rosa_exact::IndexedDeleteRow del(q,k,n);
-    std::vector<int> qrun_end(n),krun_end(n),finish_head(n,-1),heap_at_key(nd,-1),active_heaps;
-    for(int i=n-1;i>=0;--i) {
+    std::vector<int> qrun_end(has_repairs?n:0),krun_end(has_repairs?n:0),
+        finish_head(n,-1),heap_at_key(has_repairs?nd:0,-1),active_heaps;
+    for(int i=has_repairs?n-1:-1;i>=0;--i) {
       qrun_end[i]=(i+1<n && q[i]==q[i+1])?qrun_end[i+1]:i+1;
       krun_end[i]=(i+1<n && k[i]==k[i+1])?krun_end[i+1]:i+1;
     }
     std::vector<SingletonCorridor> corridors;
+    rosa_random::BoundaryCorridorFFT corridor_fft(root_seed,fft_sample_budget,fft_sample_seed);
     std::vector<CorridorHeap> corridor_heaps;
     std::vector<rosa_exact::SamQRepairs::Repair> detached;
-    std::vector<double> base_scores(n,0.0);
+    // An identically zero output adjoint/metric contributes an exact zero to
+    // every route score. Index only its nonzero support for deferred sums.
+    // Removing add(0) events preserves the order of every nonzero event.
+    std::vector<int> score_rows,score_row_end;
+    std::vector<double> base_scores(has_repairs?n:0,0.0);
     // A single cache admission rule for all inputs. At most 4D payload
     // classes are retained, and row/class scores are evaluated on demand.
     const int cache_budget=4*d,cache_threshold=(n+cache_budget-1)/cache_budget;
-    std::vector<int> payload_frequency(np,0),heavy_slot(np,-1);
-    for(const int id:payload_id)++payload_frequency[id];
+    std::vector<int> payload_frequency(has_repairs?np:0,0),heavy_slot(has_repairs?np:0,-1);
+    if(has_repairs)for(const int id:payload_id)++payload_frequency[id];
     int heavy_count=0;
-    for(int id=0;id<np;++id)
+    for(int id=0;has_repairs && id<np;++id)
       if(np<=cache_budget || payload_frequency[id]>=cache_threshold)heavy_slot[id]=heavy_count++;
     // Hoist the payload-position -> admitted slot map out of the H-row loop.
     // A cache hit then avoids a second dependent class-index lookup.
-    std::vector<int> heavy_at_position(n);
-    for(int s=0;s<n;++s)heavy_at_position[s]=heavy_slot[payload_id[s]];
+    std::vector<int> heavy_at_position(has_repairs?n:0);
+    for(int s=0;has_repairs && s<n;++s)heavy_at_position[s]=heavy_slot[payload_id[s]];
     std::vector<double> corridor_cache;
     const double uncomputed=std::numeric_limits<double>::quiet_NaN();
     QDeletionSnapshots qdeletion;
+    auto finish_corridors=[&](int t) {
+      if(spectral_stats && finish_head[t]>=0)
+        corridor_fft.finish<Quadratic>(finish_head[t],corridors,n,d,v,grad,bit_costs.data(),emb1,
+          base_scores.data(),score_row_end.data(),heavy_at_position.data(),heavy_count);
+      // The remaining numerical work visits each certified alignment interval.
+      // Preserve all binary64 summation residuals until interval cancellation
+      // is complete; the per-row dot product still uses ordinary float64.
+      for(int id=finish_head[t];id>=0;id=corridors[id].next_finish) {
+        auto&c=corridors[id];
+        rosa_exact::ExactExpansion correction;
+        double fft_value=0;
+        if(spectral_stats && corridor_fft.get(id,t,fft_value))correction.add(fft_value);
+        else for(int at=score_row_end[c.start];at<score_row_end[c.stop+1];++at) {
+          const int x=score_rows[at];
+          const int payload_position=x+c.end_bias+1,slot=heavy_at_position[payload_position];
+          double row=slot<0?uncomputed:corridor_cache[size_t(x)*heavy_count+slot];
+          if(std::isnan(row)) {
+            const int payload_class=payload_id[payload_position];
+            row=0;
+            if constexpr(Quadratic) {
+              const double* costs=bit_costs.data()+2*size_t(x)*d;
+              const uint64_t word=payload_words[payload_class];
+              for(int j=0;j<d;++j)row+=costs[2*j+int((word>>j)&1)];
+            } else {
+              const double* gx=grad+size_t(x)*d;
+              const double* px=payload.data()+size_t(payload_class)*d;
+              for(int j=0;j<d;++j)row+=gx[j]*px[j];
+            }
+            counters[21]+=d;
+            if(slot>=0)corridor_cache[size_t(x)*heavy_count+slot]=row;
+          }
+          correction.add(row-base_scores[x]);
+        }
+        auto removed=qdeletion.point(c.owner);
+        removed.subtract(c.deletion_at_birth);
+        correction.subtract(removed);
+        // This key never re-enters the ordinary live list. Reuse its finished
+        // snapshot slot to retain the correction until the final common-Q sum
+        // is available; projecting the two large terms separately loses bits.
+        correction.add(cq[size_t(c.owner)*d+c.bit]);
+        c.deletion_at_birth=std::move(correction);
+        --qdeletion.active;
+      }
+    };
     for(int t=0;t<n;++t) {
       qsam.advance(t);
       index.observe();
       qsam.extract_singleton_continuations(k,detached);
       if(!detached.empty()) {
         qdeletion.init(n);
+        if(score_row_end.empty()) {
+          score_row_end.resize(n+1);score_rows.reserve(n);
+          for(int x=0;x<n;++x) {
+            score_row_end[x]=int(score_rows.size());
+            bool nonzero=false;
+            for(int j=0;j<d;++j) {
+              const size_t at=size_t(x)*d+j;
+              if(grad[at]!=0 || (Quadratic && diagonal[at]!=0)) {nonzero=true;break;}
+            }
+            if(nonzero)score_rows.push_back(x);
+          }
+          score_row_end[n]=int(score_rows.size());
+        }
         if(heavy_count && corridor_cache.empty())corridor_cache.assign(size_t(n)*heavy_count,uncomputed);
         if constexpr(Quadratic)if(bit_costs.empty())bit_costs.resize(2*nd);
       }
@@ -188,6 +256,18 @@ static int uniform_impl(
       const auto base=qsam.baseline();
       const PackedRoute baseline=pack_route(base.length,base.end);
       lengths[t]=base.length; routes[t]=base.end;
+      bool nonzero=false;
+      for(int j=0;j<d;++j) {
+        const size_t at=size_t(t)*d+j;
+        if(grad[at]!=0 || (Quadratic && diagonal[at]!=0)){nonzero=true;break;}
+      }
+      if(!nonzero) {
+        // Route/repair states above still advance. No deletion geometry or
+        // row-local repair maxima are needed for an identically zero score.
+        // Corridors ending here must still freeze their deletion snapshots.
+        finish_corridors(t);
+        continue;
+      }
       del.reset(index,t,base.length,base.end);
       counters[10]+=del.a_record_count();
       counters[11]+=del.r_record_count();
@@ -209,6 +289,17 @@ static int uniform_impl(
           empty_score+=g[j]*empty+(0.5*h*empty)*empty;
         }
       } else for(int j=0;j<d;++j)empty_score+=g[j]*emb0[j];
+      if constexpr(Quadratic) {
+        // The trust model is centered at this exact baseline payload. Its
+        // score is zero, including when another endpoint shares the payload.
+        // Populate the ordinary cache without summing D zero bit terms.
+        if(base.end>=0) {
+          const int id=payload_id[base.end+1];
+          scores[id]=0.;score_stamp[id]=t;
+          if(qdeletion.active && heavy_slot[id]>=0)
+            corridor_cache[size_t(t)*heavy_count+heavy_slot[id]]=0.;
+        }
+      }
       auto score_end=[&](int r)->double {
         if(r<0)return empty_score;
         const int id=payload_id[r+1];
@@ -225,7 +316,7 @@ static int uniform_impl(
         return scores[id];
       };
       const double base_score=score_end(base.end);
-      base_scores[t]=base_score;
+      if(has_repairs)base_scores[t]=base_score;
       auto add_range=[&](std::vector<double>& diff,int lo,int hi,int r) {
         if(lo>hi)return;
         const double delta=score_end(r)-base_score;
@@ -320,42 +411,7 @@ static int uniform_impl(
         kbest[key]=0;
       }
       counters[3]+=ktouched.size();ktouched.clear();
-      // The remaining numerical work visits each certified alignment interval.
-      // Preserve all binary64 summation residuals until interval cancellation
-      // is complete; the per-row dot product still uses ordinary float64.
-      for(int id=finish_head[t];id>=0;id=corridors[id].next_finish) {
-        auto&c=corridors[id];
-        rosa_exact::ExactExpansion correction;
-        for(int x=c.start;x<=c.stop;++x) {
-          const int payload_position=x+c.end_bias+1,slot=heavy_at_position[payload_position];
-          double row=slot<0?uncomputed:corridor_cache[size_t(x)*heavy_count+slot];
-          if(std::isnan(row)) {
-            const int payload_class=payload_id[payload_position];
-            row=0;
-            if constexpr(Quadratic) {
-              const double* costs=bit_costs.data()+2*size_t(x)*d;
-              const uint64_t word=payload_words[payload_class];
-              for(int j=0;j<d;++j)row+=costs[2*j+int((word>>j)&1)];
-            } else {
-              const double* gx=grad+size_t(x)*d;
-              const double* px=payload.data()+size_t(payload_class)*d;
-              for(int j=0;j<d;++j)row+=gx[j]*px[j];
-            }
-            counters[21]+=d;
-            if(slot>=0)corridor_cache[size_t(x)*heavy_count+slot]=row;
-          }
-          correction.add(row-base_scores[x]);
-        }
-        auto removed=qdeletion.point(c.owner);
-        removed.subtract(c.deletion_at_birth);
-        correction.subtract(removed);
-        // This key never re-enters the ordinary live list. Reuse its finished
-        // snapshot slot to retain the correction until the final common-Q sum
-        // is available; projecting the two large terms separately loses bits.
-        correction.add(cq[size_t(c.owner)*d+c.bit]);
-        c.deletion_at_birth=std::move(correction);
-        --qdeletion.active;
-      }
+      finish_corridors(t);
       if(baseline) {
         const size_t offset=size_t(base.end+1)*d;
         if constexpr(Quadratic) {
@@ -400,9 +456,91 @@ static int uniform_impl(
         cq[size_t(s)*d+j]+=common_q;ck[size_t(s)*d+j]+=ksum+owner_score;
       }
     }
+    rosa_exact::ExactPayloadIdentityBatch payload_identity;
+    std::vector<rosa_exact::ExactPayloadIdentityBatch::Query> recovery_queries;
+    uint64_t recovery_work=0;bool identity_built=false,identity_finite_known=false,identity_finite=true;
+    if(spectral_stats) {
+      for(size_t id=0;id<corridors.size();++id) {
+        const auto&c=corridors[id];const bool sampled=spectral_stats&&corridor_fft.sampled(int(id),c.stop);
+        const double threshold=corridor_fft.error_indicator(int(id),c.stop);
+        auto total=c.deletion_at_birth;total.add(qdiff[c.owner]);
+        if(sampled||(threshold>0&&std::abs(total.to_double())<=threshold)) {
+          const int first=score_row_end[c.start],last=score_row_end[c.stop+1];
+          bool possible=true;
+          if(sampled)for(int at=first;at<std::min(last,first+8);++at) {
+            const int x=score_rows[at],position=x+c.end_bias+1;
+            if(routes[x]<0||payload_id[position]!=payload_id[routes[x]+1]){possible=false;break;}
+          }
+          if(!possible)continue;
+          recovery_work+=last-first;
+          if(first<last) {
+            const int left=score_rows[first],right=score_rows[last-1];
+            recovery_queries.push_back({int(id),left,left+c.end_bias+1,right-left+1});
+          }
+        }
+      }
+    }
+    auto finite_identity_scores=[&]() {
+      if(!identity_finite_known) {
+        const auto&check=Quadratic?bit_costs:base_scores;
+        identity_finite=std::all_of(check.begin(),check.end(),[](double x){return std::isfinite(x);});
+        identity_finite_known=true;
+      }
+      return identity_finite;
+    };
+    int identity_levels=1;for(int z=spectral_stats?n:0;z>1;z>>=1)++identity_levels;
+    if(recovery_work>8*uint64_t(n)*identity_levels&&finite_identity_scores()) {
+      payload_identity.build(payload_id.data(),routes,n,recovery_queries,root_seed);identity_built=true;
+    }
+    size_t recovery_index=0;
     for(auto&c:corridors) {
       c.deletion_at_birth.add(qdiff[c.owner]);
-      cq[size_t(c.owner)*d+c.bit]=c.deletion_at_birth.to_double();
+      double value=c.deletion_at_birth.to_double(),raw=0;
+      const int id=int(&c-corridors.data());
+      const double threshold=spectral_stats?corridor_fft.error_indicator(id,c.stop):0.;
+      const bool sampled=spectral_stats&&corridor_fft.sampled(id,c.stop);
+      if((sampled||(threshold>0&&std::abs(value)<=threshold))&&corridor_fft.get(id,c.stop,raw)) {
+        while(recovery_index<recovery_queries.size()&&recovery_queries[recovery_index].id<id)++recovery_index;
+        bool identical=score_row_end[c.start]==score_row_end[c.stop+1];
+        if(!identical&&identity_built)
+          identical=recovery_index<recovery_queries.size()&&recovery_queries[recovery_index].id==id&&payload_identity.confirmed(int(recovery_index));
+        if(!identical&&sampled&&!identity_built&&(!identity_finite_known||identity_finite)&&
+            recovery_index<recovery_queries.size()&&recovery_queries[recovery_index].id==id) {
+          identical=true;
+          for(int at=score_row_end[c.start];at<score_row_end[c.stop+1];++at) {
+            const int x=score_rows[at],position=x+c.end_bias+1;
+            if(routes[x]<0||payload_id[position]!=payload_id[routes[x]+1]){identical=false;break;}
+          }
+          if(identical)identical=finite_identity_scores();
+        }
+        // Sampled nonzero estimates are never selected for exact recovery
+        // by their random magnitude. Only input-fixed identities replace them.
+        if(!sampled||identical) {
+        rosa_exact::ExactExpansion exact;
+        ++corridor_fft.counters.exact_fallbacks;
+        if(!identical)for(int at=score_row_end[c.start];at<score_row_end[c.stop+1];++at) {
+          const int x=score_rows[at];++corridor_fft.counters.fallback_rows;
+          const int position=x+c.end_bias+1,slot=heavy_at_position[position];
+          double row=slot<0?uncomputed:corridor_cache[size_t(x)*heavy_count+slot];
+          if(std::isnan(row)) {
+            const int payload_class=payload_id[position];row=0;
+            if constexpr(Quadratic) {
+              const double* costs=bit_costs.data()+2*size_t(x)*d;
+              const uint64_t word=payload_words[payload_class];
+              for(int j=0;j<d;++j)row+=costs[2*j+int((word>>j)&1)];
+            } else {
+              const double* gx=grad+size_t(x)*d;const double* px=payload.data()+size_t(payload_class)*d;
+              for(int j=0;j<d;++j)row+=gx[j]*px[j];
+            }
+            counters[21]+=d;
+            if(slot>=0)corridor_cache[size_t(x)*heavy_count+slot]=row;
+          }
+          exact.add(row-base_scores[x]);
+        }
+        c.deletion_at_birth.add(-raw);c.deletion_at_birth.add(exact);value=c.deletion_at_birth.to_double();
+        }
+      }
+      cq[size_t(c.owner)*d+c.bit]=value;
     }
     // Causality makes these rows identically zero. Preserve that identity even
     // when range-difference prefix sums leave a roundoff cancellation residue.
@@ -410,6 +548,12 @@ static int uniform_impl(
     std::fill(ck+size_t(n-1)*d,ck+nd,0.0);
     if(q_deletion)q_deletion[0]=0.0;
     if(k_deletion)k_deletion[n-1]=0.0;
+    if(spectral_stats) {
+      const auto& f=corridor_fft.counters;
+      spectral_stats[0]=f.groups;spectral_stats[1]=f.queries;spectral_stats[2]=f.rows;
+      spectral_stats[3]=f.transforms;spectral_stats[4]=f.columns;spectral_stats[5]=f.channels;
+      spectral_stats[6]=f.exact_fallbacks;spectral_stats[7]=f.fallback_rows;
+    }
     return 0;
   }catch(const std::bad_alloc&){return 2;}
    catch(const std::exception&){return 3;}

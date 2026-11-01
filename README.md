@@ -23,7 +23,7 @@ layer = NBitQKVRosa(
     channels=128,
     n_bits=8,
     credit_order="second",  # "first" selects original singleton credit
-    randomized=True,       # exact search acceleration; default is False
+    randomized=True,       # exact search acceleration; enabled by default
 )
 optimizer = torch.optim.AdamW(layer.parameters(), lr=1e-3)
 x = torch.randn(2, 32, 128)
@@ -50,53 +50,88 @@ adapter makes one native forward call and one native backward call, with no
 Python loop over batch/group streams. Q/K/V/O parameter names and shapes are
 preserved. Both modes use the same hard evaluation.
 
-`randomized=True` selects an exact randomized root join. Every seed retains
-all legal one-bit neighbors, with full-word verification. It never turns on
-gradient thinning. On/off outputs, gradients, proposal streams and tested
-training updates are bitwise identical. The default stays off because some
-inputs do not benefit. The separate advanced `repair_samples` research option
-has approximation error and is not selected by this switch.
+`randomized=True` is the default exact search accelerator. Full-key checks
+retain every legal neighbor; a cost planner can keep direct queries when its
+index would cost more. This option does not sample gradients. The default
+`backward_mode="exact"` retains the complete finite-credit result.
 
-## Current complete-layer speed
+For explicit aggressive acceleration, set `backward_mode="approximate"`.
+It shares long numerical contractions when profitable and otherwise samples
+complete residual rows after exact deletion/control work. V and embedding
+gradients stay complete; chosen joint corners use complete matcher evaluations.
+The [new derivation](docs/randomized-backward.md) / [中文](docs/randomized-backward.zh-CN.md)
+explains the estimator, its certificates and the floating-point boundary.
 
-These are **absolute current CPU costs**, including dense Q/K/V/O projections
-and their gradients. They exclude the downstream model, task loss and
-optimizer. Both columns below enable exact randomization. B is batch size,
-G is the number of D-bit groups. Medians of seven alternating samples, one
-pinned Intel Xeon Platinum 8573C core, one Torch thread, GCC 13.3,
-PyTorch 2.14.1+cpu, NumPy 2.3.5:
+## Current backward costs
 
-| T | D | B / G | First-order backward | Second-order backward | Second-order forward + backward |
-|---:|---:|---:|---:|---:|---:|
-| 128 | 8 | 4 / 2 | 2.094 ms | 3.373 ms | 4.032 ms |
-| 1,024 | 8 | 1 / 1 | 2.272 ms | 2.935 ms | 4.573 ms |
-| 1,024 | 16 | 2 / 4 | 15.415 ms | 21.679 ms | 26.326 ms |
-| 8,192 | 8 | 1 / 1 | 23.940 ms | 27.678 ms | 31.318 ms |
-| 8,192 | 16 | 1 / 1 | 17.482 ms | 26.858 ms | 30.693 ms |
-| 8,192 | 64 | 1 / 1 | 66.069 ms | 70.939 ms | 83.044 ms |
+These are absolute **complete native backward** costs: public-call validation
+and allocation, metric/proposals, all credit computation, internal joint
+replays, logit mapping, and V/embedding gradients. Dense model projections,
+the task loss and the optimizer are outside this table. All rows use the
+diagonal second-order rule and exact randomized search. Timings are medians
+of nine interleaved samples on one pinned CPU core, with numerical-library
+threads limited to one.
 
-The [full results](docs/native-results.md) / [中文实测](docs/native-results.zh-CN.md)
-include both toggle states, the hard-component scope, every sample and the
-[source-hashed raw report](benchmarks/results/native_component.json).
-Native second-order forward+backward is 1.13–4.48× faster than the frozen
-previous research implementation over these six shapes. Randomization alone
-has mixed full-layer results: 0.723–1.349× across both modes. It is not a
-universal speedup.
+Approximate mode uses 32 residual rows. **A0** keeps all spectral channels;
+**A8** explicitly samples eight. Zero means all channels, not zero computation.
 
-### What the exact randomized join saves
+| Input | T / D | B / G | Exact backward | A0 backward | A8 backward |
+|---|---:|---:|---:|---:|---:|
+| Random words | 128 / 8 | 1 / 1 | 0.252 ms | 0.291 ms | 0.287 ms |
+| Random words | 8,192 / 16 | 1 / 1 | 10.916 ms | 12.932 ms | 13.032 ms |
+| Wide words with one-bit neighbors | 8,192 / 64 | 1 / 1 | 25.079 ms | 25.236 ms | 25.820 ms |
+| Last-row-only periodic adjoint | 4,096 / 4 | 1 / 1 | 4.093 ms | 2.948 ms | 2.852 ms |
+| Captured context-recall adjoint | 512 / 2 | 4 / 4 | 17.044 ms | 13.509 ms | 13.503 ms |
+| Captured long-prefix adjoint | 4,096 / 8 | 1 / 2 | 264.940 ms | 12.432 ms | 12.456 ms |
+| Captured long-prefix adjoint | 2,048 / 64 | 1 / 2 | 302.257 ms | 34.084 ms | 25.005 ms |
 
-For a T8192 D64 input with planted one-bit repairs, the complete native
-credit engine takes **12.033 ms**. Switching randomization on reduces the
-same current engine from 20.094 ms: **1.670×**. Root probes fall from 524,288
-to 16,384 bucket queries and 2,048 exact member checks. Both settings use a
-sparse root table and produce bitwise-identical Q/K/V credits.
+Long shared match intervals benefit most: A0 is **21.31×** faster on the D8
+prefix capture; A8 is **12.09×** faster on the D64 capture. Approximation is
+slower on several other inputs. At 32 rows, raw Q/K gradient errors exceed
+100% on some random and context inputs; those are retained as failures, not
+described as accurate approximations. A8 also has a severe first-order
+cancellation counterexample. The exact default keeps the complete answer.
 
-Across all 15 cases, current on versus the preceding research baseline ranges
-from 0.972–1.814×, retaining the periodic regression. This credit-core scope
-excludes projections and the extra second-order training work; it must not
-be confused with the complete-layer table.
-[Measurements](benchmarks/results/exact_randomized.json) ·
-[coverage proof and bounded buckets](docs/exact-randomized.md).
+The [full report](docs/randomized-results.md) / [中文实测](docs/randomized-results.zh-CN.md)
+contains all **26 cases, both credit orders**, errors for Q alone as well as
+shared Q/K parameters and preceding-layer inputs, negative results, and the
+[source-hashed samples](benchmarks/results/random_final_native.json).
+Older complete-layer and isolated-core timings remain in the
+[historical native report](docs/native-results.md) and
+[exact-search report](docs/exact-randomized.md); their scopes differ.
+
+### Complete ordinary training steps
+
+On a deliberately structured, fresh-data prefix-copy stress task, the final
+implementation also saves time outside a standalone kernel. Each run below
+has 20 ordinary forward/backward/Adam updates, B1/G2/D64, second-order credit,
+and discovery seed 1101. Times include projections, loss and optimizer.
+
+| Sequence length | Exact: 20 updates | A0: 20 updates | A8: 20 updates | Exact / A8 |
+|---:|---:|---:|---:|---:|
+| 2,048 | 5.379 s | 0.830 s | 0.652 s | 8.25× |
+| 4,096 | 19.501 s | not measured | 1.530 s | 12.74× |
+
+![Complete backward and ordinary training costs on long-prefix inputs](images/randomized-results.png)
+
+At length 4096, all 20 hard forwards and batch losses match exact; final
+held-out loss is 15.54690 for both, while Q/K parameters differ from update
+one. This is a short structural stress experiment, not a general convergence
+claim. Two fresh seeds are reported too: on seed 2402, A8 is slower and has
+worse loss than A0. The unretuned first-order configuration increases loss
+for every method. The report preserves all 15 final runs and 300 updates.
+
+To opt into the conservative approximate configuration:
+
+```python
+layer = NBitQKVRosa(
+    channels=128, n_bits=8, credit_order="second",
+    backward_mode="approximate",
+    approximation_rows=32,
+    approximation_channels=0,  # all spectral channels
+)
+# A positive channel budget, e.g. 8, is a separate advanced tradeoff.
+```
 
 ### Forward matching
 
@@ -127,9 +162,9 @@ measurements, not freshly measured native-layer results from this patch.
 All original samples, tolerances and build details remain in the
 [benchmark history](benchmarks/README.md#original-upstream-comparison).
 
-## Training evidence and numerical migration
+## Earlier training evidence and numerical migration
 
-The selected second-order rule is available as a normal component, but better
+The preceding integration study remains available: better
 credit modeling does not imply better results on every task. In three fresh
 100-update MSE-retrieval runs, native integration reduces average training
 loss from 0.068074 to 0.009362 while **held-out loss worsens from 0.278856 to

@@ -1,0 +1,568 @@
+{
+  "status": "PASS",
+  "scope": "Build a linear-space payload identity recovery patch; private native check.",
+  "base_core_sha256": "ebb0191d4fb15f8b9b91b9fbc6407a470c1eecd07e338ca90d352d66ed17d0da",
+  "header_sha256": "68fcea92f1acacee01a4bc669fb31529e580eaa8c213738bab70dd8aca61efdc",
+  "rows": [
+    {
+      "case": "shadow",
+      "T": 2048,
+      "D": 64,
+      "quadratic": false,
+      "spectral": false,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "shadow",
+      "T": 2048,
+      "D": 64,
+      "quadratic": false,
+      "spectral": true,
+      "values_bitwise": true,
+      "baseline_stats": [
+        1,
+        2046,
+        2096127,
+        2,
+        2,
+        1,
+        1022,
+        1046528
+      ],
+      "candidate_stats": [
+        1,
+        2046,
+        2096127,
+        2,
+        2,
+        1,
+        1022,
+        0
+      ]
+    },
+    {
+      "case": "shadow",
+      "T": 2048,
+      "D": 64,
+      "quadratic": true,
+      "spectral": false,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "shadow",
+      "T": 2048,
+      "D": 64,
+      "quadratic": true,
+      "spectral": true,
+      "values_bitwise": true,
+      "baseline_stats": [
+        1,
+        2046,
+        2096127,
+        2,
+        2,
+        1,
+        1022,
+        1046528
+      ],
+      "candidate_stats": [
+        1,
+        2046,
+        2096127,
+        2,
+        2,
+        1,
+        1022,
+        0
+      ]
+    },
+    {
+      "case": "shadow",
+      "T": 1024,
+      "D": 8,
+      "quadratic": false,
+      "spectral": false,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "shadow",
+      "T": 1024,
+      "D": 8,
+      "quadratic": false,
+      "spectral": true,
+      "values_bitwise": true,
+      "baseline_stats": [
+        1,
+        1022,
+        523775,
+        9,
+        8,
+        8,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        1,
+        1022,
+        523775,
+        9,
+        8,
+        8,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "shadow",
+      "T": 1024,
+      "D": 8,
+      "quadratic": true,
+      "spectral": false,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "shadow",
+      "T": 1024,
+      "D": 8,
+      "quadratic": true,
+      "spectral": true,
+      "values_bitwise": true,
+      "baseline_stats": [
+        1,
+        1022,
+        523775,
+        9,
+        8,
+        8,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        1,
+        1022,
+        523775,
+        9,
+        8,
+        8,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "periodic",
+      "T": 512,
+      "D": 4,
+      "quadratic": false,
+      "spectral": false,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "periodic",
+      "T": 512,
+      "D": 4,
+      "quadratic": false,
+      "spectral": true,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "periodic",
+      "T": 512,
+      "D": 4,
+      "quadratic": true,
+      "spectral": false,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "periodic",
+      "T": 512,
+      "D": 4,
+      "quadratic": true,
+      "spectral": true,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "wide",
+      "T": 1024,
+      "D": 64,
+      "quadratic": false,
+      "spectral": false,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "wide",
+      "T": 1024,
+      "D": 64,
+      "quadratic": false,
+      "spectral": true,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "wide",
+      "T": 1024,
+      "D": 64,
+      "quadratic": true,
+      "spectral": false,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "wide",
+      "T": 1024,
+      "D": 64,
+      "quadratic": true,
+      "spectral": true,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "random",
+      "T": 513,
+      "D": 8,
+      "quadratic": false,
+      "spectral": false,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "random",
+      "T": 513,
+      "D": 8,
+      "quadratic": false,
+      "spectral": true,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "random",
+      "T": 513,
+      "D": 8,
+      "quadratic": true,
+      "spectral": false,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "random",
+      "T": 513,
+      "D": 8,
+      "quadratic": true,
+      "spectral": true,
+      "values_bitwise": true,
+      "baseline_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "candidate_stats": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

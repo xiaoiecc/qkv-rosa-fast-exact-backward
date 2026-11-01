@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <utility>
 #include <vector>
+#include "exact_hamming_join.h"
 
 namespace rosa_exact {
 
@@ -24,11 +25,7 @@ public:
         uint64_t born=0, retired=0, endpoint_queries=0;
     };
 
-    struct RootJoinCounters {
-        uint64_t enabled=0, used=0, direct_queries=0, bucket_queries=0;
-        uint64_t bucket_members=0, bucket_build_entries=0, empty_buckets=0, verified_neighbors=0;
-        uint64_t blocks=0;
-    };
+    using RootJoinCounters=HammingJoinCounters;
     static uint64_t process_hash_seed() { return default_seed(); }
     RootJoinCounters root_join_counters;
 
@@ -64,16 +61,19 @@ public:
         if (t!=time_+1 || t>=n_) throw std::invalid_argument("advance must be sequential");
         time_=t;
         detached_.clear();
-        if (t) {
+        if (t && !occurrence_position_.empty()) {
             const int p=occurrence_position_[t-1];
-            endpoint_tree_.update(p,t-1);
-            const int left=occurrence_prev_[p],right=occurrence_next_[p];
-            if (left>=0) occurrence_next_[left]=p;
-            if (right<n_) occurrence_prev_[right]=p;
+            if(!endpoint_tree_.a.empty())endpoint_tree_.update(p,t-1);
+            if(!occurrence_prev_.empty()) {
+                const int left=occurrence_prev_[p],right=occurrence_next_[p];
+                if (left>=0) occurrence_next_[left]=p;
+                if (right<n_) occurrence_prev_[right]=p;
+            }
         }
         const Match old_base=base_match_;
+        const uint64_t word_hash=mix(q_[t]^seed_);
         const int ordinary_root=causal_root(root_original_[t],t);
-        base_match_=consume(old_base,q_[t],t,ordinary_root);
+        base_match_=consume(old_base,q_[t],word_hash,t,ordinary_root);
         baseline_={base_match_.length,base_match_.end};
 
         size_t kept=0;
@@ -81,11 +81,11 @@ public:
         for (size_t i=0;i<old_size;++i) {
             Repair z=active_[i];
             ++counters.active_advances;
-            const int short_target=valid_transition(z.short_state,q_[t],t);
+            const int short_target=valid_transition(z.short_state,q_[t],word_hash,t);
             if (short_target<0) { ++counters.retired; continue; }
             const Match m=z.short_state==z.state
                 ? Match{short_target,z.length+1,direct_endpoint(short_target,z.end,q_[t],t)}
-                : consume({z.state,z.length,z.end},q_[t],t,ordinary_root);
+                : consume({z.state,z.length,z.end},q_[t],word_hash,t,ordinary_root);
             z.short_state=short_target;
             z.state=m.state;z.length=m.length;z.end=m.end;
             if(detachable(z,t))detached_.push_back(z);
@@ -100,7 +100,8 @@ public:
             if(!((selected_mask_>>bit)&1))continue;
             const int root=causal_root(target,t);
             if (root<0) continue;
-            Match m=consume(old_base,q_[t]^(uint64_t(1)<<bit),t,root);
+            const uint64_t edited=q_[t]^(uint64_t(1)<<bit);
+            Match m=consume(old_base,edited,mix(edited^seed_),t,root);
             const Repair z{t,bit,m.length,m.end,m.state,root};
             if(detachable(z,t))detached_.push_back(z);
             else active_.push_back(z);
@@ -135,6 +136,7 @@ public:
         if (!state || limit<=0) return 0;
         if (nodes_[state].firstpos<limit) return state;
         int failed=state;
+        if(up_.empty())build_lifting();
         for (int level=int(up_.size())-1; level>=0; --level) {
             const int ancestor=up_[level][failed];
             if (ancestor && nodes_[ancestor].firstpos>=limit) failed=ancestor;
@@ -150,6 +152,7 @@ public:
             length>nodes_[state].length) throw std::invalid_argument("invalid suffix length");
         if(nodes_[nodes_[state].link].length<length)return state;
         int v=state;
+        if(up_.empty())build_lifting();
         for (int level=int(up_.size())-1; level>=0; --level) {
             const int ancestor=up_[level][v];
             if (ancestor && nodes_[ancestor].length>=length) v=ancestor;
@@ -173,6 +176,8 @@ public:
         if (state<=0 || state>=int(nodes_.size())) throw std::invalid_argument("invalid state");
         const int first=nodes_[state].firstpos;
         if (first>=time_) return;
+        if(first==last_endpoint_[state]){f(first);return;}
+        if(occurrence_prev_.empty())build_active_occurrences();
         const auto range=occurrence_range(state);
         const int anchor=occurrence_position_[first];
         for (int p=anchor;p<range.second;p=occurrence_next_[p]) f(occurrence_endpoints_[p]);
@@ -189,7 +194,7 @@ public:
             const int lo=occurrence_prefix_[tin_[state]], hi=occurrence_prefix_[tout_[state]];
             if (first>=time_) endpoint_cache_[state]=-1;
             else if (hi-lo==last-first+1) endpoint_cache_[state]=std::min(last,time_-1);
-            else endpoint_cache_[state]=endpoint_tree_.query(lo,hi);
+            else {if(endpoint_tree_.a.empty())build_endpoint_tree();endpoint_cache_[state]=endpoint_tree_.query(lo,hi);}
             score_stamp_[state]=time_;
             ++counters.endpoint_queries;
         }
@@ -203,6 +208,8 @@ public:
         return edges_.capacity()*sizeof(Edge)+transition_table_.capacity()*sizeof(int)
             +state_salts_.capacity()*sizeof(uint64_t);
     }
+    // Exact auxiliary indexes are built only for an unresolved query.
+    int materialized_auxiliary_indexes() const {return int(!endpoint_tree_.a.empty()) | (int(!up_.empty())<<1);}
     uint64_t supported_repair_mask() const {return supported_mask_;}
     uint64_t selected_repair_mask() const {return selected_mask_;}
     Counters counters;
@@ -231,10 +238,11 @@ private:
     } endpoint_tree_;
     const uint64_t* q_;
     const uint64_t* k_;
-    int n_,d_,time_=-1;
+    int n_,d_,time_=-1,max_link_depth_=0;
     uint64_t seed_;
     size_t query_symbols_=0;
     size_t root_degree_=0;
+    uint64_t root_reference_=0,root_varying_=0;
     uint64_t supported_mask_=0,selected_mask_=0;
     std::vector<size_t> active_lanes_;
     std::vector<uint64_t> state_salts_;
@@ -248,8 +256,8 @@ private:
     std::vector<int> prefix_state_,tin_,tout_,score_stamp_,endpoint_cache_;
     std::vector<int> last_endpoint_;
     std::vector<int> occurrence_prefix_,occurrence_endpoints_;
-    std::vector<int> occurrence_position_,occurrence_prev_,occurrence_next_;
-    std::vector<std::vector<int>> up_;
+    mutable std::vector<int> occurrence_position_,occurrence_prev_,occurrence_next_;
+    mutable std::vector<std::vector<int>> up_;
     Match base_match_;
     Route baseline_;
     std::vector<Repair> active_,detached_;
@@ -284,7 +292,10 @@ private:
         }
     }
     void add_edge(size_t slot,int state,uint64_t symbol,int target) {
-        if(!state)++root_degree_;
+        if(!state) {
+            if(root_degree_++)root_varying_|=symbol^root_reference_;
+            else root_reference_=symbol;
+        }
         transition_table_[slot]=int(edges_.size());
         edges_.push_back({symbol,state,target,builder_[state].head});
         builder_[state].head=int(edges_.size())-1;
@@ -326,38 +337,6 @@ private:
         return cur;
     }
 
-    // A projected bucket is still a full-key dictionary: the projected word
-    // is compared exactly, and every enumerated neighbor is verified by XOR.
-    struct RootBuckets {
-        struct Group { uint64_t word; int head=-1,count=0; };
-        uint64_t mask=0;
-        std::vector<int> table,next;
-        std::vector<Group> groups;
-        RootBuckets(uint64_t bits,const std::vector<int>& roots,
-                    const std::vector<Edge>& edges,uint64_t seed):mask(bits),next(roots.size(),-1) {
-            size_t capacity=8;
-            while(capacity<std::max(size_t(8),roots.size()*2))capacity*=2;
-            table.assign(capacity,-1);groups.reserve(roots.size());
-            for(size_t i=0;i<roots.size();++i) {
-                const uint64_t word=edges[roots[i]].symbol&mask;
-                size_t slot=size_t(mix(word^seed))&(capacity-1);
-                while(table[slot]>=0 && groups[table[slot]].word!=word)
-                    slot=(slot+1)&(capacity-1);
-                int group=table[slot];
-                if(group<0) {group=int(groups.size());table[slot]=group;groups.push_back({word,-1,0});}
-                next[i]=groups[group].head;groups[group].head=int(i);++groups[group].count;
-            }
-        }
-        const Group* find(uint64_t word,uint64_t seed) const {
-            word&=mask;size_t slot=size_t(mix(word^seed))&(table.size()-1);
-            while(table[slot]>=0) {
-                const auto&group=groups[table[slot]];
-                if(group.word==word)return &group;
-                slot=(slot+1)&(table.size()-1);
-            }
-            return nullptr;
-        }
-    };
     static int singleton_bit(uint64_t word) {
         // Called only for a nonzero power of two.
 #if defined(__GNUC__) || defined(__clang__)
@@ -398,7 +377,10 @@ private:
             if(id<0) {
                 id=int(symbols.size());classes[slot]=id;
                 symbols.push_back(symbol);latest_query.push_back(t);
-                const int edge=transition_table_[find_slot(0,symbol,word_hash)];
+                // Every K word agrees outside root_varying_. A mismatch
+                // there proves absence without touching the root dictionary.
+                const int edge=((symbol^root_reference_)&~root_varying_) ? -1
+                    : transition_table_[find_slot(0,symbol,word_hash)];
                 ordinary_root.push_back(edge<0 ? -1 : edges_[edge].target);
             } else latest_query[id]=t;
             query_class_[t]=id;root_original_[t]=ordinary_root[id];
@@ -407,115 +389,29 @@ private:
         root_offsets_.resize(symbols.size()+1);
         root_masks_.assign(symbols.size(),0);
         root_targets_.reserve(symbols.size()*std::min(size_t(4),repair_bits_.size()));
-        root_join_counters.enabled=randomized_roots;
-        auto direct=[&](size_t id,size_t lane)->int {
-            const uint64_t symbol=symbols[id]^(uint64_t(1)<<repair_bits_[lane]);
-            const int edge=transition_table_[find_slot(0,symbol,mix(symbol^seed_))];
-            ++root_join_counters.direct_queries;
-            return edge<0?-1:edges_[edge].target;
-        };
-        // One operation-based planner for all inputs. The occupancy model is
-        // only a speed heuristic: correctness and the per-query D cap never
-        // depend on it. Estimate 2- and 4-block covers, charging index builds,
-        // bucket probes, exact member checks, and a small fixed setup budget.
-        const size_t direct_work=symbols.size()*repair_bits_.size();
-        int blocks=0;
-        std::vector<int> roots,bits;
-        if(randomized_roots && direct_work>256 &&
-           direct_work>2*(symbols.size()+root_degree_)+size_t(d_)) {
-            roots.reserve(root_degree_);uint64_t varying=0,reference=0;
-            for(int edge=builder_[0].head;edge>=0;edge=edges_[edge].next) {
-                if(roots.empty())reference=edges_[edge].symbol;
-                varying|=edges_[edge].symbol^reference;roots.push_back(edge);
-            }
-            bits.resize(d_);for(int j=0;j<d_;++j)bits[j]=j;
-            std::mt19937_64 random(seed_^UINT64_C(0x72da41f6c385eb09));
-            for(int j=d_-1;j>0;--j) {
-                std::uniform_int_distribution<int> pick(0,j);std::swap(bits[j],bits[pick(random)]);
-            }
-            size_t exact_members=0;
-            for(int target:ordinary_root)exact_members+=target>=0;
-            const double self_rate=symbols.empty()?0.0:double(exact_members)/symbols.size();
-            double best=0.85*double(direct_work);
-            for(int count: {2,4}) {
-                if(count>d_)continue;
-                double estimate=256.0+2.0*d_+2.0*count*root_degree_+double(count)*symbols.size();
-                for(int block=0;block<count;++block) {
-                    uint64_t omitted=0;
-                    for(int j=block*d_/count;j<(block+1)*d_/count;++j)
-                        omitted|=uint64_t(1)<<bits[j];
-                    size_t width=0;
-                    for(int bit:repair_bits_)width+=(omitted>>bit)&1;
-                    uint64_t variable=varying&~omitted;int entropy_bits=0;
-                    while(variable){variable&=variable-1;++entropy_bits;}
-                    const double occupancy=std::max(self_rate,std::ldexp(double(root_degree_),-entropy_bits));
-                    estimate+=double(symbols.size())*(occupancy>width?double(width):0.5*occupancy);
+        uint64_t allowed=0;
+        for(int bit:repair_bits_)allowed|=uint64_t(1)<<bit;
+        exact_hamming_one_join(symbols,ordinary_root,
+            HammingDomain{root_degree_,root_reference_,root_varying_},allowed,seed_,randomized_roots,
+            [&](uint64_t symbol)->int {
+                const int edge=transition_table_[find_slot(0,symbol,mix(symbol^seed_))];
+                return edge<0?-1:edges_[edge].target;
+            },
+            [&](auto&& emit) {
+                for(int edge=builder_[0].head;edge>=0;edge=edges_[edge].next)
+                    emit(edges_[edge].symbol,edges_[edge].target);
+            },
+            [&](size_t id,uint64_t available,const int* targets) {
+                root_offsets_[id]=root_targets_.size();
+                uint64_t causal=0;
+                for(uint64_t pending=available;pending;pending&=pending-1) {
+                    const int bit=singleton_bit(pending&(~pending+1));
+                    const int target=targets[bit];
+                    if(builder_[target].firstpos>=latest_query[id])continue;
+                    causal|=uint64_t(1)<<bit;root_targets_.push_back(target);
                 }
-                if(estimate<best){best=estimate;blocks=count;}
-            }
-        }
-        root_join_counters.used=blocks!=0;
-        root_join_counters.blocks=blocks;
-        std::vector<RootBuckets> indexes;
-        std::vector<uint64_t> bucket_seeds;
-        std::vector<std::vector<size_t>> complements;
-        if(blocks) {
-            const uint64_t all_bits=d_==64?~uint64_t(0):(uint64_t(1)<<d_)-1;
-            indexes.reserve(blocks);bucket_seeds.reserve(blocks);complements.reserve(blocks);
-            for(int block=0;block<blocks;++block) {
-                uint64_t omitted=0;
-                for(int j=block*d_/blocks;j<(block+1)*d_/blocks;++j)
-                    omitted|=uint64_t(1)<<bits[j];
-                std::vector<size_t> complement;
-                for(size_t lane=0;lane<repair_bits_.size();++lane)
-                    if((omitted>>repair_bits_[lane])&1)complement.push_back(lane);
-                if(complement.empty())continue;
-                const uint64_t bucket_seed=mix(seed_+uint64_t(block)+UINT64_C(0xf16a8bd029c735e4));
-                indexes.emplace_back(all_bits^omitted,roots,edges_,bucket_seed);
-                complements.push_back(std::move(complement));bucket_seeds.push_back(bucket_seed);
-                root_join_counters.bucket_build_entries+=roots.size();
-            }
-        }
-        int lane_for_bit[64];std::fill(lane_for_bit,lane_for_bit+64,-1);
-        for(size_t lane=0;lane<repair_bits_.size();++lane)lane_for_bit[repair_bits_[lane]]=int(lane);
-        for(size_t id=0;id<symbols.size();++id) {
-            int targets[64];uint64_t available=0;
-            auto install=[&](int bit,int target) {
-                if(target<0)return;
-                ++root_join_counters.verified_neighbors;
-                // A root first appearing after this Q class's last occurrence
-                // can never be causal. Do not store such an impossible edge.
-                if(builder_[target].firstpos>=latest_query[id])return;
-                available|=uint64_t(1)<<bit;targets[bit]=target;
-            };
-            if(!blocks) {
-                for(size_t lane=0;lane<repair_bits_.size();++lane)
-                    install(repair_bits_[lane],direct(id,lane));
-            } else for(size_t block=0;block<indexes.size();++block) {
-                const auto&buckets=indexes[block];const auto&complement=complements[block];
-                const auto*group=buckets.find(symbols[id],bucket_seeds[block]);
-                ++root_join_counters.bucket_queries;
-                if(!group){++root_join_counters.empty_buckets;continue;}
-                if(size_t(group->count)>complement.size()) {
-                    for(size_t lane:complement)install(repair_bits_[lane],direct(id,lane));
-                } else {
-                    for(int member=group->head;member>=0;member=buckets.next[member]) {
-                        ++root_join_counters.bucket_members;
-                        const auto&edge=edges_[roots[member]];
-                        const uint64_t diff=edge.symbol^symbols[id];
-                        if(!diff || (diff&(diff-1)))continue;
-                        const int bit=singleton_bit(diff);
-                        if(lane_for_bit[bit]>=0)install(bit,edge.target);
-                    }
-                }
-            }
-            root_offsets_[id]=root_targets_.size();root_masks_[id]=available;
-            supported_mask_|=available;
-            // One representation for every input, sorted by bit without sorting.
-            // Empty roots occupy no slot and are never revisited by advance().
-            for(uint64_t pending=available;pending;pending&=pending-1)
-                root_targets_.push_back(targets[singleton_bit(pending&(~pending+1))]);
-        }
+                root_masks_[id]=causal;supported_mask_|=causal;
+            },root_join_counters);
         root_offsets_[symbols.size()]=root_targets_.size();
         for(size_t lane=0;lane<repair_bits_.size();++lane)
             if((supported_mask_>>repair_bits_[lane])&1)active_lanes_.push_back(lane);
@@ -570,17 +466,18 @@ private:
         tin_.resize(m);tout_.resize(m);
         last_endpoint_.assign(m,-1);
         for(int r=0;r<n_;++r)last_endpoint_[prefix_state_[r]]=r;
-        std::vector<int> stack{0};int timer=0;
+        std::vector<int> stack{0};int timer=0,depth=-1;
         while(!stack.empty()) {
             int v=stack.back();stack.pop_back();
             if(v<0){
-                v=~v;tout_[v]=timer;
+                --depth;v=~v;tout_[v]=timer;
                 if(v) {
                     const int p=nodes_[v].link;
                     last_endpoint_[p]=std::max(last_endpoint_[p],last_endpoint_[v]);
                 }
                 continue;
             }
+            ++depth;max_link_depth_=std::max(max_link_depth_,depth);
             tin_[v]=timer++;stack.push_back(~v);
             for(int c=head[v];c>=0;c=next[c])stack.push_back(c);
         }
@@ -598,6 +495,14 @@ private:
                 ++occurrence_prefix_[p+1];
             }
         }
+    }
+
+#if defined(__GNUC__) || defined(__clang__)
+    __attribute__((noinline))
+#elif defined(_MSC_VER)
+    __declspec(noinline)
+#endif
+    void build_active_occurrences() const {
         occurrence_position_.resize(n_);
         occurrence_prev_.resize(n_);occurrence_next_.resize(n_);
         for (int p=0;p<n_;++p) {
@@ -614,17 +519,47 @@ private:
             if (left>=0) occurrence_next_[left]=right;
             if (right<n_) occurrence_prev_[right]=left;
         }
+        for(int r=0;r<time_;++r) {
+            const int p=occurrence_position_[r];
+            const int left=occurrence_prev_[p],right=occurrence_next_[p];
+            if(left>=0)occurrence_next_[left]=p;
+            if(right<n_)occurrence_prev_[right]=p;
+        }
+    }
+
+#if defined(__GNUC__) || defined(__clang__)
+    __attribute__((noinline))
+#elif defined(_MSC_VER)
+    __declspec(noinline)
+#endif
+    void build_endpoint_tree() {
         endpoint_tree_.init(n_);
-        int levels=1;while((uint64_t(1)<<levels)<=uint64_t(std::max(1,m)))++levels;
+        if(occurrence_position_.empty()) {
+            occurrence_position_.resize(n_);
+            for(int p=0;p<n_;++p)occurrence_position_[occurrence_endpoints_[p]]=p;
+        }
+        for(int r=0;r<time_;++r)endpoint_tree_.a[endpoint_tree_.size+occurrence_position_[r]]=r;
+        for(int p=endpoint_tree_.size-1;p>0;--p)
+            endpoint_tree_.a[p]=std::max(endpoint_tree_.a[2*p],endpoint_tree_.a[2*p+1]);
+    }
+
+#if defined(__GNUC__) || defined(__clang__)
+    __attribute__((noinline))
+#elif defined(_MSC_VER)
+    __declspec(noinline)
+#endif
+    void build_lifting() const {
+        const int m=int(nodes_.size());
+        int levels=1;while((uint64_t(1)<<levels)<=uint64_t(std::max(1,max_link_depth_)))++levels;
         up_.assign(levels,std::vector<int>(m,0));
         for(int v=1;v<m;++v)up_[0][v]=nodes_[v].link;
         for(int level=1;level<levels;++level)
             for(int v=0;v<m;++v)up_[level][v]=up_[level-1][up_[level-1][v]];
     }
 
-    int valid_transition(int state,uint64_t symbol,int t) {
+    int valid_transition(int state,uint64_t symbol,uint64_t word_hash,int t) {
         ++counters.transition_probes;
-        const int edge=transition_table_[find_slot(state,symbol,mix(symbol^seed_))];
+        const int edge=transition_table_[find_slot(state,symbol,word_hash)];
         if(edge<0)return -1;
         const int target=edges_[edge].target;
         return nodes_[target].firstpos<t ? target : -1;
@@ -644,29 +579,30 @@ private:
         return latest_endpoint(state);
     }
 
-    Match consume(Match before,uint64_t symbol,int t,int root_target) {
+    Match consume(Match before,uint64_t symbol,uint64_t word_hash,int t,int root_target) {
         int v=before.state;
         if(!v)return root_target>=0 ? Match{root_target,1,latest_endpoint(root_target)} : Match{};
-        int target=valid_transition(v,symbol,t);
+        int target=valid_transition(v,symbol,word_hash,t);
         if(target>=0)return {target,before.length+1,direct_endpoint(target,before.end,symbol,t)};
         // If even the one-symbol suffix is unavailable, no ancestor can
         // accept it. This exact rejection applies to every input.
         if(root_target<0)return {};
         ++counters.fallback_queries;
         const int parent=nodes_[v].link;
-        const int parent_target=parent ? valid_transition(parent,symbol,t) : root_target;
+        const int parent_target=parent ? valid_transition(parent,symbol,word_hash,t) : root_target;
         if(parent_target>=0)
             return {parent_target,std::min(before.length,nodes_[parent].length)+1,latest_endpoint(parent_target)};
         // Validity is ancestor-closed: every shorter suffix of an occurrence
         // ending before t also occurs before t. The direct parent was checked
         // above; binary lifting is only needed beyond that invalid parent.
         int failed=parent;
+        if(up_.empty())build_lifting();
         for(int level=int(up_.size())-1;level>=0;--level) {
             const int ancestor=up_[level][failed];
-            if(ancestor && valid_transition(ancestor,symbol,t)<0)failed=ancestor;
+            if(ancestor && valid_transition(ancestor,symbol,word_hash,t)<0)failed=ancestor;
         }
         const int source=nodes_[failed].link;
-        target=source ? valid_transition(source,symbol,t) : root_target;
+        target=source ? valid_transition(source,symbol,word_hash,t) : root_target;
         if(target<0)return {};
         return {target,std::min(before.length,nodes_[source].length)+1,latest_endpoint(target)};
     }
