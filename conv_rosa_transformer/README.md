@@ -53,8 +53,10 @@ convolution and a SwiGLU feed-forward block. Its retrieval layer uses the
 repository's single unified CPU algorithm for hard forward matching and the
 exact single-bit counterfactual Q/K/V credits.
 
-For the algorithm itself, read the [English derivation](../ALGORITHM.md) or
-[中文推导](../ALGORITHM.zh-CN.md). Both derive the implementation from the
+For the algorithm itself, start with the principle-first
+[English guide](../ALGORITHM.md) or [中文推导](../ALGORITHM.zh-CN.md); the
+[exhaustive reference](../docs/algorithm-reference.md) /
+[中文](../docs/algorithm-reference.zh-CN.md) derives every invariant from the
 bit-flip brute-force definition. The root
 [`hard_qkv_rosa_explained.py`](../hard_qkv_rosa_explained.py) is a readable
 entry point into the same runtime; it does not carry a second optimized
@@ -152,9 +154,9 @@ first, then reverses the result for display. Its default convolution kernel
 is 32, distinct from the model's generic default of 4. Evaluation reports
 per-digit accuracy and exact product-string accuracy.
 
-The bundled [`multiply_ckpt.pt`](multiply_ckpt.pt),
-[`multiply_metrics.json`](multiply_metrics.json), and
-[`train_log.txt`](train_log.txt) are historical artifacts from the original
+The bundled [`multiply_ckpt.pt`](artifacts/multiply_ckpt.pt),
+[`multiply_metrics.json`](artifacts/multiply_metrics.json), and
+[`train_log.txt`](artifacts/train_log.txt) are historical artifacts from the original
 upstream implementation at commit
 [`32e90e2`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/commit/32e90e272929942a764d696b639409b783c61bb1).
 They have not been rerun as a training-quality evaluation of the current core.

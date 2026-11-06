@@ -104,7 +104,7 @@ def main():
     ap.add_argument("--eval-every", type=int, default=250)
     ap.add_argument("--eval-pairs", type=int, default=64)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--out", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "multiply_ckpt.pt"))
+    ap.add_argument("--out", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "artifacts", "multiply_ckpt.pt"))
     args = ap.parse_args()
 
     torch.manual_seed(args.seed)
@@ -135,6 +135,7 @@ def main():
             print(f"   per-pos acc (units->high): {pa[:10]}", flush=True)
 
     # export weights
+    os.makedirs(os.path.dirname(args.out), exist_ok=True)
     ckpt = dict(config=dict(vocab_size=VOCAB, channels=args.channels, n_layers=args.layers,
                             n_bits=args.n_bits, conv_kernel=args.conv_kernel, max_seq_len=T_MAX),
                 state_dict=model.state_dict(),
