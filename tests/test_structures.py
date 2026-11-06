@@ -15,14 +15,20 @@ class StructureTests(unittest.TestCase):
         self.assertEqual(result["status"], "PASS")
         COVERAGE[stem] = result
 
-    def test_delete_routes_and_numeric_ranges(self):
-        self.check_oracle("delete_routes")
+    def test_subquadratic_delete_and_owner_time_ranges(self):
+        self.check_oracle("subquadratic_delete")
 
-    def test_causal_occurrences_and_latest(self):
-        self.check_oracle("causal_occurrences")
+    def test_subquadratic_heavy_light_and_long_repairs(self):
+        self.check_oracle("subquadratic_repair")
 
-    def test_corridor_lifetimes_and_winners(self):
-        self.check_oracle("corridor_routes")
+    def test_subquadratic_virtual_words_and_dominance(self):
+        self.check_oracle("subquadratic_short")
+
+    def test_subquadratic_correlations(self):
+        self.check_oracle("subquadratic_correlation")
+
+    def test_subquadratic_c_training_interface(self):
+        self.check_oracle("subquadratic_training")
 
 
 if __name__ == "__main__":

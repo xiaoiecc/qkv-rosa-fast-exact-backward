@@ -19,9 +19,8 @@ from conv_rosa_transformer.rosa_transformer import RosaTransformer
 
 # Numerical singleton-oracle checks retain their exact original rule even if
 # the shipped layer's recommended training defaults change after experiments.
-LINEAR_OPTIONS = dict(repair_samples=None, joint_pairs=0, joint_rows=32,
-                      stochastic_values=False, trust_diagonal=0.,
-                      training_rule="hard_credit", joint_row_selection="input")
+LINEAR_OPTIONS = dict(credit_order="first", joint_pairs=0, joint_rows=32,
+                      trust_diagonal=0., joint_row_selection="input")
 
 
 def _pack_independently(bits):

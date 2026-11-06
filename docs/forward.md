@@ -29,8 +29,8 @@ The moving causal boundary preserves the amortized argument. Remove the last sym
 from any current match: its predecessor ends at `r-1 < t-1`, so it was already legal
 on the previous row. The longest length therefore grows by at most one. Every fallback
 decreases it by at least one, and it never becomes negative. Across T rows there are
-at most T fallbacks and 2T transition attempts. This trajectory needs neither a Q sort
-nor the backward's lifting and occurrence-list indexes.
+at most T fallbacks and 2T transition attempts. This single trajectory does not need the suffix and numerical indexes used
+to share work across all backward edits.
 
 ## Three proofs that can settle the latest endpoint
 
@@ -72,57 +72,12 @@ general endpoint maintenance takes O(T log T). The complete bound is **O(T log T
 and O(T) auxiliary space**, with that hashing assumption. Certificates remove endpoint
 work when their proofs apply; the complete forward is not unconditionally linear.
 
-## Measured forward latency
+## Validation and historical timing evidence
 
-The [saved report](../benchmarks/results/forward.json) contains 21 cases, raw samples,
-input hashes and binary hashes. On 2026-10-25, logical CPU 8 of an Intel Xeon Platinum
-8573C ran seven samples per case, alternating old/new order. Native time includes SAM
-construction, auxiliary indexes and every route. Public time also includes validation
-of contiguous NumPy `uint64` inputs and conversion of both outputs to Python lists.
-Both exclude payload reads/aggregation, projections, compilation and first-call warmup.
+[Independent checks](../tests/test_forward_lean.py) compare causal routes with literal matching and test the fallback bound and lazy endpoint allocation. The route API remains `rosa_core.matching_stats(q, k)`; [forward.h](../conv_rosa_transformer/csrc/forward.h) implements the matcher used by the native forward.
 
-| Input | T | Native matcher (ms) | Public `matching_stats` (ms) |
-|---|---:|---:|---:|
-| All same | 8,192 | 0.367 | 0.634 |
-| Random binary | 8,192 | 2.297 | 2.377 |
-| Random 16-symbol alphabet | 8,192 | 1.893 | 2.162 |
-| Random 8-bit symbols | 8,192 | 1.583 | 1.534 |
-| Random 64-bit symbols | 8,192 | 0.475 | 0.788 |
-| Periodic | 8,192 | 0.596 | 0.833 |
-| Shadow | 8,192 | 0.750 | 1.151 |
-| Random binary | 65,536 | 36.823 | 40.422 |
-| Random 64-bit symbols | 65,536 | 6.220 | 8.069 |
+The [forward.json receipt](../benchmarks/results/forward.json) records a 2026-10-25 forward-only experiment, including 21 input cases, timing samples, input identities, and source/binary hashes. Its results belong to that recorded build and scope: they are historical measurements, not a newly measured complete training step. The comparison implementation is an external historical source, not a shipped runtime backend.
 
-The 64-bit case forces one quarter of Q to match the preceding K word, so
-it includes real historical matches. Periodic uses period four with one K
-mutation; shadow is `Q=0^T, K=10^(T-1)`. The two timing scopes were measured
-separately; occasional median inversions reflect variation, not negative wrapper cost.
+The retained [forward benchmark](../benchmarks/forward.py) can compare the current forward with an explicitly supplied external checkout through `--baseline-dir`. Its public scope includes input validation and conversion of route arrays to Python lists; native scope includes construction and matching. Neither includes payload aggregation, projections, loss, or optimization. Follow [the current benchmark guide](../benchmarks/README.md) when reporting a fresh run.
 
-### Small comparison with the previous forward
-
-The external baseline is the preceding delivered implementation's
-`SamQRepairs(...,d=0)` scan, not the original upstream backward implementation.
-
-| Input | T | Previous native (ms) | Current native (ms) | Speedup |
-|---|---:|---:|---:|---:|
-| Random binary | 65,536 | 59.915 | 36.823 | 1.63× |
-| Random 8-bit symbols | 8,192 | 7.731 | 1.583 | 4.88× |
-| Random 64-bit symbols | 8,192 | 5.374 | 0.475 | 11.31× |
-
-Across all cases, native speedups were 1.63–11.31× and public speedups
-1.48–9.26×. They are measurements of these inputs, not uniform guarantees.
-Reproduce with [forward.py](../benchmarks/forward.py), supplying
-`--baseline-dir <previous-checkout> --cpu <available-core> --repeat 7`.
-
-## Checks and measurement provenance
-
-[Independent checks](../tests/test_forward_lean.py) passed all 21,845 binary
-Q/K pairs through length seven, 68 additional input/seed combinations, and
-checks of the fallback bound and lazy allocation. All 21 timed cases produced
-identical old/new routes. Vector-capacity counters in the report are not RSS.
-
-The current `forward.h` matches the measured SHA256
-`76a0d37bfb258de0fb9fcaa2a6ad63a91a997dc5bb98b13aaa0ea606df043c26`.
-Later credit-only source changes are outside the measured whole-library
-snapshot. The saved run belongs to the recorded binary and source hashes;
-it must not be presented as a measurement of a later complete source tree.
+Current backward and training measurements are in [subquadratic-results.md](subquadratic-results.md). The [main algorithm guide](../ALGORITHM.md) explains how the backward shares work across all bit edits; it uses the same longest/latest causal routing definition.

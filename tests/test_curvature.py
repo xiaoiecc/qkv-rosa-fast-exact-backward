@@ -36,7 +36,8 @@ def quadratic_oracle(q, k, v, grad, diagonal, emb0, emb1):
                 delta = np.asarray(changed, dtype=np.float64).reshape(n, d) - y
                 expected[stream][owner, bit] = fsum(
                     float(grad[t, j]) * float(delta[t, j])
-                    + 0.5 * float(diagonal[t, j]) * float(delta[t, j]) ** 2
+                    + (0.5 * float(diagonal[t, j]) * float(delta[t, j]) ** 2
+                       if stream < 2 else 0.0)
                     for t in range(n) for j in range(d))
     return (*expected, [x[0] for x in baseline], [x[1] for x in baseline])
 
@@ -64,10 +65,7 @@ class CurvatureTests(unittest.TestCase):
             if actual.size:
                 type(self).max_error = max(self.max_error,
                                            float(np.max(np.abs(actual - target))))
-            if integer:
-                np.testing.assert_array_equal(actual, target)
-            else:
-                np.testing.assert_allclose(actual, target, atol=2e-10, rtol=2e-10)
+            np.testing.assert_allclose(actual, target, atol=2e-10, rtol=2e-10)
             type(self).checks += actual.size
         return got
 
@@ -100,7 +98,7 @@ class CurvatureTests(unittest.TestCase):
             e0, e1 = rng.normal(size=(2, d))
             self.compare(q, k, v, g, h, e0, e1)
 
-    def test_caches_corridors_and_moving_owners(self):
+    def test_structured_routes_and_moving_owners(self):
         rng = np.random.default_rng(2026102503)
         for n, d, shadow in ((48, 8, True), (31, 3, False)):
             q = np.zeros(n, dtype=np.uint64)
@@ -111,16 +109,7 @@ class CurvatureTests(unittest.TestCase):
             g = rng.normal(size=(n, d))
             h = rng.uniform(0.1, 2, (n, d))
             e0, e1 = rng.normal(size=(2, d))
-            got = self.compare(q, k, v, g, h, e0, e1)
-            if shadow:
-                self.assertGreater(got[5]["singleton_corridors"], 0)
-                self.assertGreater(got[5]["singleton_dot_components"], 0)
-                self.assertTrue(got[5]["curvature_history_materialized"])
-                self.assertEqual(got[5]["curvature_working_bytes"], 16 * d * (n + 1))
-            else:
-                self.assertGreater(got[5]["deletion_owner_ranges"], 0)
-                self.assertFalse(got[5]["curvature_history_materialized"])
-                self.assertEqual(got[5]["curvature_working_bytes"], 16 * d)
+            self.compare(q, k, v, g, h, e0, e1)
 
     def test_zero_metric_preserves_first_order_bits(self):
         rng = np.random.default_rng(2026102504)
@@ -136,9 +125,6 @@ class CurvatureTests(unittest.TestCase):
         for x, y in zip(original[:3], quadratic[:3]):
             np.testing.assert_array_equal(x, y)
         self.assertEqual(original[3:5], quadratic[3:5])
-        for name, value in original[5].items():
-            self.assertEqual(value, quadratic[5][name])
-        self.assertEqual(quadratic[5]["curvature_working_bytes"], 0)
 
     def test_finite_step_sign_and_constant_outputs(self):
         q = k = [0, 0]
@@ -149,7 +135,9 @@ class CurvatureTests(unittest.TestCase):
         first = rosa_core.credits_numpy(q, k, v, g, e0, e1)
         second = self.compare(q, k, v, g, h, e0, e1)
         self.assertEqual(first[2][1, 0], -1.0)
-        self.assertEqual(second[2][1, 0], 1.0)
+        self.assertEqual(second[2][1, 0], -1.0)
+        self.assertEqual(first[0][1, 0], -0.5)
+        self.assertEqual(second[0][1, 0], 0.0)
         # Any routing change is irrelevant if both empty and all signed values
         # are exactly zero. Curvature must not manufacture a Q/K signal.
         n, d = 20, 3

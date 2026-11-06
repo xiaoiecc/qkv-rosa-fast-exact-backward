@@ -1,203 +1,70 @@
-# CPU measurements
+# Measuring the current C++ engine
 
-## Current native component and exact randomization
+[Results](../docs/subquadratic-results.md) · [中文结果](../docs/subquadratic-results.zh-CN.md)
 
-Current absolute performance is reported in [English](../docs/native-results.md)
-and [中文](../docs/native-results.zh-CN.md). Keep these scopes separate:
+The repository contains one production backward engine. Its runtime choices
+are first/second credit, verified-cache on/off, and explicit statistical
+approximation. No runner imports an old optimized backward implementation.
 
-| Report | Measured operation |
-|---|---|
-| [native_component.json](results/native_component.json) | Both credit orders × random off/on; hard component and full layer, including forward/backward separately |
-| [exact_randomized.json](results/exact_randomized.json) | Complete single-stream native credit engine with reused native buffers; all indexes included |
-| [forward.json](results/forward.json) | Completed lean forward matcher, native and public routes-only scopes |
-
-Every raw sample and source hash is retained. Current native component timing
-uses seven alternating samples; exact randomization uses eleven. The previous
-research baseline is the companion checkout at f6d7c4b, not an online commit.
-Run from this repository root, with an available CPU core:
+## Complete backward timing
 
 ```bash
-python benchmarks/native_component.py --baseline-root ../baseline-f6 --cpu 0 --repeats 7 --output build/native_component.json
-python benchmarks/exact_randomized.py --baseline-root ../baseline-f6 --cpu 0 --repeats 11 --output build/exact_randomized.json
-python benchmarks/forward.py --baseline-dir ../online-base --cpu 0 --repeat 7 --output build/forward.json
+python benchmarks/subquadratic_engine.py --repeats 7 --cpu 4 --output build/backward.json
 ```
 
-Use each script's `--help` for other options. The exact randomized runner also
-uses shared generators in randomized_backward.py and curvature.py; those are
-benchmark helpers, not extra production backends. The measured test bridge is
-preserved in [snapshots](snapshots/exact_randomized_probe.cpp), with its
-[provenance](results/exact_randomized_provenance.json).
+Use an available logical CPU or omit `--cpu`. The runner alternates method
+order and includes validation, allocation, index construction, all singleton
+credits, trust/joint work, V/embedding gradients and logit mapping. It excludes
+compilation, dense projections, the model forward, loss and optimizer.
 
-The native migration has a held-out-loss regression in the small MSE study,
-retained alongside its first-divergence trace in the [results](../docs/native-results.md).
-Random on/off itself retains every tested update. No GPU speed, peak RSS or
-large-model quality result is implied by these CPU tables.
+`--quick` checks setup on small inputs. `--historical-baseline` can read an
+explicitly labeled previous JSON timing receipt; it does not load its code.
+The final [current receipt](results/subquadratic_engine.json) contains all raw
+samples, input digests, source hashes, counters and numerical comparisons.
 
-## Published measurements before native training
+The cases include random symbols, repeated symbols, periodic strings, a long
+single-boundary match and an irregular skyline of runs. These labels belong
+to the benchmark generator; the engine has no such dispatch.
 
-The following original report is preserved with its recorded source and
-scope. Its “current” labels refer to that historical snapshot, not the latest
-native-training source tree. It is not a fresh timing of this patch.
-
-
-The main results measure this repository's current algorithm on one stream
-and one D-bit group. The measured operation is the public five-result
-`exact_stream_bit_credits` call: Q/K/V credits plus baseline lengths and
-routes. It includes input validation, dtype conversion, all per-call indices,
-baseline matching, numeric contraction, output allocation, and conversion
-back to the input gradient dtype.
-
-Compilation, imports, input generation, warmup, checks, and report writing
-are outside the timer. Dense projections, the autograd layer, and complete
-training are also outside this measurement. `tokens/s` means T divided by
-the median call duration for this single stream; it is not a Transformer
-training-throughput measurement. Returned credit tensor bytes are the sum
-of the three actual output tensor sizes, not peak working memory or RSS.
-
-## Reproduce
-
-From the repository root:
+## Ordinary training checks
 
 ```bash
-python tests/run.py --exhaustive
-python benchmarks/backward.py --repeats 7 --cpu 0 --output build/current.json
+python benchmarks/subquadratic_toy.py --cpu 3 --steps 30 --seeds 1101 1102 1103 --lr .005 --output build/toy.json
 ```
 
-Choose an available logical CPU for `--cpu`, or omit the affinity option
-where unsupported. Stop other CPU-heavy work before measuring. The script
-uses one PyTorch thread, one warmup, and seven timed repetitions by default.
-JSON contains every raw sample, min/max, input digest, seed, exact source
-hashes, work counters, and explicit numerical tolerances. CSV contains the
-same main timing rows. `--smoke` runs three tiny setup checks; those timings
-should not be compared with the published full matrix.
+The [current toy receipt](results/subquadratic_toy.json) records paired data,
+initial parameters, per-step parameter hashes, loss, gradient errors and wall
+clock samples. Every update is a normal `zero_grad / model / loss.backward /
+optimizer.step` loop. The runner asserts one model forward and one component
+backward per update. It uses two short structured tasks, not a language-model
+quality or large-model throughput benchmark. The two task/model definitions
+in `research/` contain no alternative backward engine.
 
-The case generator is deterministic. It tests random binary, 8-bit, and
-16-bit symbols; a four-symbol periodic Q/K pair with one K mutation;
-all-zero Q/K; and `shadow` (Q all zero, K initially one and otherwise zero).
-Scalar two-class payloads alternate. Wide payload classes are assigned
-independently at each position, and unrestricted payloads are random bit
-rows. These labels exist only in the benchmark generator; the production
-runtime uses one implementation for all of them.
-
-## Current implementation
-
-The checked-in [JSON](results/current.json) and [CSV](results/current.csv)
-record the complete matrix. The table below is generated from their median
-durations after the source hashes have been checked against the validation
-report.
-
-Measured on 2026-10-18 with **INTEL(R) XEON(R) PLATINUM 8573C**, logical CPU 0, Linux x86-64, one PyTorch thread, one warmup, and seven timed calls per row. Python 3.12.14, NumPy 2.3.5, PyTorch 2.14.1+cpu; c++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0. The native core uses `-O3 -DNDEBUG -std=c++17 -ffp-contract=off`.
-
-| Input | T | D | Observed payload classes | Median (ms) | Tokens/s | Credit outputs (KiB) |
-|---|---:|---:|---:|---:|---:|---:|
-| random_binary | 1,024 | 1 | 2 | 3.810 | 268,750 | 12 |
-| random_binary | 4,096 | 1 | 2 | 20.432 | 200,465 | 48 |
-| random_binary | 8,192 | 1 | 2 | 50.872 | 161,031 | 96 |
-| random8 | 1,024 | 8 | 253 | 2.027 | 505,277 | 96 |
-| random8 | 4,096 | 8 | 256 | 11.053 | 370,579 | 384 |
-| random8 | 8,192 | 8 | 256 | 26.678 | 307,074 | 768 |
-| periodic | 1,024 | 4 | 16 | 3.859 | 265,384 | 48 |
-| periodic | 4,096 | 4 | 16 | 46.693 | 87,722 | 192 |
-| periodic | 8,192 | 4 | 16 | 172.784 | 47,412 | 384 |
-| shadow | 1,024 | 1 | 2 | 3.774 | 271,304 | 12 |
-| shadow | 4,096 | 1 | 2 | 46.436 | 88,207 | 48 |
-| shadow | 8,192 | 1 | 2 | 179.192 | 45,716 | 96 |
-| all_same | 1,024 | 1 | 2 | 0.598 | 1,712,057 | 12 |
-| all_same | 4,096 | 1 | 2 | 2.004 | 2,043,919 | 48 |
-| all_same | 8,192 | 1 | 2 | 3.997 | 2,049,535 | 96 |
-| random_binary | 16,384 | 1 | 2 | 121.221 | 135,159 | 192 |
-| random_binary | 65,536 | 1 | 2 | 808.774 | 81,031 | 768 |
-| random16 | 8,192 | 16 | 7,713 | 13.756 | 595,525 | 1,536 |
-| shadow | 2,048 | 64 | 1 | 10.029 | 204,206 | 1,536 |
-| shadow | 4,096 | 64 | 2 | 111.249 | 36,818 | 3,072 |
-| shadow | 2,048 | 64 | 2,048 | 75.321 | 27,190 | 1,536 |
-
-Credit-output sizes exclude returned route lists and all temporary/native working storage. This run does not measure peak allocation or RSS.
-
-## Measured work
-
-Work counters describe what was actually visited or materialized, rather
-than treating a reduction in a single counter as the same reduction in
-whole-call latency. In particular, singleton continuations can remove
-ordinary SAM state advances while still paying for many numeric interval
-visits. Those visits can be quadratic. Periodic inputs can still materialize
-many deletion records. No universal subquadratic bound or universal speedup
-is inferred from this workload matrix.
-
-| Input | T | D | Stored A records | Ordinary Q advances | Numeric continuation visits |
-|---|---:|---:|---:|---:|---:|
-| periodic | 8,192 | 4 | 6,289,408 | 16,378 | 2,094,081 |
-| shadow | 8,192 | 1 | 16,379 | 0 | 33,550,335 |
-| all_same | 8,192 | 1 | 16,381 | 0 | 0 |
-| random_binary | 65,536 | 1 | 66,192 | 940,843 | 35,643 |
-| shadow | 4,096 | 64 | 8,187 | 0 | 8,386,559 |
-
-## Original upstream comparison
-
-This smaller comparison uses the original repository revision
-`32e90e272929942a764d696b639409b783c61bb1`. It does not use an intermediate
-development implementation. Every paired call receives identical float32
-CPU tensors and packed Q/K values. Timed order alternates between the two
-implementations. Float64 checks use the same underlying float32 values and
-require identical routes; float32 reduction differences are published
-separately and are not described as bitwise equality.
-
-Obtain an external checkout of that revision and run:
+## Forward-only measurement
 
 ```bash
-git clone https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward.git /tmp/qkv-rosa-upstream
-python benchmarks/backward.py --baseline-dir /tmp/qkv-rosa-upstream \
-  --baseline-revision 32e90e272929942a764d696b639409b783c61bb1 \
-  --repeats 7 --cpu 0 --output build/upstream.json
+python benchmarks/forward.py --baseline-dir /path/to/external/checkout --cpu 4 --repeat 7 --output build/forward.json
 ```
 
-The setup helper reads tracked sources from that git revision and compiles
-them in a temporary cache outside this working tree. The historical runtime
-is never bundled with, or selected by, the current library. The historical
-build currently supports Linux/WSL and requires PyTorch's C++ headers. It
-uses GCC/Clang-compatible optimization flags and adds the single standard
-`template` keyword needed for the original dependent `item<scalar_t>()`
-expression to compile under GCC. Original and compiled source hashes and
-compiler flags are both recorded. No historical arithmetic or backend
-selection rule is changed.
+This optional comparison uses the specified external checkout for its previous
+forward matcher. The current lean forward implementation is unchanged by the
+backward replacement. [forward.json](results/forward.json) is an earlier
+measurement with its own source identity; it is not a new backward timing.
 
-| Input | T | D | Original (ms) | Current (ms) | Original/current |
-|---|---:|---:|---:|---:|---:|
-| random_binary | 256 | 1 | 18.747 | 0.944 | 19.850× |
-| random_binary | 1,024 | 1 | 111.258 | 4.050 | 27.469× |
-| random8 | 256 | 8 | 11.388 | 0.657 | 17.332× |
-| random8 | 1,024 | 8 | 57.685 | 2.143 | 26.918× |
-| periodic | 256 | 4 | 36.003 | 0.669 | 53.794× |
-| periodic | 1,024 | 4 | 548.974 | 4.197 | 130.795× |
-| shadow | 256 | 1 | 76.816 | 0.763 | 100.678× |
-| shadow | 1,024 | 1 | 3749.891 | 4.098 | 915.002× |
-| all_same | 256 | 1 | 13.701 | 0.403 | 33.961× |
-| all_same | 1,024 | 1 | 205.854 | 0.932 | 220.922× |
-| random16 | 4,096 | 16 | 61.020 | 6.972 | 8.752× |
+## Correctness and provenance
 
-All 11 paired median ratios exceed one in this matrix. Maximum absolute differences were 4.68958e-13 in the float64 comparison and 3.24249e-05 in the public float32 comparison. Every checked route was identical; all documented tolerances passed. The paired current timings are from this separate alternating run and can differ from the current-only table above.
+```bash
+python tests/run.py --exhaustive --output build/validation.json
+```
 
-All measured rows and all regressions are retained in
-[upstream.json](results/upstream.json) and [upstream.csv](results/upstream.csv).
-Ratios describe these particular cases and this machine, not a claim of
-globally fastest behavior.
+The current gate is [subquadratic_validation.json](results/subquadratic_validation.json).
+The independent C ABI memory-safety check is
+[subquadratic_sanitizers.json](results/subquadratic_sanitizers.json).
 
-## Correctness of the measured sources
-
-The full [validation report](results/validation.json) records the production
-source hashes, independent all-bit hard-forward checks, integer equality,
-floating tolerances, numerical cancellation regressions, exact dyadic
-expansion checks, C++ structural oracles, and PyTorch layer tests. The
-implementation hashes in both timing reports are checked against this
-report before publishing. See [the test guide](../tests/README.md) for the
-scope and limitations of each gate.
-
-Final exhaustive run: **27 test methods, 1 CUDA-device skip, PASS** (16.78 seconds on the recorded machine). The current environment has no CUDA device, so GPU transfer behavior is not claimed as measured here.
-
-- 5,461 binary integer inputs require exact all-bit equality; 160 floating, 25 wide-bit, and 16 longer structured inputs use independent direct hard forwards. Maximum ordinary floating error was 1.06581e-14.
-- 542 constant-forward fixtures require exact zero Q/K credits; 24 snapshot/corridor and 9 saved nonconstant target witnesses require their independent exact answers.
-- 4,052 Fraction cases check exact binary64-event representation and final rounding. Deliberately extreme inputs reached 61 components; ordinary million-add diagnostics had zero spills.
-- Structural oracles check 5,782,250 deletion routes, 7,205,159 deletion intervals, 7,858,789 causal memberships, and 1,267,260 Q plus 1,108,192 K repair routes.
-- Layer tests cover batching/grouping, noncontiguous inputs, empty shapes, bfloat16, unsigned bit 63, checkpoint configuration, and training smoke behavior. Input validation rejects complex gradients/embeddings and integer Torch public gradients before lossy conversion.
-
-These verification layers overlap; their counts are not a sum of independent whole-core inputs.
+[subquadratic_comparison.json](results/subquadratic_comparison.json) and
+[subquadratic_toy_comparison.json](results/subquadratic_toy_comparison.json)
+were frozen before removing the previous engine. Their bytes and source hashes
+are preserved as historical comparison evidence. They do not describe the
+final source tree, and the old implementation is not retained as a runtime or
+benchmark backend. Other old JSON/CSV files in `results/` likewise refer to
+their recorded revisions, not the current engine.

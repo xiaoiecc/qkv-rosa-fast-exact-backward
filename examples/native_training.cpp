@@ -23,15 +23,16 @@ int main(int argc,char** argv) {
     RosaTrainingOptions options;rosa_training_defaults(&options);
     // C options are explicit. The default is order 2, one pair, trust 0.5;
     // selecting order 1 requires clearing both second-order terms.
-    bool approximate=false;
+    bool approximate=false,randomized=true;
     for(int i=1;i<argc;++i) {
         const std::string flag(argv[i]);
         if(flag=="--first") {
             options.credit_order=1;options.joint_pairs=0;options.trust_diagonal=0.;
         } else if(flag=="--approximate")approximate=true;
-        else {std::cerr<<"usage: rosa-native [--first] [--approximate]\n";return 1;}
+        else if(flag=="--deterministic")randomized=false;
+        else {std::cerr<<"usage: rosa-native [--first] [--approximate] [--deterministic]\n";return 1;}
     }
-    options.randomized=1;options.proposal_seed=123;options.repair_seed=456;
+    options.randomized=randomized;options.proposal_seed=123;options.repair_seed=456;
     int code=rosa_training_forward(&options,B,G,T,D,qz.data(),kz.data(),vz.data(),
         e0.data(),e1.data(),q.data(),k.data(),v.data(),lengths.data(),routes.data(),
         y.data(),forward_counts.data());

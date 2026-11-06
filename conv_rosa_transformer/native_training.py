@@ -64,12 +64,14 @@ APPROXIMATION_COUNTER_NAMES = (
     "certificate_distinct_pairs", "certificate_indexes", "population_rows",
     "selected_rows", "row_budget", "complete_residual_streams", "extra_joint_replays",
     "certified_zero_rows", "importance_streams", "full_deletion_calls",
-    "spectral_groups", "spectral_queries", "spectral_rows", "spectral_transforms",
-    "spectral_columns", "spectral_channels", "spectral_exact_fallbacks", "spectral_fallback_rows",
+    "reserved32", "channel_sampling_streams", "reserved34", "reserved35",
+    "reserved36", "sampled_channels", "reserved38", "reserved39",
 )
 
 
-TRAINING_COUNTER_NAMES = rosa_core.COUNTER_NAMES + (
+SUBQUADRATIC_COUNTER_NAMES = rosa_core.COUNTER_NAMES
+
+TRAINING_COUNTER_NAMES = rosa_core.COUNTER_NAMES + ("reserved",) + (
     "selected_pairs", "joint_matching_calls", "active_proposal_rows",
     "candidate_events", "supported_repair_lanes", "selected_repair_lanes",
     "exact_repair_streams", "gradient_elements", "randomized_root_streams",
@@ -80,7 +82,7 @@ TRAINING_COUNTER_NAMES = rosa_core.COUNTER_NAMES + (
 def make_options(*, credit_order="second", randomized=True, tau=1.,
                  credit_to_logit="bernoulli", joint_pairs=None, joint_rows=32,
                  trust_diagonal=None, joint_row_selection="active",
-                 repair_samples=None, proposal_seed=0, repair_seed=0):
+                 proposal_seed=0, repair_seed=0):
     if credit_order not in ("first", "second"):
         raise ValueError("credit_order must be first or second")
     if not isinstance(randomized, (bool, np.bool_)):
@@ -95,15 +97,12 @@ def make_options(*, credit_order="second", randomized=True, tau=1.,
     joint_pairs=operator.index((1 if credit_order=="second" else 0)
                                if joint_pairs is None else joint_pairs)
     joint_rows=operator.index(joint_rows)
-    repair_budget=0 if repair_samples is None else operator.index(repair_samples)
     if not math.isfinite(tau) or tau<=0:
         raise ValueError("tau must be finite and positive")
     if not math.isfinite(trust_diagonal) or trust_diagonal<0:
         raise ValueError("trust_diagonal must be finite and nonnegative")
     if not 0<=joint_pairs<=(2**31-1)//8 or not 0<joint_rows<2**31:
         raise ValueError("joint budgets are outside the native int32 domain")
-    if repair_samples is not None and not 1<=repair_budget<=64:
-        raise ValueError("repair_samples must be positive and at most 64")
     if credit_order=="first" and (joint_pairs or trust_diagonal):
         raise ValueError("first order requires joint_pairs=0 and trust_diagonal=0")
     proposal_seed,repair_seed=operator.index(proposal_seed),operator.index(repair_seed)
@@ -112,7 +111,7 @@ def make_options(*, credit_order="second", randomized=True, tau=1.,
     return TrainingOptions(1, ctypes.sizeof(TrainingOptions),
         1 if credit_order=="first" else 2, int(randomized),
         int(credit_to_logit=="identity"), joint_pairs, joint_rows,
-        int(joint_row_selection=="active"), repair_budget, 0,
+        int(joint_row_selection=="active"), 0, 0,
         tau, trust_diagonal, proposal_seed, repair_seed)
 
 
@@ -131,6 +130,9 @@ def _library():
         library.rosa_training_backward_approx.argtypes=[ctypes.POINTER(TrainingOptions),
             ctypes.POINTER(ApproximationOptions)]+[ctypes.c_int]*4+[ctypes.c_void_p]*20
         library.rosa_training_backward_approx.restype=ctypes.c_int
+        library.rosa_training_backward_subquadratic.argtypes=[ctypes.POINTER(TrainingOptions),
+            ctypes.POINTER(ApproximationOptions)]+[ctypes.c_int]*4+[ctypes.c_void_p]*21
+        library.rosa_training_backward_subquadratic.restype=ctypes.c_int
         library._training_api_bound=True
     return library
 
@@ -176,16 +178,16 @@ def training_forward_numpy(q_logits, k_logits, v_logits, emb0, emb1,
     approximation=make_approximation_options(backward_mode=backward_mode,
                                              approximation_rows=approximation_rows,
                                              approximation_channels=approximation_channels)
-    if approximation is not None and options.repair_budget:
-        raise ValueError("approximate backward cannot be combined with legacy repair_samples")
+    if options.repair_budget or options.reserved:
+        raise ValueError("reserved native training fields must be zero")
     qz,kz,vz=[rosa_core._array(x,np.float64) for x in (q_logits,k_logits,v_logits)]
     if qz.ndim!=4 or kz.shape!=qz.shape or vz.shape!=qz.shape:
         raise ValueError("logits require a common [B,G,T,D] shape")
     b,groups,n,d=qz.shape
     if groups<=0 or not 1<=d<=64 or n>=rosa_core._MAX_T or n*d>rosa_core._MAX_ELEMENTS:
         raise ValueError("invalid native training shape")
-    if b*groups>rosa_core._MAX_ELEMENTS or options.repair_budget>d:
-        raise ValueError("batch/group count or repair budget is outside the domain")
+    if b*groups>rosa_core._MAX_ELEMENTS:
+        raise ValueError("batch/group count is outside the domain")
     e0,e1=[rosa_core._array(x,np.float64) for x in (emb0,emb1)]
     if e0.shape!=(groups,d) or e1.shape!=(groups,d):
         raise ValueError("embeddings require [G,D]")
@@ -243,6 +245,11 @@ def training_backward_numpy(cache, grad_y, *, trace=False):
     stats.update(backend="native_batched",streams=b*groups,
                  repair_sampling_exact=stats["exact_repair_streams"]==b*groups)
     stats["backward_mode"]="exact" if cache.approximation is None else "approximate"
+    # Streams execute serially; report the peak estimate rather than its sum.
+    stats["workspace_estimate_bytes"]=int(counts[:,18].max(initial=0))
+    detail={key:stats[key] for key in SUBQUADRATIC_COUNTER_NAMES}
+    stats.update({"subq_"+key:value for key,value in detail.items()})
+    if trace:stats["subquadratic_stream_counters"]=counts[:,:len(SUBQUADRATIC_COUNTER_NAMES)]
     if approximation_counts is not None:
         detail=dict(zip(APPROXIMATION_COUNTER_NAMES,map(int,approximation_counts.sum(axis=0,dtype=np.uint64))))
         stats.update({"approx_"+key:value for key,value in detail.items()})

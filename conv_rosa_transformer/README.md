@@ -1,203 +1,75 @@
-# Conv∥ROSA with batched native training
+# Conv∥ROSA with one native credit engine
 
-`NBitQKVRosa(channels, n_bits, credit_order="second", randomized=True)` uses
-one batched C++ forward and one batched C++ backward. Select `credit_order="first"`
-for original full singleton credit. Second order adds a diameter-scaled trust
-metric and one independent joint block per stream by default. `randomized=True`
-is the default exact search accelerator. `backward_mode="approximate"` explicitly
-enables shared numerical contraction / residual sampling; see the
-[derivation](../docs/randomized-backward.md) / [中文](../docs/randomized-backward.zh-CN.md).
+[English algorithm](../ALGORITHM.md) · [中文推导](../ALGORITHM.zh-CN.md) · [Training guide](../docs/native-training.md) / [中文](../docs/native-training.zh-CN.md)
 
-```python
-from conv_rosa_transformer.rosa_layer import NBitQKVRosa
-layer = NBitQKVRosa(128, 8, credit_order="second", randomized=True)
-y = layer(x)
-loss = criterion(y, target)
-loss.backward()
-```
-
-The normal optimizer and outer training loop are unchanged. Each selected
-joint corner adds one internal component match, not another whole-model pass.
-The [integration guide](../docs/native-training.md) / [中文](../docs/native-training.zh-CN.md)
-explains the learning rule and its restrictions. The standalone
-[C ABI](csrc/training.h) and [example](../examples/native_training.cpp) need no
-framework headers. [Results](../docs/native-results.md) include absolute layer
-cost and the negative held-out result from the numerical migration.
-
-The main layer is CPU native; CUDA tensors incur transfers. Native arithmetic
-is binary64 before casting gradients back to input dtype. Old float32 Torch
-training is not bitwise preserved; the new random on/off toggle is. Second-order
-updates depend on incoming gradients and do not support double autograd or
-additivity between separate loss backwards. First/second modes share hard
-evaluation semantics and parameter names/shapes.
-
-| New source | Role |
-|---|---|
-| [native_training.py](native_training.py) | Thin validated contiguous-array binding |
-| [csrc/training.h](csrc/training.h) | Versioned C options and caller-owned arrays |
-| [csrc/training_impl.h](csrc/training_impl.h) | Batched packing, forward, proposals, metric, credits and gradient mapping |
-| [csrc/forward.h](csrc/forward.h) | Lean exact causal forward scan |
-| [csrc/sam_q.h](csrc/sam_q.h) | Sparse exact roots and optional random omitted-block join |
-| [csrc/pair_candidates.h](csrc/pair_candidates.h) | Shared bounded causal joint-bit proposals |
-
-## Original model and example documentation
-
-The following model layout and historical demonstration files are retained.
-Descriptions of the original singleton layer below refer to `credit_order="first"`.
-The current `RosaTransformer` uses the native layer's second-order default;
-retaining the model layout does not retain the old training rule by default.
-
-
-This package combines a hard QKV-ROSA retrieval mixer with a depthwise causal
-convolution and a SwiGLU feed-forward block. Its retrieval layer uses the
-repository's single unified CPU algorithm for hard forward matching and the
-exact single-bit counterfactual Q/K/V credits.
-
-For the algorithm itself, start with the principle-first
-[English guide](../ALGORITHM.md) or [中文推导](../ALGORITHM.zh-CN.md); the
-[exhaustive reference](../docs/algorithm-reference.md) /
-[中文](../docs/algorithm-reference.zh-CN.md) derives every invariant from the
-bit-flip brute-force definition. The root
-[`hard_qkv_rosa_explained.py`](../hard_qkv_rosa_explained.py) is a readable
-entry point into the same runtime; it does not carry a second optimized
-implementation.
-
-## Build and use
-
-Python, NumPy, PyTorch, and a C++17 compiler are required for the layer. The
-NumPy-only stream API does not import PyTorch. On Linux/macOS/WSL, the first
-call compiles the core through `c++` (or `CXX`) and caches it by source and
-compiler options. PyTorch C++ headers, Ninja, and a CUDA toolkit are not
-required by the current native core.
-
-Run from the repository root:
-
-```bash
-python -m pip install numpy torch
-python -m conv_rosa_transformer.self_test
-python -m conv_rosa_transformer.multiply_demo --steps 1500
-```
-
-Native Windows can use `build.bat` from an x64 Visual Studio developer command
-prompt, for example `build.bat self_test.py`. The full structural test harness
-uses GCC/Clang-compatible commands; use Linux/WSL for that harness. Published
-CPU benchmarks and validation do not constitute native Windows or CUDA
-performance measurements.
+`NBitQKVRosa` uses one batched C++17 forward and one batched C++17 backward. The backward is the shared subquadratic construction for every input. Its options select the credit rule, exact query caching, and explicit numerical estimation—not a different backend.
 
 ```python
 import torch
-from conv_rosa_transformer.rosa_layer import NBitQKVRosaCpp
-from conv_rosa_transformer.rosa_transformer import RosaTransformer
+from conv_rosa_transformer.rosa_layer import NBitQKVRosa
 
-layer = NBitQKVRosaCpp(channels=64, n_bits=8, credit_order="first")
-x = torch.randn(2, 32, 64)
-layer(x).square().mean().backward()
-
-model = RosaTransformer(  # uses the current second-order layer default
-    vocab_size=16, channels=64, n_layers=2, n_bits=8,
-    conv_kernel=4, max_seq_len=64,
+layer = NBitQKVRosa(
+    channels=128, n_bits=8,
+    credit_order="second", randomized=True, backward_mode="exact",
 )
-logits = model(torch.randint(0, 16, (2, 32)))
+x = torch.randn(2, 32, 128)
+optimizer = torch.optim.AdamW(layer.parameters(), lr=1e-3)
+
+optimizer.zero_grad(set_to_none=True)
+loss = layer(x).square().mean()
+loss.backward()
+optimizer.step()
 ```
 
-The historical `NBitQKVRosaCpp`, `NBitQKVRosaForwardCpp`, and
-`NBitQKVRosa` names refer to the same implementation. Projection and embedding
-parameter names are retained for checkpoint compatibility. Inputs have shape
-`[B,T,C]`, with `C % n_bits == 0` and `1 <= n_bits <= 64`. Each group of D
-channels is processed as one stream.
+Inputs have shape `[B,T,C]`, with positive `C`, `C % n_bits == 0`, and `1 <= n_bits <= 64`. Each channel group is an independent stream. Hard bits use `logit > 0`; rows select the longest causal suffix match, breaking ties by the latest endpoint, and retrieve the payload after that endpoint or the learned empty output.
 
-The layer preserves its tensor device for ordinary projections and outputs,
-but transfers discrete stream work to the CPU core when necessary. It is not
-a GPU suffix-matching implementation. Device transfers, dense projections,
-and model training are distinct from the
-[stream backward measurements](../benchmarks/README.md).
+## Training options
 
-## Forward and backward semantics
+| Option | Meaning |
+|---|---|
+| `credit_order="first"` | Original linear single-bit output-change credit |
+| `credit_order="second"` | Default diagonal local trust model plus a bounded number of joint-bit blocks |
+| `randomized=True` | Default bounded cache with full-query-key verification; same numerical answers as disabling it |
+| `backward_mode="approximate"` | Explicit residual-row or centered numerical-channel estimation |
+| `approximation_rows=32` | Residual-row work budget when the channel budget is zero |
+| `approximation_channels=0` | Default keeps all channels in the row estimator; a positive budget selects channel estimation instead |
 
-Hard codes use `bit = (logit > 0)`. At output t, select the longest Q suffix
-matching a K endpoint `r < t`, breaking ties by the latest r. A nonempty route
-reads the signed payload at `V[r+1]`; an empty route reads `emb0`.
+The ordinary model, loss, and optimizer loop is unchanged. Selected joint corners are evaluated inside the component. Complete mode includes every mathematical credit term; grouped binary64 reductions and FFT have their stated rounding contract. The exact-cache toggle preserves this engine's arithmetic schedule. Sampling has a separate statistical error. See the [integration guide](../docs/native-training.md), [exact-cache guide](../docs/exact-randomized.md), and [approximation guide](../docs/randomized-backward.md).
 
-The core returns the projected output difference after each individual Q/K/V
-bit flip. This is a finite counterfactual quantity. It is not the ordinary
-derivative of a threshold. The layer explicitly maps that credit to logits:
+The default local metric and proposals depend on the incoming gradient. Separate backwards on different losses need not equal one backward on their sum; combine losses when that is the intended rule. Hard-credit double autograd is unsupported. The native matcher is CPU code, so CUDA tensors incur transfers and synchronization. Dense projections and ordinary outputs preserve the tensor device.
 
-- `credit_to_logit="bernoulli"` orients the flip as output-at-1 minus
-  output-at-0, then multiplies by `p*(1-p)/tau`, with `p=sigmoid(z/tau)`.
-- `credit_to_logit="identity"` uses the same oriented difference directly.
+## Build and verify
 
-Both retain the hard forward. The embedding gradients use the actual selected
-payloads and upstream vectors. Full derivations and floating-point guarantee
-boundaries are in [the algorithm guide](../ALGORITHM.md).
+Install from the repository root and run the independent checks:
 
-## Model layout
-
-Each pre-normalized block computes
-
-```text
-h = RMSNorm(x)
-x = x + ROSA(h) + ShortConv(h)
-x = x + SwiGLU(RMSNorm(x))
+```bash
+python -m pip install -r requirements.txt
+python tests/run.py
+python tests/run.py --exhaustive
 ```
 
-The two mixers share their input. `ShortConv` is a left-padded depthwise
-convolution; its default kernel length is 4. `tie_qk=True` shares the Q and K
-projection module, making identical input vectors receive identical Q/K
-codes. It is a model design option, not a correctness condition of the
-stream algorithm. Untied Q/K codes are supported and covered by the stream
-tests. `RosaTransformer` also supports tied input/output token embeddings.
+The first call compiles a source-hashed C++17 library through `c++` or `CXX`, without PyTorch C++ headers or a CUDA toolkit. The NumPy binding does not require importing PyTorch. The [standalone example](../examples/native_training.cpp) uses the same [C ABI](csrc/training.h) without a framework. See [native-api.md](../docs/native-api.md) for arrays, options, ownership, and diagnostics.
 
-## Multiplication demo and historical artifacts
-
-The demonstration task predicts decimal products, least-significant digit
-first, then reverses the result for display. Its default convolution kernel
-is 32, distinct from the model's generic default of 4. Evaluation reports
-per-digit accuracy and exact product-string accuracy.
-
-The bundled [`multiply_ckpt.pt`](artifacts/multiply_ckpt.pt),
-[`multiply_metrics.json`](artifacts/multiply_metrics.json), and
-[`train_log.txt`](artifacts/train_log.txt) are historical artifacts from the original
-upstream implementation at commit
-[`32e90e2`](https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward/commit/32e90e272929942a764d696b639409b783c61bb1).
-They have not been rerun as a training-quality evaluation of the current core.
-The saved metrics record 1,500 steps, digit accuracy 0.1730, and exact accuracy
-0.0000. Retaining these files preserves the example's provenance; it does not
-establish a new model accuracy or training-speed result.
-
-`overfit_test.py` remains a runnable small training diagnostic. Successful
-backward smoke tests check integration and gradients; they are not evidence
-of multiplication generalization.
+Current complete-backward times, memory, and approximation errors are in [the measured results](../docs/subquadratic-results.md) / [中文](../docs/subquadratic-results.zh-CN.md); reproduction is documented in [benchmarks/README.md](../benchmarks/README.md). Historical JSONs and example artifacts are evidence of their recorded builds, not a current runtime or training-quality guarantee.
 
 ## Source map
 
 | File | Role |
 |---|---|
-| [`rosa_core.py`](rosa_core.py) | Validated NumPy/PyTorch stream APIs and source-hashed C++ build |
-| [`csrc/unified_core.cpp`](csrc/unified_core.cpp) | Shared row loop, common deletion, Q/K repair, bounded scores, numerical contraction |
-| [`csrc/sam_q.h`](csrc/sam_q.h) | Static K SAM, causal occurrence list, ordinary edited states and uniqueness certificates |
-| [`csrc/sam_routes.h`](csrc/sam_routes.h) | Shared suffix, predecessor/successor, and route queries |
-| [`csrc/delete_indexed.h`](csrc/delete_indexed.h) | R staircases and compressed A/H deletion envelopes |
-| [`csrc/exact_expansion.h`](csrc/exact_expansion.h) | Residual-preserving interval and snapshot aggregation |
-| [`rosa_reference.py`](rosa_reference.py) | Independent hard-forward and all-flip definitions for tests |
-| [`rosa_layer.py`](rosa_layer.py) | Custom autograd function, logit mapping, compatible layer aliases |
-| [`rosa_transformer.py`](rosa_transformer.py) | RMSNorm, ShortConv, SwiGLU, parallel block, token model |
-| [`self_test.py`](self_test.py) | Independent stream checks, also exposed by the root entry point |
-| [`build.py`](build.py), [`build.bat`](build.bat) | Convenience build/launch entry points |
+| [rosa_layer.py](rosa_layer.py) | Ordinary PyTorch layer, custom autograd adapter, dense projections |
+| [native_training.py](native_training.py) | Validated batched NumPy binding and owned forward cache |
+| [rosa_core.py](rosa_core.py) | Source-hashed build, packed-word helpers, thin current-engine credit calls |
+| [csrc/training.h](csrc/training.h) | Versioned C ABI and caller-owned array contract |
+| [csrc/training_impl.h](csrc/training_impl.h) | Packing, forward, trust model, proposals, complete/approximate credit, joint replay and gradient mapping |
+| [csrc/forward.h](csrc/forward.h) | Exact causal suffix-automaton forward scan |
+| [csrc/subquadratic/index.h](csrc/subquadratic/index.h) | Shared suffix/LCP and wavelet indexes, verified query cache |
+| [csrc/subquadratic/delete.h](csrc/subquadratic/delete.h) | AP deletion profiles, streamed periodic sums, arbitrary owner/time projections |
+| [csrc/subquadratic/repair.h](csrc/subquadratic/repair.h) | Q heavy/light repair and anchored long K repair |
+| [csrc/subquadratic/short_k.h](csrc/subquadratic/short_k.h) | Compact virtual-word dictionaries and weighted short K queries |
+| [csrc/subquadratic/correlation.h](csrc/subquadratic/correlation.h) | Streamed arbitrary shifted interval correlations |
+| [csrc/subquadratic/engine.h](csrc/subquadratic/engine.h) | Complete composition, centered diagonal features, explicit estimators |
+| [csrc/pair_candidates.h](csrc/pair_candidates.h) | Bounded causal joint-bit proposal policy |
+| [rosa_reference.py](rosa_reference.py) | Independent literal definitions used by tests |
+| [rosa_transformer.py](rosa_transformer.py) | Model blocks combining ROSA with causal convolution and feed-forward layers |
 
-## Verification and measurement
-
-From the repository root:
-
-```bash
-python tests/run.py
-python tests/run.py --exhaustive
-python benchmarks/backward.py --repeats 7 --cpu 0 --output build/current.json
-```
-
-Choose a valid logical CPU or omit `--cpu` where unsupported. The
-[test guide](../tests/README.md) distinguishes route equality, independent
-integer credit checks, floating tolerances, targeted cancellation regressions,
-and layer gradients. The [measurement guide](../benchmarks/README.md) provides
-current absolute latency and throughput before its smaller comparison with
-the original upstream implementation. No old backend or runtime selector is
-needed to use this package.
+The derivation belongs in [ALGORITHM.md](../ALGORITHM.md) and [ALGORITHM.zh-CN.md](../ALGORITHM.zh-CN.md). The [reference map](../docs/algorithm-reference.md) connects invariants to proofs and tests; the [test guide](../tests/README.md) distinguishes route equality, exact integer checks, floating tolerances, and training integration.

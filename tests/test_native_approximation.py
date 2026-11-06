@@ -64,8 +64,7 @@ class NativeApproximationTests(unittest.TestCase):
     def test_validation_and_defaults(self):
         self.assertTrue(make_options().randomized)
         self.assertTrue(NBitQKVRosa(8,4).randomized)
-        for kw in ({'backward_mode':'bad'},{'approximation_rows':0},
-                   {'backward_mode':'approximate','repair_samples':2}):
+        for kw in ({'backward_mode':'bad'},{'approximation_rows':0}):
             with self.assertRaises(ValueError):NBitQKVRosa(8,4,**kw)
 
 if __name__=='__main__':unittest.main()

@@ -2,9 +2,8 @@
 // Complete selected-row repair evaluator. Route maxima are
 // unchanged; class indexes remove endpoints that provably cannot contribute.
 #include "approx_onegram.h"
-#include "sam_routes.h"
-#include <memory>
 #include <array>
+#include <cmath>
 
 namespace rosa_random {
 struct IndexedRowStep {int lo,hi,end;};
@@ -14,33 +13,25 @@ struct IndexedNeighborSpan {int bit;const int*begin;const int*end;};
 // one-symbol repair for those same rows. The caller owns exact full deletion,
 // value/embedding derivatives, and the full one-symbol control. No baseline
 // routes or output arrays are cleared or rebuilt by this function.
+// The caller supplies LCS queries from the same suffix index used by the
+// complete engine; selected rows never construct another matcher.
 template<bool Quadratic>
 inline int indexed_row_repairs(const OnegramPlan&plan,const uint8_t*v,
     const double*gradient,const double*diagonal,const double*empty,const double*scale,
     const int32_t*selected,const double*weights,int count,
     const int32_t*lengths,const int32_t*routes,double*cq,double*ck,uint64_t*stats,
-    bool subtract_onegram=true) {
+    bool subtract_onegram,
+    int(*external_lcs)(const void*,int,int),const void*external_context) {
   try {
     const int n=plan.n,d=plan.d;const uint64_t*q=plan.q,*k=plan.k;
-    if(count<0)return 1;
+    if(count<0 || !external_lcs)return 1;
     std::fill(stats,stats+16,uint64_t(0));stats[0]=count;
     if(!n)return count?1:0;
     if(!count)return 0;
     const size_t nd=size_t(n)*d;
-    std::unique_ptr<rosa_exact::SamQRepairs> sam;
-    using Index=rosa_exact::SamRoutes<rosa_exact::SamQRepairs>;
-    std::unique_ptr<Index> index;
     auto lcs=[&](int t,int r)->int {
         if(t<0||r<0)return 0;
-        for(int matched=0;matched<4;++matched)
-            if(r<matched||q[t-matched]!=k[r-matched])return matched;
-        if(!index) {
-            sam=std::make_unique<rosa_exact::SamQRepairs>(q,k,n,0);
-            index=std::make_unique<Index>(*sam,q,k);
-            for(int row=0;row<n;++row){sam->advance(row);index->observe();}
-            stats[15]=n;
-        }
-        return index->lcs(t,r);
+        return external_lcs(external_context,t,r);
     };
     std::vector<int> f;
     std::vector<RowRoute> prefix,qbest(nd,0),kbest(nd,0);
@@ -173,7 +164,6 @@ inline int indexed_row_repairs(const OnegramPlan&plan,const uint8_t*v,
             }
         }
     }
-    stats[9]=index?index->materialized_index_flags():0;
     return 0;
   }catch(const std::bad_alloc&){return 2;}catch(const std::exception&){return 3;}
 }

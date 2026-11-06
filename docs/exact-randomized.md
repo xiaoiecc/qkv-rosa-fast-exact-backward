@@ -1,221 +1,64 @@
-# Randomization without gradient noise: exact covering joins and sparse roots
+# Exact randomization: cache work, preserve the answer
 
-[中文](exact-randomized.zh-CN.md) · [Ordinary training integration](native-training.md)
+[中文](exact-randomized.zh-CN.md) · [Algorithm](../ALGORITHM.md) · [Approximate backward](randomized-backward.md) · [Measurements](subquadratic-results.md)
 
-The selected randomized scheme is an **exact random covering join**. Randomness
-changes search layout and screens distant, irrelevant word pairs. Every possible
-one-bit repair is still found. No gradient coordinates are dropped, no fingerprint
-is accepted as equality, and the selected joint block is unchanged.
+`randomized=True` enables a bounded cache inside the same suffix-index algorithm. It does not sample bit edits, candidate matches, rows, or channels. Complete keys are verified before a cached result is used, and a miss executes the ordinary exact query. With fixed inputs, credit rule, and other seeds, switching this option on and off leaves the complete backward outputs bitwise identical.
 
-`randomized=True` enables this exact acceleration. `False` enumerates requested
-bit flips and looks up complete words. Both modes share sparse root storage,
-matching states, and numerical accumulation. With other inputs and seeds fixed,
-the switch changes work, not the first-order or diagonal/joint credit definition.
+```python
+from conv_rosa_transformer.rosa_layer import NBitQKVRosa
 
-## 1. Could better sampling probabilities be enough?
+cached = NBitQKVRosa(128, 8, randomized=True)   # default
+uncached = NBitQKVRosa(128, 8, randomized=False)
+```
 
-The previous estimator writes $`C_{s,j}=B_s+R_{s,j}`$, retains the common deletion
-term B exactly, and samples complete repair lanes. This avoids sampling inside
-the K-candidate maximum, but its variance is substantial.
+Copy the same parameter state and use the same forward/proposal seeds when comparing the two. The boolean changes query acceleration, not the training rule or the independent joint-bit proposer.
 
-We first gave importance sampling an unusually generous oracle: suppose the full
-residual energy $`E_j`$ of every lane were known for free. With expected budget
-$`b`$, optimal marginal probabilities solve
+## 1. Which question is cached?
+
+For row $t$, let $F_t(r)$ be its exact suffix-match length at K endpoint $r$. The repeated indexed question is
 
 ```math
-\min_{0\lt p_j\le1,\;\sum p_j\le b}
-\sum_j E_j\left(\frac1{p_j}-1\right),
-\qquad
-p_j=\min\left(1,\frac{\sqrt{E_j}}{\lambda}\right).
+R(t,h,c)=\max\{r<c:F_t(r)\ge h\},
 ```
 
-The diagnostic itself is not free: it computes all exact credits first, then
-evaluates this optimistic ceiling.
+with an empty answer of $-1$. The causal cutoff is clipped to $c\le t$. A suffix-rank interval identifies matches of the length-$h$ Q suffix; a wavelet-matrix predecessor query selects the latest legal K occurrence. Deletion, interval projection, and repair trimming can ask the same question more than once.
 
-| Input | Budget | Uniform relative RMS | Oracle-importance relative RMS |
-|---|---:|---:|---:|
-| Random T=8,192, D=8 | 4 | 84.716% | 84.712% |
-| Random T=8,192, D=16 | 8 | 70.412% | 70.274% |
-| 64-bit slots, 8-bit vocabulary | 4 | 34.166% | 34.165% |
+The cache entry stores all of `(t, h, c, result)`. A seeded integer mixer maps the three query integers to a slot. The array has power-of-two capacity between $2n$ and $4n$, so both memory and replacement work are bounded.
 
-Lane energies are already nearly uniform in these cases. Even adding the exact
-per-owner mean across all lanes as a free control variate leaves roughly 66–67%
-relative RMS in the first two cases. This rejects the hope that clever inclusion
-weights alone make these states nearly lossless; it does not rule out every
-approximate randomized method. Definitions and values are retained in
-[native_random_noise_ceiling.json](../research/results/native_random_noise_ceiling.json).
+## 2. Why collisions cannot change a route
 
-The public acceleration switch therefore selects exact search, not lane sampling.
+A lookup has three possible outcomes:
 
-## 2. What the old root queries waste
+| Outcome | Action |
+|---|---|
+| Slot contains the complete same query key | Return its exact stored endpoint |
+| Slot is empty | Evaluate the suffix-index query and store the result |
+| Slot contains a different key | Evaluate the suffix-index query and replace the slot |
 
-Equal Q words already share root queries, but every distinct Q word x still asks,
-for every requested bit j,
+The hash determines placement only. It is never accepted as proof that two queries or symbols are equal. Even if every query were placed in one slot, the program would remain correct; reuse would merely be poor. Packed symbols themselves are compared through full-value compression and exact suffix/LCP structures.
 
-```math
-x\mathbin{\mathrm{xor}}2^j\in K\;?
-```
+Caching also leaves the numerical schedule alone. It substitutes an integer endpoint for a recomputation of the same integer endpoint; the caller then performs the same floating-point operations in the same order. This is why bitwise on/off equality is a meaningful contract here.
 
-This requires $`U_QD`$ complete-word lookups for $`U_Q`$ distinct Q words. Most
-answers are absent in a sparse 64-bit vocabulary. The old dense table also stores
-those absent answers, and each subsequent Q occurrence scans many empty slots.
+## 3. Avoid paying for low reuse indefinitely
 
-Two related problems remain: ask fewer unproductive questions, and avoid storing
-and rereading empty answers.
+A cache can slow down work that rarely repeats. The implementation measures a window of 512 probes. If fewer than 32 hit, it skips the next 2,048 probes and computes those queries directly, then observes another window. Later phases can have different reuse, so bypass is temporary.
 
-## 3. Why random blocks cannot miss a one-bit neighbor
+These are implementation constants, not accuracy controls. A bypass never drops a contribution. The policy limits unproductive probing, but is not a promise of universal acceleration: hashing, slot checks, and extra memory can still cost more than the hits save. Report end-to-end timings as well as hits and misses.
 
-Randomly permute the D bits and partition them into p balanced, disjoint blocks.
-The implementation considers only p=2 or p=4. For each block b, index K words by
-**all bits outside b**, using complete projected keys.
+The implementation is in [index.h](../conv_rosa_transformer/csrc/subquadratic/index.h). An index belongs to one stream; its mutable cache is not shared by simultaneous calls. Independent batch/group streams have independent indices.
 
-If two words differ only at a bit in b, they agree everywhere outside b. They
-must share b's bucket. Every other block's projection retains the differing bit,
-so the pair appears in exactly one bucket. Every one-bit neighbor is covered.
+## 4. Seeds and reproducibility
 
-Each enumerated member still undergoes full-word XOR verification. Only a nonzero
-power-of-two difference is accepted. Complete projected-key equality resolves
-hash collisions; complete XOR rejects distant bucket members. Correctness does
-not depend on collisions being unlikely.
+The native options separate `proposal_seed`, used by the bounded joint-bit proposal, from `repair_seed`, used for indexed query placement and as a sampling salt when approximation is explicitly requested. The adapter freezes the options with the forward state. Switching `randomized` does not change proposal seeds or the framework RNG consumption for that forward.
 
-![An eight-bit covering join with exact XOR verification and a bounded bucket scan](../images/exact-randomized-root-join.svg)
+For first-order complete mode with no joint proposals, this cache needs no additional Torch RNG draw. Second-order proposal randomness is still present when the cache is disabled; disabling a lookup accelerator does not disable the chosen training rule. Approximate mode has its own explicit sampling behavior, documented in [randomized-backward.md](randomized-backward.md).
 
-The differing bit 4 belongs to A. Omitting A leaves identical keys `0100`;
-omitting B retains the difference (`1110` versus `1010`). This small example
-illustrates coverage. The planner can still choose direct lookups when indexes
-would not repay their build cost.
+Fixed seeds make runs reproducible within the same implementation and numerical environment. The cache's equality guarantee is the on/off comparison with all other inputs and random choices held fixed, not a promise that different sampling seeds, compilers, or floating-point environments produce the same training trajectory.
 
-For fixed p and a uniformly random partition, two words at Hamming distance h>0
-share some bucket only when all h differences fall in one block. With block
-sizes $`m_b`$,
+## 5. Exact search and floating-point completeness are different contracts
 
-```math
-\Pr[\text{some shared bucket}]
-=\frac{\sum_b {m_b\choose h}}{{D\choose h}}.
-```
+The current complete engine batches interval sums and uses FFT where appropriate. Its routes are exact and no mathematical credit terms are omitted, but binary64 grouping and FFT can round differently from a historical direct reduction. That fact applies with this cache both enabled and disabled.
 
-The probability is exactly 1 for h=1. With equal block sizes and h≥2, it is at
-most $`p^{1-h}`$. Distant pairs tend to separate while useful one-bit neighbors
-are retained. This formula assumes fixed p; a data-dependent planner does not
-make the selected p's conditional distribution uniform.
+`backward_mode="approximate"` is the separate choice that permits a statistical estimate. It samples complete residual rows, or explicitly selected numerical channels, after the relevant route maxima are resolved. `randomized=True` alone enables neither estimator.
 
-## 4. Dense buckets have a deterministic work cap
-
-Let a block contain m requested flip bits and its bucket contain c distinct K
-words:
-
-- If c≤m, enumerate bucket members and verify full XOR.
-- If c>m, enumerate those m flips and use complete-word lookups.
-
-The candidate work for one Q word is bounded by
-
-```math
-\sum_b\min(c_b,m_b)\le\sum_b m_b\le D.
-```
-
-This bound holds for every input and partition seed. Correlated codes or an
-unfortunate partition cannot cause unbounded bucket scans. These are per-bucket
-choices within one covering algorithm, not dispatch on benchmark family names.
-
-Building indexes also costs time. A small planner uses $`U_Q`$, distinct K count
-$`U_K`$, K's varying bits, and the fraction of exact Q/K word matches to estimate
-direct queries and two-/four-block covering work. It charges construction,
-queries, member checks, and fixed setup. If predicted savings are insufficient,
-it uses direct queries. This model is only a performance heuristic; correctness
-does not depend on it. Dense D=8, some dense D=16, and tiny inputs often stay direct.
-
-## 5. Store only the answers that exist
-
-Each Q class stores a 64-bit neighbor mask, a CSR offset, and packed int32 root
-targets in ascending bit order. Repair birth order therefore stays identical to
-the old algorithm.
-
-A K word first appearing at or after the last occurrence of this Q class can
-never be causal; that root is not stored. The scan separately checks causality
-at the current time t.
-
-Each query temporarily uses an uninitialized `targets[64]`, reading only entries
-marked by its written mask. There is no hidden D-sized clearing pass, per-class
-small container, or sorting step.
-
-Let R count stored causal root neighbors. Root storage drops from $`O(U_QD)`$
-to $`O(U_Q+R)`$, or $`O(T+U_Q+R)`$ including position-to-class mapping. Root visits
-during the scan change from the $`TD`$ bound to
-
-```math
-\sum_{t=0}^{T-1}\deg(\mathrm{class}(Q[t])).
-```
-
-These are improvements to root preparation and repair births. Output tensors
-still have $`TD`$ entries, and the full backward retains deletion, live-repair,
-and numerical-corridor costs. This is not a linear bound for the whole algorithm.
-Reserved vector capacity and other indexes also consume memory; R is not peak RSS.
-
-The old `root_repair_entries` counter retains its logical
-$`U_Q\times\text{requested bits}`$ meaning for compatibility. Diagnostics report
-`stored_root_entries` separately rather than silently changing that contract.
-
-## 6. Complete backward measurements
-
-The baseline is the previous delivery, commit `f6d7c4b`. Both current off/on modes
-use sparse roots; on additionally enables the covering join. Each row has 11
-alternating measurements on one CPU core with fixed input and preallocated
-output buffers. Timers include all native indexing and credit contraction;
-Python validation, projections, optimizers, compilation, and warmup are excluded.
-
-| Input | Previous complete native backward | Current off | Current on | Previous / on |
-|---|---:|---:|---:|---:|
-| Random T=8,192, D=32 | 11.624 ms | 11.351 ms | **7.121 ms** | **1.63×** |
-| 64-bit words, planted one-bit repairs, T=8,192 | 21.824 ms | 20.094 ms | **12.033 ms** | **1.81×** |
-| Same, diagonal costs | 18.437 ms | 16.659 ms | **10.435 ms** | **1.77×** |
-| Random T=2,048, D=16 | 1.756 ms | 1.605 ms | 1.518 ms | 1.16× |
-| Random T=8,192, D=8 | 26.656 ms | 26.835 ms | 23.974 ms | 1.11× |
-| 64-bit slots, 8-bit vocabulary, T=8,192 | 44.476 ms | 39.129 ms | 43.731 ms | 1.02× |
-| Periodic T=4,096, D=4 | 47.999 ms | 45.635 ms | 49.376 ms | **0.97×** |
-
-The full 15-row previous/on range is **0.972–1.814×**, including a regression.
-Timing changes in D=8 or periodic rows with unchanged work must not be called
-algorithmic gains. Some current off/on ratios also fall below one; all raw
-samples are retained.
-
-For the planted 64-bit case, SAM preparation falls from **7.960 ms** off to
-**1.713 ms** on. The 524,288 direct root lookups become 16,384 bucket queries and
-2,048 member checks. Only 2,048 causal root targets are stored. All outputs remain
-bitwise equal to the baseline.
-
-Full matrix, seeds, work counts, and loaded-binary hashes:
-[exact_randomized.json](../benchmarks/results/exact_randomized.json).
-The tests gained four-block and sampled-trajectory cases after measurement;
-production C++ did not change. The exact measured C++ probe is retained, with the
-test-module versus production-source hash distinction documented in
-[exact_randomized_provenance.json](../benchmarks/results/exact_randomized_provenance.json).
-These are complete **credit-engine** times, not model training throughput;
-ordinary component measurements appear in the main report.
-
-## 7. Validation and reproduction
-
-`tests/test_randomized_join.py` compares all Q/K/V credits, lengths, routes, and
-the existing 23 structural counters across the switch. Cases include empty
-streams, bit 63, multiple widths, correlated codes, direct/two-/four-block plans,
-and several seeds. Existing repair-sampling expectation/variance, forced-lane,
-and hash-layout checks continue to pass. Formal timings also compare bitwise
-against the frozen previous engine and verify unchanged sources during the run.
-
-```bash
-python -m unittest tests.test_randomized_join tests.test_repair_sampling tests.test_backward_hash
-python benchmarks/exact_randomized.py --baseline-root /path/to/frozen-previous-source --cpu 0
-```
-
-The external baseline is research-only and never a production backend. The old
-probabilistic lane-sampling interface retains its explicit error contract;
-`randomized=True` does not enable it.
-
-## Relationship to prior work
-
-Exact Hamming search with multiple substring indexes is established research;
-see [Norouzi, Punjani, and Fleet: Multi-Index Hashing](https://arxiv.org/abs/1307.2982).
-Random layouts that preserve all required near neighbors are also related to
-[Pagh: CoveringLSH](https://arxiv.org/abs/1507.03225).
-This implementation uses a simple radius-one cover, bounded bucket work,
-causal certification, and sparse repair births to remove specific repeated work
-in this ROSA engine. It does not claim to invent generic nearest-neighbor search.
+[The deletion oracle](../tests/cpp/subquadratic_delete.cpp) compares cache-on and cache-off outputs bytewise while checking both against literal routing. [The native integration tests](../tests/test_subquadratic_engine.py) exercise the complete training entry. Current speed and numerical error belong in [the measured results](subquadratic-results.md), not in a claim that randomization always wins.
