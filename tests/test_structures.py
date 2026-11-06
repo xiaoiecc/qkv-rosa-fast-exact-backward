@@ -21,6 +21,9 @@ class StructureTests(unittest.TestCase):
     def test_subquadratic_bounded_q_frontier(self):
         self.check_oracle("subquadratic_q_frontier")
 
+    def test_subquadratic_verified_fingerprint_k(self):
+        self.check_oracle("subquadratic_fingerprint_k")
+
     def test_subquadratic_heavy_light_and_long_repairs(self):
         self.check_oracle("subquadratic_repair")
 

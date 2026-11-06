@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="710" viewBox="0 0 1120 710" role="img" aria-labelledby="title desc">
+<title id="title">用两个半段找全 K 候选</title>
+<desc id="desc">两个不相交的半段覆盖不短于原匹配的修复；原匹配受损窗口覆盖更短的赢家。</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#43627c"/></marker></defs>
+<style>text{font-family:Arial,"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#18334a}.mono{font-family:"DejaVu Sans Mono",monospace}</style>
+<rect x="0" y="0" width="1120" height="710" rx="20" fill="#f3f7fa" stroke="none" stroke-width="1"/>
+<text x="34" y="46" font-size="28" fill="#18334a" font-weight="700" text-anchor="start">哪些 K 终点有资格挑战原答案？</text>
+<text x="34" y="76" font-size="18" fill="#18334a" font-weight="400" text-anchor="start">以 L = 8 为例。一次修改至多碰到其中一个半段。</text>
+<rect x="24" y="98" width="1072" height="306" rx="12" fill="#ffffff" stroke="#d8e3eb" stroke-width="1"/>
+<text x="44" y="130" font-size="21" fill="#18334a" font-weight="700" text-anchor="start">1  长度至少为 L 的修复，总有一个精确半段</text>
+<rect x="247" y="146" width="246" height="26" rx="5" fill="#e8edf9" stroke="none" stroke-width="1"/>
+<rect x="495" y="146" width="246" height="26" rx="5" fill="#dcf3ed" stroke="none" stroke-width="1"/>
+<text x="369" y="165" font-size="16" fill="#18334a" font-weight="400" text-anchor="middle">较早半段：L − h</text>
+<text x="617" y="165" font-size="16" fill="#18334a" font-weight="400" text-anchor="middle">较晚半段：h = floor(L/2)</text>
+<text x="44" y="209" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">Q 的末尾</text>
+<rect x="252" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="280.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="314" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="342.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="376" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="404.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="438" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="466.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="500" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="528.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="562" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="590.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="624" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="652.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="686" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="714.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<text x="44" y="261" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">修改较早半段</text>
+<rect x="252" y="237" width="56" height="35" rx="5" fill="#eef1f7" stroke="none" stroke-width="2"/>
+<text x="280.0" y="262" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="314" y="237" width="56" height="35" rx="5" fill="#ffe3d8" stroke="#c96345" stroke-width="2"/>
+<text x="342.0" y="262" font-size="20" fill="#18334a" font-weight="700" text-anchor="middle" class="mono">0</text>
+<rect x="376" y="237" width="56" height="35" rx="5" fill="#eef1f7" stroke="none" stroke-width="2"/>
+<text x="404.0" y="262" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="438" y="237" width="56" height="35" rx="5" fill="#eef1f7" stroke="none" stroke-width="2"/>
+<text x="466.0" y="262" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="500" y="237" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="528.0" y="262" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="562" y="237" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="590.0" y="262" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="624" y="237" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="652.0" y="262" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="686" y="237" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="714.0" y="262" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<text x="784" y="253" font-size="17" fill="#18334a" font-weight="700" text-anchor="start">精确出现终点为 r</text>
+<text x="784" y="276" font-size="15" fill="#18334a" font-weight="400" text-anchor="start">较晚半段没有被修改。</text>
+<text x="44" y="313" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">修改较晚半段</text>
+<rect x="252" y="289" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="280.0" y="314" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="314" y="289" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="342.0" y="314" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="376" y="289" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="404.0" y="314" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="438" y="289" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="466.0" y="314" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="500" y="289" width="56" height="35" rx="5" fill="#eef1f7" stroke="none" stroke-width="2"/>
+<text x="528.0" y="314" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="562" y="289" width="56" height="35" rx="5" fill="#eef1f7" stroke="none" stroke-width="2"/>
+<text x="590.0" y="314" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="624" y="289" width="56" height="35" rx="5" fill="#ffe3d8" stroke="#c96345" stroke-width="2"/>
+<text x="652.0" y="314" font-size="20" fill="#18334a" font-weight="700" text-anchor="middle" class="mono">0</text>
+<rect x="686" y="289" width="56" height="35" rx="5" fill="#eef1f7" stroke="none" stroke-width="2"/>
+<text x="714.0" y="314" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<text x="784" y="305" font-size="17" fill="#18334a" font-weight="700" text-anchor="start">报告 r − h，再加上 h</text>
+<text x="784" y="328" font-size="15" fill="#18334a" font-weight="400" text-anchor="start">较早半段没有被修改。</text>
+<text x="44" y="374" font-size="16" fill="#18334a" font-weight="400" text-anchor="start">橙色格子是本次修改修好的原失配；绿色半段是精确出现的证据。</text>
+<rect x="24" y="422" width="1072" height="262" rx="12" fill="#ffffff" stroke="#d8e3eb" stroke-width="1"/>
+<text x="44" y="454" font-size="21" fill="#18334a" font-weight="700" text-anchor="start">2  更短的修复要胜出，owner 必须破坏原出现</text>
+<text x="44" y="482" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">例：L = 8，原终点 r0 = 12。枚举窗口 [5, 20)，再按 r &lt; t 裁剪。</text>
+<rect x="230" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="251.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">5</text>
+<rect x="275" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="296.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">6</text>
+<rect x="320" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="341.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">7</text>
+<rect x="365" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="386.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">8</text>
+<rect x="410" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="431.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">9</text>
+<rect x="455" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="476.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">10</text>
+<rect x="500" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="521.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">11</text>
+<rect x="545" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="566.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">12</text>
+<rect x="590" y="509" width="43" height="36" rx="3" fill="#e6edf8" stroke="none" stroke-width="1"/>
+<text x="611.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">13</text>
+<rect x="635" y="509" width="43" height="36" rx="3" fill="#e6edf8" stroke="none" stroke-width="1"/>
+<text x="656.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">14</text>
+<rect x="680" y="509" width="43" height="36" rx="3" fill="#e6edf8" stroke="none" stroke-width="1"/>
+<text x="701.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">15</text>
+<rect x="725" y="509" width="43" height="36" rx="3" fill="#e6edf8" stroke="none" stroke-width="1"/>
+<text x="746.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">16</text>
+<rect x="770" y="509" width="43" height="36" rx="3" fill="#e6edf8" stroke="none" stroke-width="1"/>
+<text x="791.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">17</text>
+<rect x="815" y="509" width="43" height="36" rx="3" fill="#e6edf8" stroke="none" stroke-width="1"/>
+<text x="836.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">18</text>
+<rect x="860" y="509" width="43" height="36" rx="3" fill="#e6edf8" stroke="none" stroke-width="1"/>
+<text x="881.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">19</text>
+<path d="M230,504 L230,557" fill="none" stroke="#376383" stroke-width="2"/>
+<path d="M905,504 L905,557" fill="none" stroke="#376383" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="216" y="534" font-size="25" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">[</text>
+<text x="919" y="534" font-size="25" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">)</text>
+<text x="44" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">K 终点</text>
+<path d="M521.5,568 L746.5,568" fill="none" stroke="#43627c" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="521.5" y="593" font-size="16" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">s = 11</text>
+<text x="746.5" y="593" font-size="16" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">r = 16</text>
+<text x="634.0" y="560" font-size="15" fill="#18334a" font-weight="400" text-anchor="middle">右延伸 = 5</text>
+<text x="44" y="627" font-size="16" fill="#18334a" font-weight="400" text-anchor="start">owner s 在 [r0 − L + 1, r0] 内；较短修复的终点 r = s + a，其中 a &lt; L。</text>
+<text x="44" y="655" font-size="16" fill="#18334a" font-weight="700" text-anchor="start">先数清两个出现区间与这个窗口的大小，再决定是否完整枚举。</text>
+</svg>

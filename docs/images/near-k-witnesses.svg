@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="710" viewBox="0 0 1120 710" role="img" aria-labelledby="title desc">
+<title id="title">Find every K challenger with two witnesses</title>
+<desc id="desc">Two disjoint halves cover every repair at least as long as the baseline; a bounded damage window covers shorter winners.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#43627c"/></marker></defs>
+<style>text{font-family:Arial,"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#18334a}.mono{font-family:"DejaVu Sans Mono",monospace}</style>
+<rect x="0" y="0" width="1120" height="710" rx="20" fill="#f3f7fa" stroke="none" stroke-width="1"/>
+<text x="34" y="46" font-size="28" fill="#18334a" font-weight="700" text-anchor="start">Which K endpoints can challenge the baseline?</text>
+<text x="34" y="76" font-size="18" fill="#18334a" font-weight="400" text-anchor="start">L = 8 example. A single edit touches at most one of the two halves.</text>
+<rect x="24" y="98" width="1072" height="306" rx="12" fill="#ffffff" stroke="#d8e3eb" stroke-width="1"/>
+<text x="44" y="130" font-size="21" fill="#18334a" font-weight="700" text-anchor="start">1  A repair of length at least L has an exact half</text>
+<rect x="247" y="146" width="246" height="26" rx="5" fill="#e8edf9" stroke="none" stroke-width="1"/>
+<rect x="495" y="146" width="246" height="26" rx="5" fill="#dcf3ed" stroke="none" stroke-width="1"/>
+<text x="369" y="165" font-size="16" fill="#18334a" font-weight="400" text-anchor="middle">Older half: L − h</text>
+<text x="617" y="165" font-size="16" fill="#18334a" font-weight="400" text-anchor="middle">Recent half: h = floor(L/2)</text>
+<text x="44" y="209" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">Q suffix</text>
+<rect x="252" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="280.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="314" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="342.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="376" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="404.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="438" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="466.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="500" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="528.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="562" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="590.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="624" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="652.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="686" y="185" width="56" height="35" rx="5" fill="#edf2f7" stroke="none" stroke-width="2"/>
+<text x="714.0" y="210" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<text x="44" y="261" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">Edit in older half</text>
+<rect x="252" y="237" width="56" height="35" rx="5" fill="#eef1f7" stroke="none" stroke-width="2"/>
+<text x="280.0" y="262" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="314" y="237" width="56" height="35" rx="5" fill="#ffe3d8" stroke="#c96345" stroke-width="2"/>
+<text x="342.0" y="262" font-size="20" fill="#18334a" font-weight="700" text-anchor="middle" class="mono">0</text>
+<rect x="376" y="237" width="56" height="35" rx="5" fill="#eef1f7" stroke="none" stroke-width="2"/>
+<text x="404.0" y="262" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="438" y="237" width="56" height="35" rx="5" fill="#eef1f7" stroke="none" stroke-width="2"/>
+<text x="466.0" y="262" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="500" y="237" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="528.0" y="262" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="562" y="237" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="590.0" y="262" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="624" y="237" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="652.0" y="262" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="686" y="237" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="714.0" y="262" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<text x="784" y="253" font-size="17" fill="#18334a" font-weight="700" text-anchor="start">Report exact end r</text>
+<text x="784" y="276" font-size="15" fill="#18334a" font-weight="400" text-anchor="start">The recent half is untouched.</text>
+<text x="44" y="313" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">Edit in recent half</text>
+<rect x="252" y="289" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="280.0" y="314" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="314" y="289" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="342.0" y="314" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="376" y="289" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="404.0" y="314" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="438" y="289" width="56" height="35" rx="5" fill="#c5eade" stroke="none" stroke-width="2"/>
+<text x="466.0" y="314" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="500" y="289" width="56" height="35" rx="5" fill="#eef1f7" stroke="none" stroke-width="2"/>
+<text x="528.0" y="314" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">1</text>
+<rect x="562" y="289" width="56" height="35" rx="5" fill="#eef1f7" stroke="none" stroke-width="2"/>
+<text x="590.0" y="314" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="624" y="289" width="56" height="35" rx="5" fill="#ffe3d8" stroke="#c96345" stroke-width="2"/>
+<text x="652.0" y="314" font-size="20" fill="#18334a" font-weight="700" text-anchor="middle" class="mono">0</text>
+<rect x="686" y="289" width="56" height="35" rx="5" fill="#eef1f7" stroke="none" stroke-width="2"/>
+<text x="714.0" y="314" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<text x="784" y="305" font-size="17" fill="#18334a" font-weight="700" text-anchor="start">Report r − h, then add h</text>
+<text x="784" y="328" font-size="15" fill="#18334a" font-weight="400" text-anchor="start">The older half is untouched.</text>
+<text x="44" y="374" font-size="16" fill="#18334a" font-weight="400" text-anchor="start">Orange = the original mismatch repaired by the edit. Green = an exact witness.</text>
+<rect x="24" y="422" width="1072" height="262" rx="12" fill="#ffffff" stroke="#d8e3eb" stroke-width="1"/>
+<text x="44" y="454" font-size="21" fill="#18334a" font-weight="700" text-anchor="start">2  A shorter winner must damage the baseline occurrence</text>
+<text x="44" y="482" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">Example: L = 8, baseline end r0 = 12. Enumerate [5, 20), clipped by r &lt; t.</text>
+<rect x="230" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="251.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">5</text>
+<rect x="275" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="296.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">6</text>
+<rect x="320" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="341.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">7</text>
+<rect x="365" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="386.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">8</text>
+<rect x="410" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="431.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">9</text>
+<rect x="455" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="476.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">10</text>
+<rect x="500" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="521.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">11</text>
+<rect x="545" y="509" width="43" height="36" rx="3" fill="#cae8e0" stroke="none" stroke-width="1"/>
+<text x="566.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">12</text>
+<rect x="590" y="509" width="43" height="36" rx="3" fill="#e6edf8" stroke="none" stroke-width="1"/>
+<text x="611.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">13</text>
+<rect x="635" y="509" width="43" height="36" rx="3" fill="#e6edf8" stroke="none" stroke-width="1"/>
+<text x="656.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">14</text>
+<rect x="680" y="509" width="43" height="36" rx="3" fill="#e6edf8" stroke="none" stroke-width="1"/>
+<text x="701.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">15</text>
+<rect x="725" y="509" width="43" height="36" rx="3" fill="#e6edf8" stroke="none" stroke-width="1"/>
+<text x="746.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">16</text>
+<rect x="770" y="509" width="43" height="36" rx="3" fill="#e6edf8" stroke="none" stroke-width="1"/>
+<text x="791.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">17</text>
+<rect x="815" y="509" width="43" height="36" rx="3" fill="#e6edf8" stroke="none" stroke-width="1"/>
+<text x="836.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">18</text>
+<rect x="860" y="509" width="43" height="36" rx="3" fill="#e6edf8" stroke="none" stroke-width="1"/>
+<text x="881.5" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">19</text>
+<path d="M230,504 L230,557" fill="none" stroke="#376383" stroke-width="2"/>
+<path d="M905,504 L905,557" fill="none" stroke="#376383" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="216" y="534" font-size="25" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">[</text>
+<text x="919" y="534" font-size="25" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">)</text>
+<text x="44" y="534" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">K endpoints</text>
+<path d="M521.5,568 L746.5,568" fill="none" stroke="#43627c" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="521.5" y="593" font-size="16" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">s = 11</text>
+<text x="746.5" y="593" font-size="16" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">r = 16</text>
+<text x="634.0" y="560" font-size="15" fill="#18334a" font-weight="400" text-anchor="middle">right extension = 5</text>
+<text x="44" y="627" font-size="16" fill="#18334a" font-weight="400" text-anchor="start">Owner s lies in [r0 − L + 1, r0]; a shorter repaired endpoint has r = s + a, a &lt; L.</text>
+<text x="44" y="655" font-size="16" fill="#18334a" font-weight="700" text-anchor="start">Count both witness intervals and this window before reporting any candidates.</text>
+</svg>

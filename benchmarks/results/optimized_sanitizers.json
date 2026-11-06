@@ -1,0 +1,260 @@
+{
+  "status": "PASS",
+  "compiler": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0",
+  "scope": "Independent literal native oracles; address and undefined-behavior sanitizers",
+  "leak_detection": false,
+  "tests": [
+    {
+      "test": "subquadratic_q_frontier",
+      "status": "PASS",
+      "compile_command": [
+        "c++",
+        "-O1",
+        "-g",
+        "-std=c++17",
+        "-ffp-contract=off",
+        "-fsanitize=address,undefined",
+        "-fno-sanitize-recover=all",
+        "-fno-omit-frame-pointer",
+        "/workspace/scratch/0105199a8474/qkv-rosa-optimized/tests/cpp/subquadratic_q_frontier.cpp",
+        "-o",
+        "/workspace/scratch/0105199a8474/qkv-rosa-optimized/build/sanitizers/subquadratic_q_frontier"
+      ],
+      "compile_seconds": 5.902725167001336,
+      "run_seconds": 3.2474486240025726,
+      "compile_returncode": 0,
+      "compile_stderr": "",
+      "returncode": 0,
+      "stdout": "{\"status\":\"PASS\",\"fixtures\":5641,\"accepted\":33816,\"rejected\":30,\"forward_rows\":104553}\n",
+      "stderr": "",
+      "source_sha256": {
+        "conv_rosa_transformer/csrc/forward.h": "c18eeb09ea81396eee60c08cb4f26dc1f5eb410179eae238a42a6261f916ca48",
+        "conv_rosa_transformer/csrc/subquadratic/index.h": "e459842ca8c7487c59da734c0a395bdfd4aed438615a343f42a2588d791d02ce",
+        "conv_rosa_transformer/csrc/subquadratic/q_frontier.h": "7777de2c9d238e1d4d133c4d02ecc5836f7e015e3a482ecc42c372f658dc98bc",
+        "conv_rosa_transformer/csrc/subquadratic/types.h": "faea870269abd39fd778ae6a0c9e677cb12980c7cae3b64e63be9ddad908da8e",
+        "tests/cpp/subquadratic_q_frontier.cpp": "6703f5b913e8d876caa60c6e05bcc7745453371f5923964027b9b89054a1e5c7"
+      },
+      "source_unchanged": true,
+      "sanitizer_environment": {
+        "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1",
+        "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+      },
+      "oracle": {
+        "status": "PASS",
+        "fixtures": 5641,
+        "accepted": 33816,
+        "rejected": 30,
+        "forward_rows": 104553
+      },
+      "source_matches_final": true
+    },
+    {
+      "test": "subquadratic_short",
+      "status": "PASS",
+      "compile_command": [
+        "c++",
+        "-O1",
+        "-g",
+        "-std=c++17",
+        "-ffp-contract=off",
+        "-fsanitize=address,undefined",
+        "-fno-sanitize-recover=all",
+        "-fno-omit-frame-pointer",
+        "/workspace/scratch/0105199a8474/qkv-rosa-optimized/tests/cpp/subquadratic_short.cpp",
+        "-o",
+        "/workspace/scratch/0105199a8474/qkv-rosa-optimized/build/sanitizers/subquadratic_short"
+      ],
+      "compile_seconds": 14.360339710001426,
+      "run_seconds": 3.6844088710022334,
+      "compile_returncode": 0,
+      "compile_stderr": "",
+      "returncode": 0,
+      "stdout": "{\"status\":\"PASS\",\"cases\":6932,\"credit_elements\":85338,\"literal_route_checks\":985458,\"dominance_components\":84128,\"max_absolute_error\":5.68434e-14,\"seconds\":3.67175}\n",
+      "stderr": "",
+      "source_sha256": {
+        "conv_rosa_transformer/csrc/subquadratic/index.h": "e459842ca8c7487c59da734c0a395bdfd4aed438615a343f42a2588d791d02ce",
+        "conv_rosa_transformer/csrc/subquadratic/near_k.h": "35748df7989446d6c800b0f684806538cf70cfc93a97537312083737ea41c458",
+        "conv_rosa_transformer/csrc/subquadratic/short_k.h": "ba2eb2775a16bc6ef540c1f4724bbd1ee8ccc84816c652539ff2f60e62023a73",
+        "conv_rosa_transformer/csrc/subquadratic/types.h": "faea870269abd39fd778ae6a0c9e677cb12980c7cae3b64e63be9ddad908da8e",
+        "tests/cpp/subquadratic_short.cpp": "5a32c0e203e07d1b9a27df3675508de9d4b851e70d82bc86f7ceee7dd75b3e82"
+      },
+      "source_unchanged": true,
+      "sanitizer_environment": {
+        "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1",
+        "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+      },
+      "oracle": {
+        "status": "PASS",
+        "cases": 6932,
+        "credit_elements": 85338,
+        "literal_route_checks": 985458,
+        "dominance_components": 84128,
+        "max_absolute_error": 5.68434e-14,
+        "seconds": 3.67175
+      },
+      "source_matches_final": true
+    },
+    {
+      "test": "subquadratic_indexed_row",
+      "status": "PASS",
+      "compile_command": [
+        "c++",
+        "-O1",
+        "-g",
+        "-std=c++17",
+        "-ffp-contract=off",
+        "-fsanitize=address,undefined",
+        "-fno-sanitize-recover=all",
+        "-fno-omit-frame-pointer",
+        "/workspace/scratch/0105199a8474/qkv-rosa-optimized/tests/cpp/subquadratic_indexed_row.cpp",
+        "-o",
+        "/workspace/scratch/0105199a8474/qkv-rosa-optimized/build/sanitizers/subquadratic_indexed_row"
+      ],
+      "compile_seconds": 6.46899650299747,
+      "run_seconds": 0.4833018160024949,
+      "compile_returncode": 0,
+      "compile_stderr": "",
+      "returncode": 0,
+      "stdout": "{\"status\":\"PASS\",\"cases\":5896,\"selected_rows\":31336,\"credit_components\":111392,\"literal_routes\":1995800,\"max_absolute_error\":1.42109e-14,\"seconds\":0.468084}\n",
+      "stderr": "",
+      "source_sha256": {
+        "conv_rosa_transformer/csrc/approx_indexed_row.h": "397583252f8d15fc330646ebb68cf356b0084027fb9a26ff557977d6b4e1469f",
+        "conv_rosa_transformer/csrc/approx_onegram.h": "e5dbca14aa4c892b9bed87b0186d6f4317b029e75cd0097cbac5c1c804c964d7",
+        "conv_rosa_transformer/csrc/approx_route_helpers.h": "c246fd1ce1c10466d050a89b5b46ee1baa962194158c363a38005ba40d03b86b",
+        "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+        "conv_rosa_transformer/csrc/exact_hamming_join.h": "804b3a3c207333a6d0bec513a4201651014130e10afa979358e52c5b3aa3b73a",
+        "conv_rosa_transformer/csrc/full_word_map.h": "786f657d0dabdf0b429be86449099a10029133b69d8bcec8b181ef7b394c64cd",
+        "tests/cpp/subquadratic_indexed_row.cpp": "77a5951dfff5e3d43dcea4fd571c5275566434dd631574ee523c09a52ab5a50f"
+      },
+      "source_unchanged": true,
+      "sanitizer_environment": {
+        "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1",
+        "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+      },
+      "oracle": {
+        "status": "PASS",
+        "cases": 5896,
+        "selected_rows": 31336,
+        "credit_components": 111392,
+        "literal_routes": 1995800,
+        "max_absolute_error": 1.42109e-14,
+        "seconds": 0.468084
+      },
+      "source_matches_final": true
+    },
+    {
+      "test": "subquadratic_training",
+      "status": "PASS",
+      "compile_command": [
+        "c++",
+        "-O1",
+        "-g",
+        "-std=c++17",
+        "-ffp-contract=off",
+        "-fsanitize=address,undefined",
+        "-fno-sanitize-recover=all",
+        "-fno-omit-frame-pointer",
+        "/workspace/scratch/0105199a8474/qkv-rosa-optimized/tests/cpp/subquadratic_training.cpp",
+        "-o",
+        "/workspace/scratch/0105199a8474/qkv-rosa-optimized/build/sanitizers/subquadratic_training"
+      ],
+      "compile_seconds": 43.30004542399911,
+      "run_seconds": 0.7994774440012407,
+      "compile_returncode": 0,
+      "compile_stderr": "",
+      "returncode": 0,
+      "stdout": "{\"status\":\"PASS\",\"cases\":19,\"abi_calls\":635,\"compared_gradient_values\":2166640,\"compared_joint_costs\":2016,\"literal_fixtures\":52,\"literal_route_rows\":206568,\"row_sampled_streams\":132,\"channel_sampled_streams\":78,\"max_absolute_error\":7.10543e-14,\"seconds\":0.781098}\n",
+      "stderr": "",
+      "source_sha256": {
+        "conv_rosa_transformer/csrc/approx_channel_pivotal.h": "a72e48d625622e51c1d9fdcc9480e9b7e884b3ef70cbaf2639c6eb06365be960",
+        "conv_rosa_transformer/csrc/approx_indexed_row.h": "397583252f8d15fc330646ebb68cf356b0084027fb9a26ff557977d6b4e1469f",
+        "conv_rosa_transformer/csrc/approx_onegram.h": "e5dbca14aa4c892b9bed87b0186d6f4317b029e75cd0097cbac5c1c804c964d7",
+        "conv_rosa_transformer/csrc/approx_route_helpers.h": "c246fd1ce1c10466d050a89b5b46ee1baa962194158c363a38005ba40d03b86b",
+        "conv_rosa_transformer/csrc/approx_row_certificate.h": "8f088bcb65dc005ff0ae6631f9f9d5149cd05f3ba39519c2356af22f18ccf1e6",
+        "conv_rosa_transformer/csrc/approx_sampling.h": "8d1bcfdbd6138281f28b1a83ac3ad0bdd39c5a02109fce20f566426883b91b3e",
+        "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+        "conv_rosa_transformer/csrc/exact_hamming_join.h": "804b3a3c207333a6d0bec513a4201651014130e10afa979358e52c5b3aa3b73a",
+        "conv_rosa_transformer/csrc/forward.h": "c18eeb09ea81396eee60c08cb4f26dc1f5eb410179eae238a42a6261f916ca48",
+        "conv_rosa_transformer/csrc/full_word_map.h": "786f657d0dabdf0b429be86449099a10029133b69d8bcec8b181ef7b394c64cd",
+        "conv_rosa_transformer/csrc/pair_candidates.h": "26952e61c452cbeb1c7a38f2975fb1560971d895b11ca1255b3961f9a7f76c31",
+        "conv_rosa_transformer/csrc/subquadratic/correlation.h": "fc070fc453f5163dde43ed7e345ddfb416b387efb9635abee3ae4fb9736d50b7",
+        "conv_rosa_transformer/csrc/subquadratic/delete.h": "4b8ccb9223347e57b4680790f6ba8e37abe28e295d6833786c10ba28b22a54da",
+        "conv_rosa_transformer/csrc/subquadratic/engine.h": "051c29364e4041616205a843149bcb0a5658ad1fcd924e2aa1a42b76b9573711",
+        "conv_rosa_transformer/csrc/subquadratic/fingerprint_k.h": "4a964af845b41354b7104edf53b1ccaf33abe1f708e1d25d36ed5036ff14446f",
+        "conv_rosa_transformer/csrc/subquadratic/index.h": "e459842ca8c7487c59da734c0a395bdfd4aed438615a343f42a2588d791d02ce",
+        "conv_rosa_transformer/csrc/subquadratic/near_k.h": "35748df7989446d6c800b0f684806538cf70cfc93a97537312083737ea41c458",
+        "conv_rosa_transformer/csrc/subquadratic/q_frontier.h": "7777de2c9d238e1d4d133c4d02ecc5836f7e015e3a482ecc42c372f658dc98bc",
+        "conv_rosa_transformer/csrc/subquadratic/repair.h": "500c7900500798539fa71fd5f57de6faf7ad4181c2e3d3740d6c2e91476aeb53",
+        "conv_rosa_transformer/csrc/subquadratic/short_k.h": "ba2eb2775a16bc6ef540c1f4724bbd1ee8ccc84816c652539ff2f60e62023a73",
+        "conv_rosa_transformer/csrc/subquadratic/types.h": "faea870269abd39fd778ae6a0c9e677cb12980c7cae3b64e63be9ddad908da8e",
+        "conv_rosa_transformer/csrc/training.h": "05ad7e18c1567371ad9936b20ac58aa35b5760df9172a166d80f184a7401d97d",
+        "conv_rosa_transformer/csrc/training_impl.h": "ff056e8457001fa896276df7a205f9dbb52e4ec30c2494515aa2d2d60b52bb17",
+        "conv_rosa_transformer/csrc/unified_core.cpp": "6ba2322c98ec91699426942017e3f4b74e69d803a5dfce1da442e6a167a9d9be",
+        "tests/cpp/subquadratic_training.cpp": "e9259177fdf8e5140de249ede6a5b25c6f7b1e1d1e4149c6221d2566bc40e50b"
+      },
+      "source_unchanged": true,
+      "sanitizer_environment": {
+        "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1",
+        "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+      },
+      "oracle": {
+        "status": "PASS",
+        "cases": 19,
+        "abi_calls": 635,
+        "compared_gradient_values": 2166640,
+        "compared_joint_costs": 2016,
+        "literal_fixtures": 52,
+        "literal_route_rows": 206568,
+        "row_sampled_streams": 132,
+        "channel_sampled_streams": 78,
+        "max_absolute_error": 7.10543e-14,
+        "seconds": 0.781098
+      },
+      "source_matches_final": true
+    },
+    {
+      "test": "subquadratic_fingerprint_k",
+      "status": "PASS",
+      "compile_command": [
+        "c++",
+        "-O1",
+        "-g",
+        "-std=c++17",
+        "-ffp-contract=off",
+        "-fsanitize=address,undefined",
+        "-fno-sanitize-recover=all",
+        "-fno-omit-frame-pointer",
+        "/workspace/scratch/0105199a8474/qkv-rosa-optimized/tests/cpp/subquadratic_fingerprint_k.cpp",
+        "-o",
+        "/workspace/scratch/0105199a8474/qkv-rosa-optimized/build/sanitizers/subquadratic_fingerprint_k"
+      ],
+      "compile_seconds": 6.389416412999708,
+      "run_seconds": 3.643603702999826,
+      "compile_returncode": 0,
+      "compile_stderr": "",
+      "returncode": 0,
+      "stdout": "{\"status\":\"PASS\",\"fixtures\":5682,\"accepted\":68168,\"rejected\":8,\"values\":491348}\n",
+      "stderr": "",
+      "source_sha256": {
+        "conv_rosa_transformer/csrc/full_word_map.h": "786f657d0dabdf0b429be86449099a10029133b69d8bcec8b181ef7b394c64cd",
+        "conv_rosa_transformer/csrc/subquadratic/fingerprint_k.h": "4a964af845b41354b7104edf53b1ccaf33abe1f708e1d25d36ed5036ff14446f",
+        "conv_rosa_transformer/csrc/subquadratic/index.h": "e459842ca8c7487c59da734c0a395bdfd4aed438615a343f42a2588d791d02ce",
+        "conv_rosa_transformer/csrc/subquadratic/types.h": "faea870269abd39fd778ae6a0c9e677cb12980c7cae3b64e63be9ddad908da8e",
+        "tests/cpp/subquadratic_fingerprint_k.cpp": "8e9471b67b58e66533d814d88dac5325bfe578d38334f83c2935ee36dcbf85a8"
+      },
+      "source_unchanged": true,
+      "sanitizer_environment": {
+        "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1",
+        "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+      },
+      "oracle": {
+        "status": "PASS",
+        "fixtures": 5682,
+        "accepted": 68168,
+        "rejected": 8,
+        "values": 491348
+      },
+      "source_matches_final": true
+    }
+  ]
+}

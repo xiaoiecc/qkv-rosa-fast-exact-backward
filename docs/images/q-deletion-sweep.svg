@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="650" viewBox="0 0 1120 650" role="img" aria-labelledby="title desc">
+<title id="title">One Q plateau stream answers all time ranges</title>
+<desc id="desc">A toy matrix of deletion-minus-baseline deltas is accumulated with owner range updates. Two time snapshots answer each request, and the same updates give total deletion.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#43627c"/></marker></defs>
+<style>text{font-family:Arial,"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#18334a}.mono{font-family:"DejaVu Sans Mono",monospace}</style>
+<rect x="0" y="0" width="1120" height="650" rx="20" fill="#f3f7fa" stroke="none" stroke-width="1"/>
+<text x="34" y="46" font-size="28" fill="#18334a" font-weight="700" text-anchor="start">Q deletion: sweep time, update owner intervals</text>
+<text x="34" y="76" font-size="18" fill="#18334a" font-weight="400" text-anchor="start">One emitted plateau serves the complete deletion credit and every requested time range.</text>
+<rect x="24" y="98" width="650" height="333" rx="12" fill="#ffffff" stroke="#d8e3eb" stroke-width="1"/>
+<rect x="694" y="98" width="402" height="333" rx="12" fill="#ffffff" stroke="#d8e3eb" stroke-width="1"/>
+<text x="44" y="130" font-size="20" fill="#18334a" font-weight="700" text-anchor="start">Toy deletion-minus-baseline deltas</text>
+<text x="180" y="164" font-size="16" fill="#18334a" font-weight="400" text-anchor="start">owner →</text>
+<text x="219.0" y="182" font-size="16" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">2</text>
+<text x="297.0" y="182" font-size="16" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">3</text>
+<text x="375.0" y="182" font-size="16" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">4</text>
+<text x="453.0" y="182" font-size="16" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">5</text>
+<text x="531.0" y="182" font-size="16" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">6</text>
+<text x="65" y="218" font-size="18" fill="#18334a" font-weight="400" text-anchor="start" class="mono">t = 8</text>
+<rect x="180" y="191" width="73" height="46" rx="4" fill="#f0f4f7" stroke="none" stroke-width="1"/>
+<text x="216.5" y="221" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="258" y="191" width="73" height="46" rx="4" fill="#ccebe1" stroke="none" stroke-width="1"/>
+<text x="294.5" y="221" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">+3</text>
+<rect x="336" y="191" width="73" height="46" rx="4" fill="#f0f4f7" stroke="none" stroke-width="1"/>
+<text x="372.5" y="221" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="414" y="191" width="73" height="46" rx="4" fill="#f0f4f7" stroke="none" stroke-width="1"/>
+<text x="450.5" y="221" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="492" y="191" width="73" height="46" rx="4" fill="#f0f4f7" stroke="none" stroke-width="1"/>
+<text x="528.5" y="221" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<text x="65" y="272" font-size="18" fill="#18334a" font-weight="400" text-anchor="start" class="mono">t = 9</text>
+<rect x="180" y="245" width="73" height="46" rx="4" fill="#f0f4f7" stroke="none" stroke-width="1"/>
+<text x="216.5" y="275" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="258" y="245" width="73" height="46" rx="4" fill="#ccebe1" stroke="none" stroke-width="1"/>
+<text x="294.5" y="275" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">-2</text>
+<rect x="336" y="245" width="73" height="46" rx="4" fill="#ccebe1" stroke="none" stroke-width="1"/>
+<text x="372.5" y="275" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">-2</text>
+<rect x="414" y="245" width="73" height="46" rx="4" fill="#f0f4f7" stroke="none" stroke-width="1"/>
+<text x="450.5" y="275" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="492" y="245" width="73" height="46" rx="4" fill="#f0f4f7" stroke="none" stroke-width="1"/>
+<text x="528.5" y="275" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<text x="65" y="326" font-size="18" fill="#18334a" font-weight="400" text-anchor="start" class="mono">t = 10</text>
+<rect x="180" y="299" width="73" height="46" rx="4" fill="#f0f4f7" stroke="none" stroke-width="1"/>
+<text x="216.5" y="329" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="258" y="299" width="73" height="46" rx="4" fill="#f0f4f7" stroke="none" stroke-width="1"/>
+<text x="294.5" y="329" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="336" y="299" width="73" height="46" rx="4" fill="#ccebe1" stroke="none" stroke-width="1"/>
+<text x="372.5" y="329" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">+5</text>
+<rect x="414" y="299" width="73" height="46" rx="4" fill="#ccebe1" stroke="none" stroke-width="1"/>
+<text x="450.5" y="329" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">+5</text>
+<rect x="492" y="299" width="73" height="46" rx="4" fill="#f0f4f7" stroke="none" stroke-width="1"/>
+<text x="528.5" y="329" font-size="20" fill="#18334a" font-weight="400" text-anchor="middle" class="mono">0</text>
+<rect x="333" y="187" width="79" height="161" rx="6" fill="none" stroke="#c48b2d" stroke-width="3"/>
+<text x="44" y="377" font-size="18" fill="#18334a" font-weight="700" text-anchor="start">Query: owner 4, rows [8, 10]</text>
+<text x="44" y="406" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">Its delta is 0 − 2 + 5 = 3.</text>
+<text x="716" y="130" font-size="20" fill="#18334a" font-weight="700" text-anchor="start">Two snapshots at the same owner</text>
+<rect x="716" y="158" width="356" height="76" rx="8" fill="#eff3f9" stroke="none" stroke-width="1"/>
+<text x="734" y="187" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">Before row 8</text>
+<text x="734" y="216" font-size="22" fill="#18334a" font-weight="700" text-anchor="start" class="mono">V_8(4) = 0</text>
+<path d="M889,240 L889,270" fill="none" stroke="#43627c" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="716" y="280" width="356" height="76" rx="8" fill="#def1e9" stroke="none" stroke-width="1"/>
+<text x="734" y="308" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">Before row 11</text>
+<text x="734" y="339" font-size="22" fill="#18334a" font-weight="700" text-anchor="start" class="mono">V_11(4) = 3</text>
+<text x="716" y="394" font-size="22" fill="#18334a" font-weight="700" text-anchor="start" class="mono">V_11(4) − V_8(4) = 3</text>
+<rect x="24" y="450" width="1072" height="175" rx="12" fill="#ffffff" stroke="#d8e3eb" stroke-width="1"/>
+<text x="44" y="482" font-size="20" fill="#18334a" font-weight="700" text-anchor="start">Range update on owners [a, b]</text>
+<text x="44" y="512" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">Fenwick difference: add(a, +delta), add(b + 1, −delta).</text>
+<text x="44" y="542" font-size="17" fill="#18334a" font-weight="400" text-anchor="start">The ordinary difference array receives the same delta for total Q deletion.</text>
+<text x="44" y="577" font-size="17" fill="#18334a" font-weight="400" text-anchor="start" class="mono">Deleted score on [l, r] = V(r + 1, u) − V(l, u) + B(r + 1) − B(l)</text>
+<text x="44" y="605" font-size="16" fill="#18334a" font-weight="400" text-anchor="start">B is the original-score prefix. Only owner state and two events per request are stored.</text>
+</svg>

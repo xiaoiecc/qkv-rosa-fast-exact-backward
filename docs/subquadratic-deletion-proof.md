@@ -16,7 +16,7 @@ $$
  O(Dn^{3/2}\operatorname{polylog}n).
 $$
 
-The original bulk-event implementation uses O(n log n+nD+n²/B) machine words. A verified streaming schedule reduces this to **O(n log n+nD+B²D+n/B)** machine words; at B=ceil(sqrt n), this is **O(n log n+nD)**. Section10a gives the schedule and its proof. No global event list is retained.
+Materializing all events would use O(n log n+nD+n²/B) machine words. The native streaming schedule uses **O(n log n+nD+B²D+n/B)** machine words; at B=ceil(sqrt n), this is **O(n log n+nD)**. Section10a gives the owner-bucket schedule and its proof. No global event list is retained. Section5a additionally answers arbitrary Q owner/time requests from the same plateau stream, without repeating its generation.
 
 All string equality tests, endpoints, lengths, ties, occurrence queries, and combinatorial decisions are exact. The numerical reduction is an identity over the reals, using additions, subtractions and scalar products only. An implementation in binary64 changes the order of summation and therefore does **not** promise bitwise equality with a row-by-row oracle or with production's old event order. No FFT, truncation, sampling or approximate string matching is used.
 
@@ -36,9 +36,9 @@ The standard suffix-array index on Q, separator, K, separator supports:
 
 * LCE and LCS in O(1), using the forward and reversed concatenations, LCP arrays and RMQ.
 * The suffix-array interval I(t,h) of the length-h Q suffix ending at t in O(log n), by binary search with LCP queries.
-* The first or last K start position in a numerical interval [a,b] whose suffix-array rank belongs to I(t,h), in O(log² n), using a merge-sort tree over suffix-array order containing K start positions.
+* The first or last K start position in a numerical interval [a,b] whose suffix-array rank belongs to I(t,h), in O(log n), using a wavelet matrix over suffix-array order containing K start positions.
 
-These are deterministic constructions. The simple doubling suffix-array implementation has O(n log² n) construction time and O(n log n) index space. Faster known suffix-array/IPM machinery is unnecessary for this bound.
+The native radix-doubling suffix array takes O(n log n) construction time; LCP sparse-table and wavelet storage take O(n log n) words. Faster suffix-array/IPM machinery is unnecessary for the bound. The displayed overall theorem conservatively allows extra logarithmic factors.
 
 Write
 
@@ -48,7 +48,9 @@ $$
 
 A predecessor query on K starts with inclusive upper bound c-h gives this value, then adds h-1. This detail prevents an endpoint equal to the causal cutoff from leaking in.
 
-`BEST(t,c)` binary searches h in [0,min(t+1,c)] for existence of R_t[h;c], then returns (h,R_t[h;c]). It takes O(log³ n). `BEST(t,t)` is the baseline; `BEST(t,s)` is A(s) below.
+For `BEST(t,c)`, the reversed Q suffix has a maximum LCP with one of its two lexicographic neighbors among reversed K suffixes with endpoints below c. A second wavelet matrix finds those eligible predecessor/successor ranks; the longer LCP gives the optimal length, and one R query gives the latest endpoint at that length. This takes O(log n). `BEST(t,t)` is the saved baseline; `BEST(t,s)` is A(s) below.
+
+All indices are lazy. A full-word match at a requested position boundary already certifies the first/last occurrence. Precomputed same-symbol run lengths can decide an LCS/LCE by inspecting at most two run boundaries; unresolved cases use RMQ. These checks have a fixed operation bound on every input. The optional exact query cache is allocated only after such certificates fail, compares its complete key, and cannot change a route on a collision. Full-word dictionaries use bounded probes plus ordered lookup, keeping their worst-case bounds independent of hash luck.
 
 ### Baseline substring reduction
 
@@ -89,7 +91,7 @@ The AP therefore extends through the last causal full-pattern start in the
 verified run. Search resumes past the larger of the original window and
 that run's last permissible start; the original-window AP fact covers the
 case where the run stops early. This only skips verified occurrences, so the
-$O(n/A)$ discovery bound and the length profile below remain valid.
+$O(n/B)$ discovery bound and the length profile below remain valid.
 
 
 ## 3. One exact exception to a whole periodic profile
@@ -162,7 +164,7 @@ No assumption that p is a primitive period is needed in either lemma.
 
 For h>=B, ordinary progression endpoints other than the last one can be discarded from the computation of R_t[h]. Their F is no greater than the last ordinary value, and their endpoint is earlier. The actual last endpoint b has F at least its ordinary formula, even if it is itself exceptional. Therefore the only necessary candidates from a block are b and its exceptional endpoint r*, if present.
 
-Sort these O(t/B) pairs (F,r) by decreasing r. Starting at high-length threshold B-1, append a step [previous_F+1,F] whenever F increases. This is exactly the latest-endpoint envelope for all h>=B.
+Visit these O(t/B) pairs (F,r) by decreasing r. Starting at high-length threshold B-1, append a step [previous_F+1,F] whenever F increases. This is exactly the latest-endpoint envelope for all h>=B. The native AP generator already emits increasing endpoints, so reversing its candidate list supplies this order without another sort.
 
 Consequently the number of distinct R steps, including h<B, is at most
 
@@ -178,15 +180,41 @@ The bound can be tight in order. Let K begin with zero runs of lengths m,m-1,...
 
 Deleting Q owner u at row t caps surviving match length at h=t-u. For 0<h<=L, the winner is (h,R_t[h]); h=0 is empty; h>L leaves the baseline unchanged.
 
-Per row:
+For any h with r=R_t[h], the exact plateau extends through F_t(r). Indeed, a later endpoint matching any length in [h,F_t(r)] would already match h and contradict the definition of r. This gives the following bounded generator.
 
 1. Add the empty-route difference to owner t.
-2. For each h=1,...,min(B-1,L), obtain R_t[h] by one index query and add a point difference at owner t-h.
-3. Build the high R steps from Section 4. A high step [a,b] with endpoint r adds the constant scalar g[t]·P[r+1]-beta_t to owner interval [t-b,t-a].
+2. Starting at h=1, query r=R_t[h], set z=min(L,F_t(r)), emit the owner interval [t-z,t-h], and continue at h=z+1. Stop immediately if r is the baseline endpoint, since all remaining endpoint deltas are zero.
+3. Perform at most B such jumps. If any lengths remain, their starting threshold h is greater than B. Use the progression construction from Section4 at this actual threshold; its cost is O(n/h), hence O(n/B). Each step [a,b] with endpoint r emits the constant scalar g[t]·P[r+1]-beta_t on [t-b,t-a].
 
 A scalar difference array contracts all fixed intervals in O(1) updates per interval, followed by one owner prefix scan. Including h=L is harmless: its endpoint is the baseline and its contribution is zero. One can omit it in an implementation.
 
-This yields O(nB log² n + (n²/B)log² n + D(nB+n²/B)) time, apart from baseline/index construction.
+This still yields O(B+n/B) emitted intervals per row, with polylogarithmic index work and O(D) numeric work per interval. It can jump over a long plateau in one step without assuming that the whole input has any particular form.
+
+## 5a. All Q time ranges from the same plateau stream
+
+Let M requests ask for the deleted score at owner u over an arbitrary time interval [l,r]. A plateau generator emits delta_t on an owner interval [a,b], where the delta is relative to the original row score beta_t. A range-add/point-query Fenwick tree maintains
+
+$$
+V_T(u)=\sum_{t<T}\bigl(\operatorname{score}(\operatorname{DelQ}(u,t))-\beta_t\bigr).
+$$
+
+Also maintain the scalar baseline prefix B_T=sum_(t<T) beta_t. The requested value is
+
+$$
+\boxed{V_{r+1}(u)+B_{r+1}-V_l(u)-B_l.}
+$$
+
+Sort two signed snapshots per request by time. Before consuming row t, answer every snapshot at time t; then feed that row's plateau intervals to the Fenwick tree. An interval addition is two point updates in the tree's difference representation. A snapshot is one prefix query at its owner. These operations are O(log n); sorting the M events contributes O(M log M).
+
+The same emitted interval also updates an ordinary scalar difference array. Its final owner prefix gives the complete Q deletion credit. Thus total Q deletion and every requested negative repair projection share one generation pass, with no retained row-by-owner profiles and no repeated time-block scans. With B≈sqrt(n), the sweep costs
+
+$$
+\widetilde O((D+1)n^{3/2}+M)
+$$
+
+time and O(n+M) extra scalar storage, beyond the shared exact index and inputs. Unrequested gaps may be skipped when only range projections are requested: they cancel out of every future snapshot difference. When the full deletion credit is also requested, all rows still feed the ordinary difference array.
+
+The native base case directly evaluates at most four rows for each short request. Charge O(M_0 D) for M_0 such requests if D and M are arbitrary. For the complete engine, M≤nb and fixed b,D, this is absorbed by the displayed asymptotic bound. Expansion accumulators protect the sweep's snapshot differences from avoidable cancellation; their scalar representation follows the fixed-format contract in the full proof. They do not claim equality with every row-by-row binary64 evaluation order.
 
 ## 6. K deletion and the short-owner split
 
@@ -215,6 +243,8 @@ $$
 $$
 
 compute the route directly by indexed queries. A(s)=BEST(t,s). The greatest H length is the largest h for which R_t[h]>=s+h, obtained by binary search. Its endpoint is R_t[h]. This costs O(log³ n) per short owner, for at most nB owners overall.
+
+The native short fringe groups certified constant endpoints before these point queries. On either the A-winning or H-winning region, the selected endpoint is nondecreasing in owner order. Equal endpoints at both ends of an interval certify a constant payload if that endpoint lies outside the interval: it lies before every owner, forcing the A region, or after every owner, forcing the H region. Otherwise split and query recursively. This is confined to at most B fringe owners, so failure of every certificate still incurs only O(B) indexed queries per row.
 
 The remaining **long-owner interval** is [first,end], where end=r0-B. It may be empty. For every s in that interval, the baseline endpoint by itself retains H length r0-s>=B. Therefore no endpoint with original F_t(r)<B can win on this interval. All candidates needed for the remaining work are represented by the progression pieces of Sections 2–3.
 
@@ -262,7 +292,7 @@ close each record immediately before the next record's owner start
 
 No implicit A endpoint is expanded.
 
-### Why the old A count really can be quadratic
+### Why explicit A records can be quadratic
 
 For Q=K=010101..., at row t the matching endpoints have the same parity as t and satisfy F_t(r)=r+1. Every such endpoint is a new prefix record, so each row has Theta(t) explicit A records. Moreover A wins on a suffix of the affected owner interval of Theta(t) size, and those winning records remain Theta(t) in number. Summed over rows, explicit A enumeration is Theta(n²), even when R has very few steps. Constant-symbol-run compression does not remove this period-two family. The progression representation does.
 
@@ -283,6 +313,8 @@ A_wins(s):
 ```
 
 Binary-search the first true owner, or the sentinel end+1 if none. Its cost is O(log⁴ n) per row. The condition f>=B explicitly excludes the irrelevant initial low-length A part.
+
+The native implementation reuses the AP scan instead of repeatedly invoking BEST inside that binary search. On one ordinary piece, its capped-affine record formula gives A(s); the already built R staircase answers R_t[f]. Test the piece's end first, skip a losing piece, and binary-search only the first piece that can win. This last search uses integer formulas and staircase lookup, with no new suffix queries. When R has a single plateau, the floor-affine crossing inequality can instead be solved directly for its first feasible progression block and owner. The partially consumed AP scanner is then passed to the winning A stream. The monotonicity argument is exactly the one above.
 
 For a high R step [a,b] with endpoint r, H selects endpoint r exactly on the owners
 
@@ -386,20 +418,20 @@ For a last partial block with c>=m, no current-block payload V_c is accessed; an
 
 | Work | Count | Cost per item / total |
 |---|---:|---:|
-| Forward/reverse suffix indices | 2 | O(n log² n) build, O(n log n) words |
-| Baseline and A initialization | O(n) | O(log³ n) |
-| Exact short Q lengths | O(nB) | O(log² n + D) |
+| Forward/reverse suffix indices | 2, built on demand | O(n log n) build, O(n log n) words |
+| Baseline and A initialization | O(n) | Saved forward routes / O(log n) indexed queries |
+| Bounded Q plateau jumps | O(nB) | O(log n + D) |
 | Exact short K owners | O(nB) | O(log³ n + D) |
 | Local occurrence start blocks | O(n²/B) | Three O(log² n) occurrence queries, O(1) LCS calls |
 | AP pieces, high R/A records, fixed intervals | O(n²/B) | O(log n + D) with sorting included |
 | A/H binary searches | O(n log n) queries | O(n log⁴ n) total |
-| Periodic intervals and events | O(n²/B) | O(D + log n), stored as O(1)-word row references |
+| Periodic intervals and events | O(n²/B) | O(D) contraction and O(1) owner-bucket queue work |
 | All-residue block scans | At most B-1 periods | O(nBD) |
 | Final owner scan | n | O(n) |
 
 Taking B=ceil(sqrt(n)) proves the stated worst-case subquadratic deletion bound, for every input string, including nonconstant periodic inputs. Randomness is unnecessary.
 
-Q and K may share baseline routes, suffix indices, occurrence groups and high-R records. The native Q and K routines share one suffix index; they retain separate accumulation buffers.
+Q and K share baseline routes and suffix indices; their accumulation buffers are separate. Q's full deletion and its time-range requests additionally share the same plateau emission, as proved in Section5a.
 
 The bulk-event variant uses O(n log n+nD+n²/B) space, plus O(n/B) row-local structural records. The streaming variant below uses O(n log n+nD+B²D+n/B) space. Storing the full affected owner-row route matrix is diagnostic and is not part of either claimed algorithm.
 
@@ -419,17 +451,17 @@ At each owner s, first initialize the current block for every p dividing s, usin
 
 The block identity from Section9 remains unchanged: A at block entry supplies the contribution of already active intervals, and within-block event corrections supply precisely the difference after each start or end. When the next block starts, A already contains those events, so the old correction array is discarded. A final partial block uses the same zero/partial boundary rules. Block initialization across all p costs O(nBD), and one per-period scalar consumption per owner costs O(nB). Event processing costs O(D) each.
 
-### One lazy A iterator and one pending event per row
+### One lazy A iterator and one reusable event slot per row
 
 Compute a row's high R records, H intervals and exact A/H crossing as before. Apply H's fixed-payload intervals to the scalar owner difference array, then discard this row's R/AP scratch. If an A-winning suffix exists, initialize its A route exactly by BEST(t,cross). This length is at least B. Re-query the occurrence start blocks forward, beginning with the block containing endpoint cross; at most one AP block's constant number of pieces is held at a time.
 
 Within an ordinary AP piece, the same capped-affine profile and record rule produce the current record or skip it. A record's final owner bound is determined by the next record, so the iterator holds one current record and one look-ahead record. It emits disjoint owner intervals in increasing order. A fixed tail updates the scalar owner difference array immediately. A periodic interval yields its start and end to the event scheduler.
 
-A heap merges these per-row iterators by next event owner. Each row contributes at most one heap entry. On a start, replace it with that interval's end event. On an end, advance that row's iterator to its next periodic interval, applying intervening fixed intervals as they are discovered. A following start may be at the same owner as the previous end; process both before consuming that owner's numeric result. Fixed contributions may be discovered after their owners have already been visited in the periodic sweep, because their independent scalar difference array is prefix-summed only at the very end.
+Every event has an integer owner in [0,n), and a row's next event never precedes the current owner. Store n bucket heads and one reusable event slot plus a next pointer per row. Popping a start frees that row's slot for the corresponding end; popping an end frees it for the next interval's start. Each insertion and removal takes O(1). A following start may be at the same owner as the previous end; exhaust the current bucket, including newly inserted events, before consuming that owner's numeric result. Fixed contributions may be discovered after their owners have already been visited in the periodic sweep, because their independent scalar difference array is prefix-summed only at the very end.
 
-The total number of occurrence blocks re-queried is O(n²/B), merely a second pass over the bounded structural groups. The generators hold O(1) state each, the heap holds O(n) events, and only the preprocessing of a single row needs O(n/B) AP/R scratch. The event-merging time is O((n²/B)log n). No expanded endpoint array or global event array is retained.
+The total number of occurrence blocks inspected is O(n²/B); passing the scanner from the crossing search also avoids repeating its consumed prefix. The generators hold O(1) state each, the buckets hold at most O(n) pending events, and only one row needs O(n/B) AP/R scratch at a time. Event scheduling takes O(n+n²/B). No expanded endpoint array or global event array is retained.
 
-Combining the exact suffix index, input/output arrays, current period blocks, row-local scratch and heap gives O(n log n+nD+B²D+n/B) words, with the same time bound. Q deletion already applies scalar interval updates row by row and does not need the periodic heap.
+Combining the exact suffix index, input/output arrays, current period blocks, row-local scratch and owner buckets gives O(n log n+nD+B²D+n/B) words, with the same overall time bound. Q deletion applies scalar interval updates row by row; its optional time-range Fenwick tree is a separate O(n+M) workspace.
 
 ### Validation of the streaming schedule
 
@@ -440,5 +472,7 @@ The restricted-row API accepts original time indices and a reusable global suffi
 ## Engineering and numerical validation
 
 The same native code is used by the NumPy and ordinary autograd interfaces. [The engine guide](subquadratic-engine.md) explains the bounded verified cache, monotone staircase certificates and constant-factor choices. These reduce work without changing the deletion proof.
+
+Native workspace counters are a **buffer capacity estimate** from tracked reserved arrays. The asymptotic word-storage bounds above are mathematical statements; the counters are not process RSS measurements or guaranteed overall allocator/runtime peaks.
 
 Binary64 aggregation changes addition order. The tests compare mathematical route semantics and use scale-aware numerical tolerances; they do not establish a universal relative-error bound for heavily cancelled inputs. Standalone address/undefined-behavior sanitizers and complete backward benchmarks are separate engineering gates.
