@@ -168,11 +168,60 @@ static void one_case(const std::vector<std::uint64_t>& q,const std::vector<std::
     ++checked_cases;
 }
 
+// Saved forward routes may leave every suffix structure unbuilt. Exercise the
+// bounded run certificates and their indexed fallback before repair asks for
+// either suffix array, including equal runs spanning more than two boundaries.
+static void check_lazy_index(std::mt19937_64& random) {
+    for(int pattern=0;pattern<8;++pattern) {
+        const int n=43+pattern;
+        std::vector<std::uint64_t> q(n),k(n);
+        for(int t=0;t<n;++t) {
+            if(pattern==0)q[t]=k[t]=UINT64_MAX;
+            else if(pattern==1){q[t]=std::uint64_t(t/5)%3;k[t]=std::uint64_t(t/7)%3;}
+            else if(pattern==2){q[t]=t%5;k[t]=(t+2)%5;}
+            else if(pattern==3){q[t]=std::uint64_t(t%2)<<63;k[t]=std::uint64_t((t+1)%2)<<63;}
+            else if(pattern==4){q[t]=random();k[t]=random();}
+            else{q[t]=random()%3;k[t]=random()%3;}
+        }
+        std::vector<Route> saved(n);
+        for(int t=0;t<n;++t)saved[t]=literal(q,k,t);
+        Index index(q.data(),k.data(),n,true,random(),&saved);
+        require(index.baseline()==saved,"saved forward routes changed");
+        auto common=[&](const std::vector<std::uint64_t>& a,int i,
+            const std::vector<std::uint64_t>& b,int j,int step) {
+            int length=0;
+            while(i>=0 && j>=0 && i<n && j<n && a[i]==b[j]){++length;i+=step;j+=step;}
+            return length;
+        };
+        for(int a=0;a<n;++a)for(int b=0;b<n;++b) {
+            require(index.lcs(a,b)==common(q,a,k,b,-1),"lazy cross-string LCS");
+            require(index.lce(a,b)==common(q,a,k,b,1),"lazy cross-string LCE");
+            require(index.same_lcs(true,a,b)==common(q,a,q,b,-1),"lazy Q LCS");
+            require(index.same_lcs(false,a,b)==common(k,a,k,b,-1),"lazy K LCS");
+            require(index.same_lce(true,a,b)==common(q,a,q,b,1),"lazy Q LCE");
+            require(index.same_lce(false,a,b)==common(k,a,k,b,1),"lazy K LCE");
+        }
+        for(int trial=0;trial<64;++trial) {
+            const int start=int(random()%n),length=1+int(random()%(n-start));
+            std::pair<int,int> ranks{-1,-1};
+            for(int lower=0;lower<n;lower+=7)for(bool successor:{false,true}) {
+                int wanted=-1;
+                for(int at=lower;at+length<=n;++at)if(common(q,start,k,at,1)>=length) {
+                    wanted=at;if(successor)break;
+                }
+                require(index.occurrence(start,length,lower,n-1,successor,&ranks)==wanted,
+                    "lazy cached occurrence boundary");
+            }
+        }
+    }
+}
+
 int main(int argc,char** argv) {
     try {
         const bool quick=argc>1 && std::string(argv[1])=="--quick";
         std::mt19937_64 random(2026110607);
         const auto start=std::chrono::steady_clock::now();
+        check_lazy_index(random);
         const int exhaustive=quick?4:6;
         for(int n=1;n<=exhaustive;++n) {
             const unsigned total=1u<<(2*n),mask=(1u<<n)-1;
@@ -200,6 +249,13 @@ int main(int argc,char** argv) {
         for(int n:{96,128}) {
             std::vector<std::uint64_t> q(n,0),k(n,0);k[n/4]=1;k[3*n/4]=1;
             one_case(q,k,1,random,false,false);
+        }
+        // Both symbol classes exceed the small-envelope leaf, so this case
+        // also exercises the dynamic range tree after leaf elision.
+        {
+            std::vector<std::uint64_t> q(160),k(160);
+            for(int t=0;t<160;++t){q[t]=random()&1;k[t]=random()&1;}
+            one_case(q,k,1,random,true,false);
         }
         const double seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
         std::cout<<"{\"status\":\"PASS\",\"cases\":"<<checked_cases<<",\"literal_rows\":"<<checked_rows

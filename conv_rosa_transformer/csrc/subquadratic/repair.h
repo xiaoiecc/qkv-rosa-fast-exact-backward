@@ -6,6 +6,7 @@
 #include "types.h"
 #include <array>
 #include <cassert>
+#include <cmath>
 #include <limits>
 #include <stdexcept>
 #include <tuple>
@@ -29,11 +30,12 @@ class FrontierIndex {
     };
     struct Group {
         std::uint64_t symbol;
-        int first,count,power;
+        int first,count,power,earliest;
         std::size_t node_base;
     };
     struct Update { std::uint32_t node,leaf; };
     std::vector<Group> groups_;
+    ExactWordRanks group_ids_;
     std::vector<Node> nodes_;
     std::vector<int> ys_,maximum_;
     std::vector<std::size_t> update_start_;
@@ -100,8 +102,10 @@ public:
     };
     std::vector<Point> points;
 
-    explicit FrontierIndex(const Index& index) {
+    explicit FrontierIndex(const Index& index,int light_threshold=0,int requested_bits=0) {
         const int n=index.n;
+        if(requested_bits<0 || requested_bits>64)
+            throw std::invalid_argument("invalid Q frontier bit count");
         const auto& right=index.forward_suffixes();
         const auto& left=index.reverse_suffixes();
         points.reserve(n);
@@ -116,17 +120,49 @@ public:
             return a.symbol<b.symbol || (a.symbol==b.symbol && a.x<b.x);
         });
         update_start_.assign(std::size_t(n)+1,0);
+        std::vector<std::uint64_t> symbols;
+        ExactWordRanks query_ids;
+        std::vector<int> last_query;
+        bool queries_ready=false;
+        auto queried_after=[&](std::uint64_t symbol,int earliest) {
+            if(!requested_bits)return true;
+            if(!queries_ready) {
+                std::vector<std::uint64_t> words=index.q;
+                std::sort(words.begin(),words.end());words.erase(std::unique(words.begin(),words.end()),words.end());
+                last_query.assign(words.size(),-1);query_ids.build(std::move(words));
+                for(int t=0;t<n;++t)last_query[query_ids.find(index.q[t])]=t;
+                queries_ready=true;
+            }
+            for(int bit=0;bit<requested_bits;++bit) {
+                const int id=query_ids.find(symbol^(std::uint64_t(1)<<bit));
+                if(id>=0 && last_query[id]>earliest)return true;
+            }
+            return false;
+        };
         std::size_t ysize=0,tsize=0;
         for(int first=0;first<n;) {
             int after=first+1;
             while(after<n && points[after].symbol==points[first].symbol)++after;
-            const int count=after-first,power=power_for(count);
+            const int count=after-first;
+            int earliest=n;
+            for(int j=first;j<after;++j)earliest=std::min(earliest,points[j].source);
+            symbols.push_back(points[first].symbol);
+            // A class with at most k sources can never enter the heavy phase.
+            // Its sorted points suffice for every query; no 2D updates exist.
+            // A class never queried after its first source also needs no
+            // activation structure. The full-word check includes every
+            // requested bit and proves this for the whole causal sweep.
+            if(count<=light_threshold || !queried_after(points[first].symbol,earliest)) {
+                groups_.push_back(Group{points[first].symbol,first,count,0,earliest,0});
+                first=after;continue;
+            }
+            const int power=power_for(count);
             const std::size_t base=nodes_.size();
             const std::size_t after_nodes=checked_add(base,std::size_t(2)*power);
             if(after_nodes>std::numeric_limits<std::uint32_t>::max())
                 throw std::length_error("Q range node identifiers exceed uint32");
             nodes_.resize(after_nodes);
-            groups_.push_back(Group{points[first].symbol,first,count,power,base});
+            groups_.push_back(Group{points[first].symbol,first,count,power,earliest,base});
             int depth=1;for(int z=power;z>1;z/=2)++depth;
             for(int j=0;j<count;++j) {
                 nodes_[base+power+j].count=1;
@@ -143,8 +179,10 @@ public:
             }
             first=after;
         }
+        group_ids_.build(std::move(symbols));
         ys_.resize(ysize);maximum_.assign(tsize,-1);
         for(const Group& group:groups_) {
+            if(!group.power)continue;
             const std::size_t base=group.node_base;
             for(int j=0;j<group.count;++j)
                 ys_[nodes_[base+group.power+j].ybase]=points[group.first+j].y;
@@ -172,10 +210,9 @@ public:
     }
 
     int group(std::uint64_t symbol) const {
-        const auto it=std::lower_bound(groups_.begin(),groups_.end(),symbol,
-            [](const Group& a,std::uint64_t b){return a.symbol<b;});
-        return it==groups_.end() || it->symbol!=symbol?-1:int(it-groups_.begin());
+        return group_ids_.find(symbol);
     }
+    bool active(int id,int owner) const { return groups_[id].earliest<owner; }
     std::pair<int,int> whole(int id) const {
         const Group& group=groups_[id];return {group.first,group.first+group.count};
     }
@@ -195,6 +232,7 @@ public:
     }
     Cover cover(int id,std::pair<int,int> point_range) const {
         const Group& group=groups_[id];Cover result;
+        assert(group.power>0);
         int lo=point_range.first-group.first+group.power;
         int hi=point_range.second-group.first+group.power;
         while(lo<hi) {
@@ -242,7 +280,7 @@ public:
         return groups_.capacity()*sizeof(Group)+nodes_.capacity()*sizeof(Node)
             +(ys_.capacity()+maximum_.capacity())*sizeof(int)
             +update_start_.capacity()*sizeof(std::size_t)+updates_.capacity()*sizeof(Update)
-            +points.capacity()*sizeof(Point);
+            +points.capacity()*sizeof(Point)+group_ids_.workspace_bytes();
     }
 };
 
@@ -290,20 +328,70 @@ inline void q_repair(const Index& index,const Scores& scores,int bits,int thresh
     if(bits<1 || bits>64 || threshold<1 || scores.n!=n || scores.d<1
        || heavy_positive.size()!=std::size_t(n)*bits)
         throw std::invalid_argument("invalid Q repair dimensions");
-    repair_detail::FrontierIndex tree(index);
+    // Small classes are cheaper to resolve as complete envelopes than as
+    // dynamic 2D trees. All leaf scans cost O(nb sqrt(n)) structural work;
+    // heavy score rows and at most nb*threshold light records are unchanged.
+    const int leaf_capacity=std::max(64,int(std::sqrt(double(n))));
+    repair_detail::FrontierIndex tree(index,std::max(threshold,leaf_capacity),bits);
     stats.peak_workspace_bytes=std::max(stats.peak_workspace_bytes,std::uint64_t(tree.workspace_bytes()));
     const auto& right=index.forward_suffixes();const auto& left=index.reverse_suffixes();
     struct Candidate {int left,source,age;};
     std::vector<Candidate> candidates;
-    candidates.reserve(std::min(threshold,n));
+    candidates.reserve(std::min(std::max(threshold,leaf_capacity),n));
     const std::size_t old_segments=light.size();
     for(int owner=0;owner<n;++owner) {
         if(owner)tree.activate(owner-1);
         const int xq=right.rank[owner+1],yq=left.rank[n-owner];
         for(int bit=0;bit<bits;++bit) {
             const int group=tree.group(index.q[owner]^(std::uint64_t(1)<<bit));
-            if(group<0)continue;
-            const int light_age=repair_detail::first_light_age(right,xq,tree.points,tree.whole(group),threshold);
+            if(group<0 || !tree.active(group,owner))continue;
+            const auto whole=tree.whole(group);
+            if(whole.second-whole.first<=leaf_capacity) {
+                candidates.clear();
+                const int count=whole.second-whole.first;
+                const int middle=int(std::lower_bound(tree.points.begin()+whole.first,tree.points.begin()+whole.second,xq,
+                    [](const repair_detail::Point& point,int rank){return point.x<rank;})-tree.points.begin());
+                int a=middle-1,b=middle,at_tail=-1,before_tail=0;
+                int al=a>=whole.first?right.lcp_rank(xq,tree.points[a].x):-1;
+                int bl=b<whole.second?right.lcp_rank(xq,tree.points[b].x):-1;
+                int light_age=0,light_sources=count<=threshold?count:0;
+                Candidate best{-1,-1,-1};
+                // Right-LCP lifetimes decrease away from xq on either side.
+                // Merge them from longest to shortest. A new priority maximum
+                // records exactly one winner of the nested surviving sets.
+                for(int seen=0;seen<count;++seen) {
+                    const int at=al>=bl?a:b,tail=std::max(al,bl);
+                    if(tail!=at_tail){at_tail=tail;before_tail=seen;}
+                    if(seen==threshold){light_age=tail+1;light_sources=before_tail;}
+                    const auto& point=tree.points[at];
+                    if(point.source<owner) {
+                        const int ell=left.lcp_rank(yq,point.y);
+                        if(ell>best.left || (ell==best.left && point.source>best.source)) {
+                            best=Candidate{ell,point.source,tail};candidates.push_back(best);
+                        }
+                    }
+                    if(al>=bl){--a;al=a>=whole.first?right.lcp_rank(xq,tree.points[a].x):-1;}
+                    else{++b;bl=b<whole.second?right.lcp_rank(xq,tree.points[b].x):-1;}
+                }
+                assert(light_age<=n-owner);
+                int far=-1;double& total=heavy_positive[std::size_t(owner)*bits+bit];
+                for(auto it=candidates.rbegin();it!=candidates.rend();++it)if(it->age>far) {
+                    const Candidate& candidate=*it;
+                    const int last_heavy=std::min(candidate.age,light_age-1);
+                    for(int h=far+1;h<=last_heavy;++h)total+=scores.score(owner+h,candidate.source+h);
+                    if(last_heavy>far)stats.q_heavy_rows+=std::uint64_t(last_heavy-far);
+                    const int first_light=std::max(far+1,light_age);
+                    if(first_light<=candidate.age)
+                        light.push_back(Segment{owner,bit,owner+first_light,owner+candidate.age,
+                                                candidate.left+1-owner,candidate.source-owner});
+                    far=candidate.age;
+                }
+                if(far+1>=light_age && light_age<n-owner)
+                    stats.q_light_sources+=std::uint64_t(light_sources);
+                if(far>=0)exists.push_back(BitRange{owner,bit,owner,owner+far});
+                continue;
+            }
+            const int light_age=repair_detail::first_light_age(right,xq,tree.points,whole,threshold);
             assert(light_age<=n-owner);
             int age=0,last=-1;
             // A fixed winner is valid through its right LCE. All of these
@@ -327,7 +415,7 @@ inline void q_repair(const Index& index,const Scores& scores,int bits,int thresh
                 last=finish;age=finish+1;
             }
             if(age==light_age && age<n-owner) {
-                const auto bounds=tree.range(group,right.prefix_interval(xq,age));
+                const auto bounds=age?tree.range(group,right.prefix_interval(xq,age)):tree.whole(group);
                 assert(bounds.second-bounds.first<=threshold);
                 stats.q_light_sources+=std::uint64_t(bounds.second-bounds.first);
                 candidates.clear();
@@ -362,12 +450,29 @@ inline std::vector<Segment> long_k(const Index& index,int anchor,Stats& stats) {
     if(wide_cutoff>=n)return {};
     const int cutoff=int(wide_cutoff);
     std::vector<std::uint64_t> centers;
+    std::vector<std::uint64_t> recent_centers;
     centers.reserve(n);
     auto remember=[&](int query,int key){
         if(key<0 || query<=key || query>=n)return;
         const std::uint64_t difference=index.q[query]^index.k[key];
-        if(difference && !(difference&(difference-1)))
-            centers.push_back((std::uint64_t(std::uint32_t(query))<<32)|std::uint32_t(key));
+        if(!difference || (difference&(difference-1)))return;
+        const std::uint64_t center=(std::uint64_t(std::uint32_t(query))<<32)|std::uint32_t(key);
+        if(recent_centers.empty()) {
+            std::size_t slots=1;while(slots<std::size_t(n)*2)slots*=2;
+            recent_centers.assign(slots,0);
+        }
+        // Every stored pair has query>key>=0, so its encoded value is nonzero.
+        // A single bounded probe suppresses repeated anchors for that exact
+        // pair. Collisions merely forget work; the final sort still deduplicates.
+        const std::size_t at=std::size_t(std::uint64_t(query)*UINT64_C(0x9e3779b97f4a7c15)
+            +std::uint64_t(key)*UINT64_C(0xd6e8feb86659fd93))&(recent_centers.size()-1);
+        if(recent_centers[at]==center)return;
+        recent_centers[at]=center;
+        // The adjacent mismatch can support a long repair only if both exact
+        // sides together exceed the cutoff. Reject this structural zero
+        // before storing and sorting it, rather than after materialization.
+        if(index.lcs(query-1,key-1)+1+index.lce(query+1,key+1)<=cutoff)return;
+        centers.push_back(center);
     };
     // Every capacity > 4B has an exact side of length >= 2B, which contains a
     // Q-grid B-anchor. Enumerating its suffix interval directly avoids testing
@@ -463,7 +568,7 @@ inline std::vector<Segment> long_k(const Index& index,int anchor,Stats& stats) {
         first=last;
     }
     stats.k_segments+=output.size();
-    const std::size_t bytes=centers.capacity()*sizeof(std::uint64_t)
+    const std::size_t bytes=(centers.capacity()+recent_centers.capacity())*sizeof(std::uint64_t)
         +(corridors.capacity()+output.capacity())*sizeof(Segment)
         +events.capacity()*sizeof(Event)+heap.capacity()*sizeof(int)+active.capacity();
     stats.peak_workspace_bytes=std::max(stats.peak_workspace_bytes,std::uint64_t(bytes));

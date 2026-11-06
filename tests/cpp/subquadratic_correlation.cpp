@@ -64,6 +64,20 @@ int main() {
         for(int block=1;block<=std::min(128,2*n);block*=2)check(n,d,a,b,queries,block);
         check(n,d,a,b,queries,rosa_subq::correlation_block(n,d,queries));
     }
+    // Several windows of the same shift open, overlap, and close, with long
+    // unrequested gaps. Their prefix differences must survive skipped blocks
+    // and payload transforms that are first needed late in the sweep.
+    {
+        const int n=1024,d=3;std::vector<double>a(n*d),b(n*d);
+        for(auto&x:a)x=double(int(rng()%4097)-2048)/1024;
+        for(auto&x:b)x=double(int(rng()%4097)-2048)/1024;
+        std::vector<CorrelationQuery>queries={
+            {128,255,-37},{768,895,-37},{800,850,-37},{768,895,-37},
+            {300,450,11},{700,730,11},{640,895,0},{672,831,0},
+            {64,95,217},{512,639,217},{256,383,-217}};
+        for(int block=1;block<=256;block*=2)check(n,d,a,b,queries,block);
+        check(n,d,a,b,queries,rosa_subq::correlation_block(n,d,queries));
+    }
     // Cancellation leaves a unit residual amid 2^50-scale products. The
     // expected absolute error is reported, never hidden by relative tolerance.
     for(int n:{64,128,257}) {

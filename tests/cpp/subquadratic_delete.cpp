@@ -12,6 +12,30 @@ namespace {
 int cases=0;
 [[noreturn]] void fail(const std::string& message) { throw std::runtime_error(message); }
 
+void check_flat_crossings() {
+    std::mt19937_64 random(910327);
+    for(int trial=0;trial<100000;++trial) {
+        const int scale=trial<90000?64:(1<<27);
+        delete_detail::APPiece piece;
+        piece.first=int(random()%scale);piece.period=int(random()%17);
+        piece.left=int(random()%scale)-scale/2;
+        piece.hq=1+int(random()%scale);piece.fixed=1+int(random()%scale);
+        const Route previous{int(random()%scale),0};
+        const int lo=piece.first+1+int(random()%scale),latest=int(random()%(2*scale))-1;
+        auto wins=[&](int owner) {
+            const int r=piece.period?piece.first+(owner-1-piece.first)/piece.period*piece.period:piece.first;
+            const int length=piece.period?std::min(piece.hq,r-piece.left+1):piece.fixed;
+            return owner+std::max(previous.length,length)>latest;
+        };
+        // Independent monotone search, including a winner exactly at the
+        // last owner of an AP block and large/negative affine offsets.
+        int expected=lo,hi=std::max(lo,latest+1);
+        while(expected<hi){const int mid=expected+(hi-expected)/2;if(wins(mid))hi=mid;else expected=mid+1;}
+        const int actual=delete_detail::constant_latest_crossing(piece,previous,lo,latest);
+        if(actual!=expected || !wins(actual) || (actual>lo && wins(actual-1)))fail("constant-plateau crossing differs from literal inequality");
+    }
+}
+
 // Literal route enumeration: no suffix index, occurrence AP, or envelope.
 Route literal(const std::vector<std::uint64_t>& q,const std::vector<std::uint64_t>& k,
               int t,int qo=-1,int ko=-1,int cutoff=-1) {
@@ -142,6 +166,24 @@ void check(const std::vector<std::uint64_t>& q,const std::vector<std::uint64_t>&
             close(ak[j],expected_k[j],"K range",n,width,int(j),integral);
         }
     }
+    // Fusing total credit with time snapshots must preserve both independent
+    // results, including rows outside every requested time interval.
+    const int width=std::max(1,delete_detail::square_root(n));Stats merged_stats;
+    const auto separate=q_deletion(index,scores,width,merged_stats);
+    std::vector<std::vector<OwnerRange>> batches={queries,{}};
+    if(n>=15)batches.push_back({{n/2,n/3,2*n/3},{n-1,n-2,n-1}});
+    for(const auto& batch:batches) {
+        std::vector<double> total,cached_total;
+        const auto ranges=q_deletion_and_ranges(index,scores,batch,width,merged_stats,total);
+        const auto reference=q_delete_ranges(index,scores,batch,width,merged_stats);
+        const auto cached_ranges=q_deletion_and_ranges(cached,scores,batch,width,merged_stats,cached_total);
+        auto same_bits=[](const std::vector<double>&a,const std::vector<double>&b) {
+            return a.size()==b.size() && (a.empty() || !std::memcmp(a.data(),b.data(),a.size()*sizeof(double)));
+        };
+        if(!same_bits(total,separate) || !same_bits(cached_total,separate) ||
+           !same_bits(ranges,reference) || !same_bits(cached_ranges,reference))
+            fail("merged Q totals/ranges changed arithmetic output");
+    }
 }
 }
 
@@ -149,6 +191,7 @@ int main(int argc,char** argv) {
     try {
         const bool quick=argc>1 && std::string(argv[1])=="--quick";
         std::mt19937_64 random(73534493);
+        check_flat_crossings();
         for(int n=1;n<=(quick?4:6);++n)for(std::uint64_t mask=0;mask<(UINT64_C(1)<<(2*n));++mask) {
             std::vector<std::uint64_t> q(n),k(n);
             for(int i=0;i<n;++i){q[i]=(mask>>i)&1;k[i]=(mask>>(n+i))&1;}

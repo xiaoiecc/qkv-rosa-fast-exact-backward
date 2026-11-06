@@ -71,6 +71,7 @@ def main():
     p.add_argument("--repeats",type=int,default=5)
     p.add_argument("--cpu",type=int)
     p.add_argument("--quick",action="store_true")
+    p.add_argument("--expanded",action="store_true")
     p.add_argument("--output",type=Path,default=ROOT/"benchmarks/results/subquadratic_engine.json")
     p.add_argument("--historical-baseline",type=Path)
     a=p.parse_args()
@@ -92,6 +93,11 @@ def main():
     cases=[("random",512,1),("random",2048,8),("random",8192,16),
            ("random",4096,64),("unary",4096,8),("periodic",4096,4),
            ("shadow",4096,8),("shadow",8192,8),("skyline",16,8),("skyline",32,8)]
+    if a.expanded:
+        cases += [("random",n,d) for n,d in
+                  ((1024,1),(2048,1),(4096,1),(1024,8),(4096,8),
+                   (8192,8),(1024,16),(4096,16),(8192,64))]
+        cases += [("unary",1024,8),("periodic",1024,4),("shadow",1024,8)]
     if a.quick:cases=[("random",256,4),("shadow",512,8),("skyline",6,4)]
     methods={
         "deterministic":dict(randomized=False),
@@ -124,6 +130,8 @@ def main():
                 quality[name].append(errors(reference,result));outputs[name]=result
         med={name:statistics.median(values) for name,values in timings.items()}
         row=dict(family=family,T=g.shape[2],D=d,order=order,median_ms=med,samples_ms=timings,
+                 seed=2026110600+case,
+                 input_sha256=[hashlib.sha256(x.tobytes()).hexdigest() for x in (*arrays,g)],
                  errors=quality,exact_randomized_bytewise_equal=True,
                  counters={name:{k:v for k,v in r[-1].items() if isinstance(v,(str,int,float,bool))} for name,r in outputs.items()},
                  exact_cache_speedup=med["deterministic"]/med["randomized_exact"],
