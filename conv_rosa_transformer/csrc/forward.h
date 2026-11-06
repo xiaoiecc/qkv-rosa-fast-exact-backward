@@ -3,9 +3,11 @@
 // Unlike the many edited trajectories in the backward, its total suffix-link
 // fallback count is <= T, so it needs neither binary lifting nor sorted Q.
 #include <algorithm>
+#include <cassert>
 #include <chrono>
 #include <cstdint>
 #include <limits>
+#include <map>
 #include <random>
 #include <stdexcept>
 #include <vector>
@@ -14,6 +16,10 @@ namespace rosa_exact {
 
 class SamForward {
 public:
+    // A cursor may be copied to fork a query prefix. It belongs to the same
+    // matcher throughout its lifetime. length is canonical for state:
+    // len(link(state)) < length <= len(state), except for the empty root.
+    struct Cursor { int state=0,length=0,end=-1; };
     struct Counters {
         uint64_t transition_probes=0, suffix_fallbacks=0, endpoint_queries=0;
         uint64_t endpoint_updates=0, hash_probe_steps=0;
@@ -48,28 +54,47 @@ public:
         build_occurrence_ranges();
     }
 
+    // Exact zero-length certificate for a new word, using the same full-key
+    // root transition as step(). No occurrence index is materialized.
+    bool has_causal_symbol(int t,uint64_t word) {
+        assert(t>=0 && t<n_);
+        ++counters.transition_probes;
+        const int edge=edge_at(find_slot(0,word,mix(word^seed_)),0,word);
+        return edge>=0 && nodes_[edges_[edge].target].first<t;
+    }
+
+    // All cursors sharing this matcher must be advanced at nondecreasing t.
+    // A skipped endpoint is marked unknown (-1); its next direct-extension
+    // certificate is then disabled until an endpoint is resolved again.
+    void step(int t,uint64_t word,Cursor& cursor,int minimum_route_length=1) {
+        assert(t>=0 && t<n_ && t>=activated_ && minimum_route_length>=1);
+        assert(cursor.state>=0 && size_t(cursor.state)<nodes_.size());
+        assert(cursor.length>=0 && cursor.length<=nodes_[cursor.state].length);
+        assert(!cursor.state || cursor.length>nodes_[nodes_[cursor.state].link].length);
+        bool direct=true;int target=-1;
+        const uint64_t word_hash=mix(word^seed_);
+        for(;;) {
+            ++counters.transition_probes;
+            const int edge=edge_at(find_slot(cursor.state,word,word_hash),cursor.state,word);
+            target=edge<0 ? -1 : edges_[edge].target;
+            if(target>=0 && nodes_[target].first<t)break;
+            if(!cursor.state){target=-1;cursor.length=0;break;}
+            cursor.state=nodes_[cursor.state].link;
+            cursor.length=nodes_[cursor.state].length;
+            direct=false;++counters.suffix_fallbacks;
+        }
+        if(target>=0) {
+            cursor.state=target;++cursor.length;
+            cursor.end=cursor.length>=minimum_route_length
+                ?latest_endpoint(cursor.state,t,direct?cursor.end:-1,word):-1;
+        } else {cursor.state=0;cursor.end=-1;}
+    }
+
     void run(int32_t* lengths,int32_t* routes) {
-        int state=0,length=0,previous_end=-1;
+        Cursor cursor;
         for(int t=0;t<n_;++t) {
-            bool direct=true;
-            int target=-1;
-            const uint64_t word_hash=mix(q_[t]^seed_);
-            for(;;) {
-                ++counters.transition_probes;
-                const int edge=table_[find_slot(state,q_[t],word_hash)];
-                target=edge<0 ? -1 : edges_[edge].target;
-                if(target>=0 && nodes_[target].first<t)break;
-                if(!state){target=-1;length=0;break;}
-                state=nodes_[state].link;
-                length=nodes_[state].length;
-                direct=false;
-                ++counters.suffix_fallbacks;
-            }
-            if(target>=0) {
-                state=target;++length;
-                previous_end=latest_endpoint(state,t,direct?previous_end:-1,q_[t]);
-            } else {state=0;previous_end=-1;}
-            lengths[t]=length;routes[t]=previous_end;
+            step(t,q_[t],cursor);
+            lengths[t]=cursor.length;routes[t]=cursor.end;
         }
     }
 
@@ -77,11 +102,13 @@ public:
     size_t edge_count() const {return edges_.size();}
     size_t hash_slots() const {return table_.size();}
     bool endpoint_index_materialized() const {return !tree_.empty();}
-    // Allocator overhead is excluded; these are retained vector capacities,
-    // not process RSS and not the peak while the temporary DFS tree is built.
+    // Retained vector capacities and ordered-map key/value payloads only.
+    // Allocator bookkeeping/tree links, RSS and temporary DFS storage are
+    // excluded from this estimate.
     size_t retained_capacity_bytes() const {
         return nodes_.capacity()*sizeof(Node)+edges_.capacity()*sizeof(Edge)
-            +(table_.capacity()+occurrence_position_.capacity()+tree_.capacity())*sizeof(int);
+            +(table_.capacity()+occurrence_position_.capacity()+tree_.capacity())*sizeof(int)
+            +overflow_.size()*sizeof(decltype(overflow_)::value_type);
     }
 
 private:
@@ -98,6 +125,7 @@ private:
     std::vector<Node> nodes_;
     std::vector<Edge> edges_;
     std::vector<int> table_,occurrence_position_,tree_;
+    std::map<std::pair<int,uint64_t>,int> overflow_;
     int tree_size_=1,activated_=0;
 
     static uint64_t mix(uint64_t x) {
@@ -110,16 +138,23 @@ private:
     }
     size_t find_slot(int state,uint64_t word,uint64_t word_hash) {
         size_t p=hash(state,word_hash);
-        for(;;p=(p+1)&(table_.size()-1)) {
+        for(int probe=0;probe<16;++probe,p=(p+1)&(table_.size()-1)) {
             ++counters.hash_probe_steps;
             const int id=table_[p];
             if(id<0)return p;
             const auto&e=edges_[id];
             if(e.source==state && e.symbol==word)return p;
         }
+        return table_.size();
+    }
+    int edge_at(size_t p,int state,uint64_t word) const {
+        if(p<table_.size())return table_[p];
+        const auto found=overflow_.find({state,word});
+        return found==overflow_.end()?-1:found->second;
     }
     void add_edge(size_t p,int state,uint64_t word,int target) {
-        table_[p]=int(edges_.size());
+        if(p<table_.size())table_[p]=int(edges_.size());
+        else overflow_.emplace(std::make_pair(state,word),int(edges_.size()));
         edges_.push_back({word,state,target,nodes_[state].head});
         nodes_[state].head=int(edges_.size())-1;
     }
@@ -132,7 +167,7 @@ private:
         int p=last,existing=-1;
         while(p>=0) {
             const size_t slot=find_slot(p,symbol,word_hash);
-            existing=table_[slot];
+            existing=edge_at(slot,p,symbol);
             if(existing>=0)break;
             add_edge(slot,p,symbol,cur);p=nodes_[p].link;
         }
@@ -152,7 +187,7 @@ private:
                     add_edge(slot,clone,old.symbol,old.target);e=old.next;
                 }
                 while(p>=0) {
-                    const int e=table_[find_slot(p,symbol,word_hash)];
+                    const int e=edge_at(find_slot(p,symbol,word_hash),p,symbol);
                     if(e<0 || edges_[e].target!=v)break;
                     edges_[e].target=clone;p=nodes_[p].link;
                 }

@@ -231,13 +231,13 @@ def training_backward_numpy(cache, grad_y, *, trace=False):
     arrays=(cache.q,cache.k,cache.v_bits,cache.q_logits,cache.k_logits,cache.v_logits,
             g,cache.emb0,cache.emb1,gq,gk,gv,ge0,ge1,counts,pairs,costs)
     approximation_counts=None
-    if cache.approximation is None:
-        code=_library().rosa_training_backward(ctypes.byref(options),b,groups,n,d,*_pointers(arrays))
-    else:
+    if cache.approximation is not None:
         approximation_counts=np.zeros((b*groups,len(APPROXIMATION_COUNTER_NAMES)),dtype=np.uint64)
-        code=_library().rosa_training_backward_approx(ctypes.byref(options),
-            ctypes.byref(cache.approximation),b,groups,n,d,
-            *_pointers(arrays+(cache.lengths,cache.routes,approximation_counts)))
+    # Reuse the hard forward's owned route cache. The ordinary C entry remains
+    # available to callers without it and computes the same routes itself.
+    code=_library().rosa_training_backward_subquadratic(ctypes.byref(options),
+        None if cache.approximation is None else ctypes.byref(cache.approximation),b,groups,n,d,
+        *_pointers(arrays+(cache.lengths,cache.routes,approximation_counts,None)))
     if code:
         raise ValueError("native training backward requires finite inputs") if code==4 else RuntimeError(f"native training backward failed: {code}")
     totals=counts.sum(axis=0,dtype=np.uint64)

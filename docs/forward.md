@@ -62,15 +62,21 @@ activated at most once. If certificates answer every query, the tree is never al
 ## Randomness changes the work, never the answer
 
 SAM transitions use a flat hash table with a per-process random seed. Lookups compare
-the complete state number and all 64 symbol bits. Collisions cause additional probes,
-never false matches. Capacity is at least twice the maximum edge count. Each consumed
-symbol's hash is reused across fallbacks, and state salts are cached.
+the complete state number and all 64 symbol bits. Each lookup inspects at most **16
+table slots**. If those slots are occupied by other keys, lookup and insertion use
+an overflow `std::map` keyed by the full `(state, symbol)` pair. Collisions can change
+the work but cannot change a match or cause an unbounded probe chain. Capacity is at
+least twice the maximum edge count. Each consumed symbol's hash is reused across
+fallbacks, and state salts are cached.
 
-No universal-hashing theorem is established here; bad collisions can degrade runtime.
-Assuming constant average probe cost, SAM construction and matching take O(T), while
-general endpoint maintenance takes O(T log T). The complete bound is **O(T log T) time
-and O(T) auxiliary space**, with that hashing assumption. Certificates remove endpoint
-work when their proofs apply; the complete forward is not unconditionally linear.
+There are O(T) transition-dictionary operations in SAM construction and in the single
+query trajectory. Each operation costs O(log T) in the worst case because of the
+ordered overflow map. General endpoint maintenance also costs O(T log T), so the
+complete bound is **O(T log T) time and O(T) auxiliary space for every seed**, without
+an average-hashing assumption. If the transition operations are settled by the flat
+table and endpoint certificates settle all queries, construction and scanning take O(T); the complete
+forward is not claimed unconditionally linear. Randomness changes the frequency of
+the exact overflow lookup, not the worst-case guarantee.
 
 ## Validation and historical timing evidence
 

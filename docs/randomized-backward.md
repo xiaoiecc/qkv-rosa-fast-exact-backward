@@ -60,7 +60,7 @@ If no such pair exists, every relevant match has length at most one. Full and on
 
 **No causal repair birth.** Mark $b_u=1$ when some $s<u$ has $Q_u\oplus K_s$ equal to one bit. A repair contributing at row $t$ has an unchanged right tail of length $a\le L_t$, so its Q center lies in $t-L_t\le u\le t$. If this window contains no marked birth, neither full nor one-symbol repair exists and again $\rho_t=0$. The one-symbol class plan provides these marks and their prefix sums.
 
-Rows with zero upstream support also contribute zero under this native trust rule. The remaining rows form the sampled population. See [approx_row_certificate.h](../conv_rosa_transformer/csrc/approx_row_certificate.h).
+Rows with zero upstream support also contribute zero under this native trust rule. The remaining rows form the sampled population. Complete mode uses the same certificates: when its counted endpoint work fits the complete-engine budget, it evaluates every residual through this exact row formula. With an empty certified population, the control is already the complete answer, including when an approximation option was requested. See [approx_row_certificate.h](../conv_rosa_transformer/csrc/approx_row_certificate.h).
 
 ## 5. Stratify in time and keep the probability in the denominator
 
@@ -119,7 +119,7 @@ An estimate may have strongly correlated errors across coordinates. Conditional 
 
 ## 7. What stays complete, and what error remains
 
-The hard forward remains complete. V and embedding gradients are evaluated along the original routes. Selected joint blocks use complete local corner costs; approximate singleton corners are restored by internal indexed replays when needed. The outer network and loss are not replayed.
+The hard forward remains complete. V and embedding gradients are evaluated along the original routes. Selected joint blocks use complete local corner costs; approximate singleton corners are restored by internal forward replays when needed. The outer network and loss are not replayed.
 
 Numerical batching and FFT are already part of the complete subquadratic engine. Their rounding error is distinct from row/channel sampling error; FFT is not restricted to approximate mode. Full mathematical credit evaluation does not promise a historical binary64 reduction order, and a fixed-budget unbiased estimator does not promise an unchanged Adam update or training trajectory.
 

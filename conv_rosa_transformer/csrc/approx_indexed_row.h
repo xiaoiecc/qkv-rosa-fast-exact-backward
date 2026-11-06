@@ -21,7 +21,9 @@ inline int indexed_row_repairs(const OnegramPlan&plan,const uint8_t*v,
     const int32_t*selected,const double*weights,int count,
     const int32_t*lengths,const int32_t*routes,double*cq,double*ck,uint64_t*stats,
     bool subtract_onegram,
-    int(*external_lcs)(const void*,int,int),const void*external_context) {
+    int(*external_lcs)(const void*,int,int),const void*external_context,
+    size_t* workspace=nullptr) {
+    if(workspace)*workspace=0;
   try {
     const int n=plan.n,d=plan.d;const uint64_t*q=plan.q,*k=plan.k;
     if(count<0 || !external_lcs)return 1;
@@ -29,8 +31,23 @@ inline int indexed_row_repairs(const OnegramPlan&plan,const uint8_t*v,
     if(!n)return count?1:0;
     if(!count)return 0;
     const size_t nd=size_t(n)*d;
+    // Selected adjacent rows share the exact recurrence F[t,r]=F[t-1,r-1]+1.
+    // Keep a bounded row cache so the endpoint join can reuse those answers
+    // and its nearby left-extension queries. Sparse/gapped samples still use
+    // the same shared suffix index; no quadratic table is ever constructed.
+    constexpr int history_limit=32;
+    bool adjacent=false;
+    for(int i=1;i<count;++i)adjacent|=selected[i]==selected[i-1]+1;
+    std::array<int,history_limit> history_time;history_time.fill(-2);
+    std::vector<int> history(adjacent?size_t(n)*history_limit:0);
     auto lcs=[&](int t,int r)->int {
         if(t<0||r<0)return 0;
+        if(adjacent) {
+            if(q[t]!=k[r])return 0;
+            if(history_time[t%history_limit]==t)return history[size_t(t%history_limit)*n+r];
+            if(t&&history_time[(t-1)%history_limit]==t-1)
+                return 1+(r&&q[t-1]==k[r-1]?history[size_t((t-1)%history_limit)*n+r-1]:0);
+        }
         return external_lcs(external_context,t,r);
     };
     std::vector<int> f;
@@ -60,10 +77,16 @@ inline int indexed_row_repairs(const OnegramPlan&plan,const uint8_t*v,
             same=plan.krows.data()+plan.ko[kid];
             same_count=int(std::lower_bound(same,plan.krows.data()+plan.ko[kid+1],t)-same);
         }
+        const int gram_last=same_count?same[same_count-1]:-1;
         f.resize(same_count);prefix.resize(size_t(same_count)+1);prefix[0]=0;
         for(int at=0;at<same_count;++at) {
             const int r=same[at];f[at]=lcs(t,r);++stats[2];
             prefix[at+1]=std::max(prefix[at],row_route(f[at],r));
+        }
+        if(adjacent) {
+            int*saved=history.data()+size_t(t%history_limit)*n;
+            for(int at=0;at<same_count;++at)saved[same[at]]=f[at];
+            history_time[t%history_limit]=t;++stats[15];
         }
         stats[1]+=same_count;
         // R(h)=latest endpoint with F[r]>=h. A reverse scan appends a
@@ -121,13 +144,23 @@ inline int indexed_row_repairs(const OnegramPlan&plan,const uint8_t*v,
             stats[2]+=s>0;++stats[3];
             const RowRoute candidate=row_route(a+1+b,r);
             const size_t qi=size_t(u)*d+bit,ki=size_t(s)*d+bit;
-            if(candidate>qdel(u)) {
-                if(!qbest[qi])qtouch.push_back(qi);
-                qbest[qi]=std::max(qbest[qi],candidate);
-            }
-            if(candidate>kdel(s)) {
+            // The deleted Q route has length min(L,a), whereas this repair
+            // already has a+1 matched symbols. It wins without another
+            // staircase lookup; compute the deleted score only at emission.
+            if(!qbest[qi])qtouch.push_back(qi);
+            qbest[qi]=std::max(qbest[qi],candidate);
+            // A repair beating the unedited winner also beats its deletion.
+            // Losing candidates need no repeated owner lookup after a better
+            // repair has already been retained for the same owner and bit.
+            // With a length-zero/one baseline, a new last-word match after
+            // gram_last has exactly the same returned endpoint as its
+            // one-symbol control, regardless of its left extension. No
+            // positive-a candidate can touch that owner: its endpoint is
+            // an original last-word match, hence at most gram_last.
+            if(!(subtract_onegram&&a==0&&L<=1&&s>gram_last)
+                &&candidate>kbest[ki] && (candidate>baseline||candidate>kdel(s))) {
                 if(!kbest[ki])ktouch.push_back(ki);
-                kbest[ki]=std::max(kbest[ki],candidate);
+                kbest[ki]=candidate;
             }
         };
         for(int at=0;at<same_count;++at) {
@@ -139,23 +172,35 @@ inline int indexed_row_repairs(const OnegramPlan&plan,const uint8_t*v,
         // Every F[r]==0 repair has K[r] at Hamming distance one from Q[t].
         // All other last-word classes are impossible and never need an LCE.
         std::array<IndexedNeighborSpan,64> neighbors;int neighbor_count=0;
+        std::array<int,64> neighbor_last;
         for(const auto&neighbor:plan.qneighbors[qid]) {
             const int*begin=plan.krows.data()+plan.ko[neighbor.other];
             const int*end=std::lower_bound(begin,plan.krows.data()+plan.ko[neighbor.other+1],t);
             if(begin==end)continue;
             neighbors[neighbor_count++]={neighbor.bit,begin,end};stats[1]+=end-begin;
-            for(const int*at=begin;at!=end;++at)consider(*at,0,neighbor.bit);
+            neighbor_last[neighbor.bit]=*(end-1);
+            for(const int*at=begin;at!=end;++at) {
+                // The zero-left-extension Q candidate is already in the
+                // one-symbol reference. For K it either cancels that same
+                // reference (L<=1), or loses to the surviving original
+                // suffix (L>=2). Only a genuine left extension remains.
+                if(!subtract_onegram||(t&&*at&&q[t-1]==k[*at-1]))
+                    consider(*at,0,neighbor.bit);
+            }
         }
-        for(size_t key:qtouch){cq[key]+=score(row_end(qbest[key]))-score(row_end(qdel(int(key/d))));qbest[key]=0;}
+        for(size_t key:qtouch) {
+            const int owner=int(key/d);
+            // At owner=t, full repair minus the one-symbol repair is a
+            // single endpoint difference. Evaluating it directly also
+            // avoids cancelling two large empty-route scores numerically.
+            const int before=subtract_onegram&&owner==t
+                ?neighbor_last[key%d]:row_end(qdel(owner));
+            cq[key]+=score(row_end(qbest[key]))-score(before);qbest[key]=0;
+        }
         for(size_t key:ktouch){ck[key]+=score(row_end(kbest[key]))-score(row_end(kdel(int(key/d))));kbest[key]=0;}
         stats[4]+=qtouch.size();stats[5]+=ktouch.size();
-        if(subtract_onegram) {
-            const int gram_last=same_count?same[same_count-1]:-1;
-            const double original=score(gram_last),deleted=score(-1);
-            for(int at=0;at<neighbor_count;++at) {
-                const auto&neighbor=neighbors[at];
-                cq[size_t(t)*d+neighbor.bit]-=score(*(neighbor.end-1))-deleted;
-            }
+        if(subtract_onegram&&L>=2) {
+            const double original=score(gram_last);
             for(int at=0;at<neighbor_count;++at) {
                 const auto&neighbor=neighbors[at];
                 const int*begin=std::upper_bound(neighbor.begin,neighbor.end,gram_last);
@@ -164,6 +209,10 @@ inline int indexed_row_repairs(const OnegramPlan&plan,const uint8_t*v,
             }
         }
     }
+    if(workspace)*workspace=(f.capacity()+history.capacity()+cost_stamp.capacity())*sizeof(int)
+        +(prefix.capacity()+qbest.capacity()+kbest.capacity())*sizeof(RowRoute)
+        +steps.capacity()*sizeof(IndexedRowStep)+(qtouch.capacity()+ktouch.capacity())*sizeof(size_t)
+        +cost.capacity()*sizeof(double);
     return 0;
   }catch(const std::bad_alloc&){return 2;}catch(const std::exception&){return 3;}
 }

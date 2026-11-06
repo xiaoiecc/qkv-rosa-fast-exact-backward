@@ -23,6 +23,8 @@ R(t,h,c)=\max\{r<c:F_t(r)\ge h\},
 
 with an empty answer of $-1$. The causal cutoff is clipped to $c\le t$. A suffix-rank interval identifies matches of the length-$h$ Q suffix; a wavelet-matrix predecessor query selects the latest legal K occurrence. Deletion, interval projection, and repair trimming can ask the same question more than once.
 
+Length-one, impossible-length and latest-endpoint certificates run before memo lookup. The cache is allocated only when an actual suffix-interval query remains unresolved. Streams settled by direct certificates pay no cache allocation or hash lookup.
+
 The cache entry stores all of `(t, h, c, result)`. A seeded integer mixer maps the three query integers to a slot. The array has power-of-two capacity between $2n$ and $4n$, so both memory and replacement work are bounded.
 
 ## 2. Why collisions cannot change a route
@@ -36,6 +38,8 @@ A lookup has three possible outcomes:
 | Slot contains a different key | Evaluate the suffix-index query and replace the slot |
 
 The hash determines placement only. It is never accepted as proof that two queries or symbols are equal. Even if every query were placed in one slot, the program would remain correct; reuse would merely be poor. Packed symbols themselves are compared through full-value compression and exact suffix/LCP structures.
+
+The full-word dictionaries used by the one-symbol control and adjacent-pair certificate also have bounded probe chains. After at most 16 probes, they use an ordered full-key map. Suffix-symbol lookup uses bounded probing followed by sorted search. Adversarial collisions therefore preserve logarithmic worst-case lookup, not merely answer correctness. [Collision tests](../tests/cpp/bounded_hash.cpp) deliberately force these overflow cases.
 
 Caching also leaves the numerical schedule alone. It substitutes an integer endpoint for a recomputation of the same integer endpoint; the caller then performs the same floating-point operations in the same order. This is why bitwise on/off equality is a meaningful contract here.
 

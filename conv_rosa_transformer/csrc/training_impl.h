@@ -174,7 +174,7 @@ inline int train_stream(const RosaTrainingOptions&o,int n,int d,
     rosa_subq::Stats work;
     const int code=rosa_subq::run(n,d,q,k,v,g,quadratic?h.data():nullptr,e0,e1,
         o.randomized!=0,repair_seed,approximation,cq,ck,lengths.data(),routes.data(),
-        work,approximation_stats);
+        work,approximation_stats,saved_lengths,saved_routes);
     if(code)return code;
     store_subquadratic_counters(work,stats);
     if(subquadratic_stats)std::copy(stats,stats+ROSA_SUBQUADRATIC_COUNTERS,subquadratic_stats);
@@ -210,9 +210,10 @@ inline int train_stream(const RosaTrainingOptions&o,int n,int d,
             words[x/d]^=uint64_t(1)<<(x%d);
         };
         auto replay_cost=[&]() {
-            rosa_subq::Index scan(qe.data(),ke.data(),n,o.randomized!=0,repair_seed);
-            const auto& edited=scan.baseline();
-            for(int t=0;t<n;++t){edited_lengths[t]=edited[t].length;edited_routes[t]=edited[t].end;}
+            // Joint corners need only the ordinary forward trajectory.
+            // Building deletion/repair suffix indexes here has no consumer.
+            SamForward scan(qe.data(),ke.data(),n,repair_seed);
+            scan.run(edited_lengths.data(),edited_routes.data());
         ExactExpansion joint;
         for(int t=0;t<n;++t) {
             if(edited_routes[t]==routes[t])continue;

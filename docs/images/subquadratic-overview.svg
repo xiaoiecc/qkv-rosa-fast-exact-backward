@@ -161,7 +161,7 @@
 <path d="M555,460 L619,460" stroke="#445f79" stroke-width="3" fill="none"/>
 <path d="M611,454 L619,460 L611,466" fill="none" stroke="#445f79" stroke-width="3"/>
 <text x="652" y="444" class="mono" text-anchor="start">F(r) = min(hQ, r − c + 1)</text>
-<text x="652" y="472" class="body" text-anchor="start">At most one endpoint needs an extra LCE.</text>
+<text x="652" y="472" class="body" text-anchor="start">At most one endpoint needs an extra LCS.</text>
 <text x="652" y="501" class="body" text-anchor="start">All residues of a period share one numerical sweep.</text>
 <text x="45" y="606" class="head" text-anchor="start">3  Contract a whole route interval, including arbitrary payloads</text>
 <text x="65" y="639" class="mono" text-anchor="start">Σ  w[t] · P[t + β + 1],   l ≤ t ≤ r</text>

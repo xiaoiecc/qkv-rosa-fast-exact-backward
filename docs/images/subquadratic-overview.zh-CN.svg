@@ -1,0 +1,192 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="840" viewBox="0 0 1120 840" role="img" aria-labelledby="title desc">
+<title id="title">QKV-ROSA：压缩路由与批量数值求和</title>
+<desc id="desc">把隐式的修改位置与时间表变成仿射区间；周期出现按余数分组；区间相关使用直接边角与缓存的整块变换。</desc>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#193047}.title{font-size:28px;font-weight:700}.head{font-size:21px;font-weight:700}.body{font-size:17px}.small{font-size:14px}.mono{font-family:monospace;font-size:17px}</style>
+<rect width="1120" height="840" rx="20" fill="#f4f7fa"/>
+<text x="36" y="47" class="title" text-anchor="start">QKV-ROSA：先压缩路由，再批量求和</text>
+<text x="36" y="76" class="body" text-anchor="start">图中展示路由的统一表示方式；这些结构来自精确匹配本身。</text>
+<rect x="24" y="100" width="1072" height="234" rx="12" fill="#ffffff" stroke="#dbe3eb"/>
+<rect x="24" y="352" width="1072" height="202" rx="12" fill="#ffffff" stroke="#dbe3eb"/>
+<rect x="24" y="572" width="1072" height="236" rx="12" fill="#ffffff" stroke="#dbe3eb"/>
+<text x="45" y="132" class="head" text-anchor="start">1  一次修改的同一条胜出对齐，可以跨越许多行</text>
+<text x="70" y="162" class="body" text-anchor="start">隐式的「修改位置 × 时间」路由</text>
+<text x="650" y="162" class="body" text-anchor="start">优先级固定为 (α, β) 的区间</text>
+<text x="66" y="193" class="small" text-anchor="end">0</text>
+<rect x="80" y="177" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="107" y="177" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="134" y="177" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="161" y="177" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="188" y="177" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="215" y="177" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="242" y="177" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="269" y="177" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="296" y="177" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="323" y="177" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="350" y="177" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="377" y="177" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="80" y="177" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="107" y="177" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="134" y="177" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="161" y="177" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="188" y="177" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="215" y="177" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="269" y="177" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="296" y="177" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="323" y="177" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="350" y="177" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="377" y="177" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<text x="66" y="216" class="small" text-anchor="end">1</text>
+<rect x="80" y="200" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="107" y="200" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="134" y="200" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="161" y="200" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="188" y="200" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="215" y="200" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="242" y="200" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="269" y="200" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="296" y="200" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="323" y="200" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="350" y="200" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="377" y="200" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="107" y="200" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="134" y="200" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="161" y="200" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="188" y="200" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="215" y="200" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="242" y="200" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="296" y="200" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="323" y="200" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="350" y="200" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="377" y="200" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<text x="66" y="239" class="small" text-anchor="end">2</text>
+<rect x="80" y="223" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="107" y="223" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="134" y="223" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="161" y="223" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="188" y="223" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="215" y="223" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="242" y="223" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="269" y="223" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="296" y="223" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="323" y="223" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="350" y="223" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="377" y="223" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="134" y="223" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="161" y="223" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="188" y="223" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="215" y="223" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="269" y="223" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="296" y="223" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="323" y="223" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="350" y="223" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="377" y="223" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<text x="66" y="262" class="small" text-anchor="end">3</text>
+<rect x="80" y="246" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="107" y="246" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="134" y="246" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="161" y="246" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="188" y="246" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="215" y="246" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="242" y="246" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="269" y="246" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="296" y="246" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="323" y="246" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="350" y="246" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="377" y="246" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="80" y="246" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="107" y="246" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="134" y="246" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="161" y="246" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="188" y="246" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="215" y="246" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="242" y="246" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="296" y="246" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="323" y="246" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="350" y="246" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="377" y="246" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<text x="66" y="285" class="small" text-anchor="end">4</text>
+<rect x="80" y="269" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="107" y="269" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="134" y="269" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="161" y="269" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="188" y="269" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="215" y="269" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="242" y="269" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="269" y="269" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="296" y="269" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="323" y="269" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="350" y="269" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="377" y="269" width="24" height="19" rx="4" fill="#e8eef4" stroke="none"/>
+<rect x="107" y="269" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="134" y="269" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="161" y="269" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="188" y="269" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="215" y="269" width="24" height="19" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="269" y="269" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="296" y="269" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="323" y="269" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="350" y="269" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<rect x="377" y="269" width="24" height="19" rx="4" fill="#6a84c7" stroke="none"/>
+<path d="M440,234 L583,234" stroke="#445f79" stroke-width="3" fill="none"/>
+<path d="M575,228 L583,234 L575,240" fill="none" stroke="#445f79" stroke-width="3"/>
+<path d="M640,189 L1039,189" stroke="#edf1f5" stroke-width="12" fill="none"/>
+<rect x="640" y="181" width="195" height="16" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="871" y="181" width="162" height="16" rx="4" fill="#6a84c7" stroke="none"/>
+<path d="M640,212 L1039,212" stroke="#edf1f5" stroke-width="12" fill="none"/>
+<rect x="673" y="204" width="195" height="16" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="904" y="204" width="129" height="16" rx="4" fill="#6a84c7" stroke="none"/>
+<path d="M640,235 L1039,235" stroke="#edf1f5" stroke-width="12" fill="none"/>
+<rect x="706" y="227" width="129" height="16" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="871" y="227" width="162" height="16" rx="4" fill="#6a84c7" stroke="none"/>
+<path d="M640,258 L1039,258" stroke="#edf1f5" stroke-width="12" fill="none"/>
+<rect x="640" y="250" width="228" height="16" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="904" y="250" width="129" height="16" rx="4" fill="#6a84c7" stroke="none"/>
+<path d="M640,281 L1039,281" stroke="#edf1f5" stroke-width="12" fill="none"/>
+<rect x="673" y="273" width="162" height="16" rx="4" fill="#41a79a" stroke="none"/>
+<rect x="871" y="273" width="162" height="16" rx="4" fill="#6a84c7" stroke="none"/>
+<text x="79" y="315" class="small" text-anchor="start">时间 →</text>
+<text x="640" y="315" class="mono" text-anchor="start">(t + α, t + β) → P[t + β + 1]</text>
+<text x="45" y="386" class="head" text-anchor="start">2  用周期出现组代替重复的终点处理</text>
+<text x="65" y="418" class="body" text-anchor="start">短文本窗口内，同一模式的精确出现构成一条等差数列。</text>
+<path d="M85,465 L500,465" stroke="#8a9aab" stroke-width="2" fill="none"/>
+<circle cx="115" cy="465" r="8" fill="#168b7e"/>
+<text x="115" y="496" class="body" text-anchor="middle">2</text>
+<circle cx="227" cy="465" r="8" fill="#168b7e"/>
+<text x="227" y="496" class="body" text-anchor="middle">5</text>
+<circle cx="339" cy="465" r="8" fill="#168b7e"/>
+<text x="339" y="496" class="body" text-anchor="middle">8</text>
+<circle cx="451" cy="465" r="8" fill="#168b7e"/>
+<text x="451" y="496" class="body" text-anchor="middle">11</text>
+<text x="278" y="443" class="small" text-anchor="middle">周期 p = 3</text>
+<path d="M555,460 L619,460" stroke="#445f79" stroke-width="3" fill="none"/>
+<path d="M611,454 L619,460 L611,466" fill="none" stroke="#445f79" stroke-width="3"/>
+<text x="652" y="444" class="mono" text-anchor="start">F(r) = min(hQ, r − c + 1)</text>
+<text x="652" y="472" class="body" text-anchor="start">至多一个终点需要额外 LCS 查询。</text>
+<text x="652" y="501" class="body" text-anchor="start">同一周期的所有余数共用一次数值扫描。</text>
+<text x="45" y="606" class="head" text-anchor="start">3  把整段路由的贡献一起算，载荷数值可以任意</text>
+<text x="65" y="639" class="mono" text-anchor="start">Σ  w[t] · P[t + β + 1],   l ≤ t ≤ r</text>
+<rect x="80" y="670" width="54" height="31" rx="4" fill="#efba79" stroke="none"/>
+<rect x="138" y="670" width="54" height="31" rx="4" fill="#efba79" stroke="none"/>
+<rect x="196" y="670" width="54" height="31" rx="4" fill="#79beb4" stroke="none"/>
+<rect x="254" y="670" width="54" height="31" rx="4" fill="#79beb4" stroke="none"/>
+<rect x="312" y="670" width="54" height="31" rx="4" fill="#79beb4" stroke="none"/>
+<rect x="370" y="670" width="54" height="31" rx="4" fill="#79beb4" stroke="none"/>
+<rect x="428" y="670" width="54" height="31" rx="4" fill="#79beb4" stroke="none"/>
+<rect x="486" y="670" width="54" height="31" rx="4" fill="#79beb4" stroke="none"/>
+<rect x="544" y="670" width="54" height="31" rx="4" fill="#79beb4" stroke="none"/>
+<rect x="602" y="670" width="54" height="31" rx="4" fill="#79beb4" stroke="none"/>
+<rect x="660" y="670" width="54" height="31" rx="4" fill="#79beb4" stroke="none"/>
+<rect x="718" y="670" width="54" height="31" rx="4" fill="#79beb4" stroke="none"/>
+<rect x="776" y="670" width="54" height="31" rx="4" fill="#79beb4" stroke="none"/>
+<rect x="834" y="670" width="54" height="31" rx="4" fill="#79beb4" stroke="none"/>
+<rect x="892" y="670" width="54" height="31" rx="4" fill="#efba79" stroke="none"/>
+<rect x="950" y="670" width="54" height="31" rx="4" fill="#efba79" stroke="none"/>
+<path d="M194,662 L194,710" stroke="#335570" stroke-width="2" fill="none"/>
+<path d="M426,662 L426,710" stroke="#335570" stroke-width="2" fill="none"/>
+<path d="M658,662 L658,710" stroke="#335570" stroke-width="2" fill="none"/>
+<path d="M890,662 L890,710" stroke="#335570" stroke-width="2" fill="none"/>
+<text x="136" y="733" class="small" text-anchor="middle">直接求和的边角</text>
+<text x="543" y="733" class="body" text-anchor="middle">完整块：缓存变换，再做一次逆变换</text>
+<text x="949" y="733" class="small" text-anchor="middle">直接求和的边角</text>
+<text x="65" y="778" class="body" text-anchor="start">路由精确，代数项完整；FFT 与浮点加法重排仍会改变舍入。</text>
+</svg>

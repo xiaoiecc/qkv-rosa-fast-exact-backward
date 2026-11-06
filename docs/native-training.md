@@ -39,6 +39,8 @@ loss.backward()
 optimizer.step()
 ```
 
+The backward reuses the hard routes owned by the ordinary forward cache. It does not rebuild the same baseline matcher. A selected joint corner uses the current lean forward matcher internally; deletion and repair indexes are unnecessary for that corner.
+
 Joint corners are internal component work. The surrounding model, downstream layers, and task loss run once. First order has no joint replay. With the default one selected pair, complete mode needs at most one internal edited-route replay; approximate mode can need two additional singleton replays so that the selected block uses complete local corner costs.
 
 ## First-order credit and the logit mapping
@@ -74,9 +76,9 @@ F=\alpha_iC_i+\alpha_jC_j+\alpha_i\alpha_j\kappa,
 \qquad \partial_{z_i}F=\alpha_i'(C_i+\alpha_j\kappa).
 ```
 
-The proposer examines a bounded set of rows and retains at most `joint_pairs` disjoint blocks. The default is one pair per stream and at most 32 proposal rows. The algorithm does not enumerate every bit pair or solve interactions among all chosen blocks. A fixed budget $J$ adds $\widetilde O(JT(D+1))$ edited-index replay work; an increasing budget must be included in the complexity accounting.
+The proposer examines a bounded set of rows and retains at most `joint_pairs` disjoint blocks. The default is one pair per stream and at most 32 proposal rows. The algorithm does not enumerate every bit pair or solve interactions among all chosen blocks. A fixed budget $J$ adds $\widetilde O(JT(D+1))$ edited-forward replay work; an increasing budget must be included in the complexity accounting.
 
-Singleton corners are already available in complete mode. When numerical channels or residuals were sampled, the chosen singleton corners are recomputed completely before forming the joint correction. The joint corner itself always uses a complete internal indexed route evaluation. Selected coordinate gradients are replaced before they flow into the shared projection parameters.
+Singleton corners are already available in complete mode. When numerical channels or residuals were sampled, the chosen singleton corners are recomputed completely before forming the joint correction. The joint corner itself always uses a complete internal forward route evaluation. Selected coordinate gradients are replaced before they flow into the shared projection parameters.
 
 ## Randomness, floating-point arithmetic, and loss composition
 

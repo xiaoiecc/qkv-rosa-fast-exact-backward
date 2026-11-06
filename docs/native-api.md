@@ -23,9 +23,9 @@ The example needs no Python, NumPy, PyTorch headers, or CUDA. `training.h` is C-
 | `rosa_training_forward` | Pack hard Q/K/V, run the causal matcher, return output and saved routes |
 | `rosa_training_backward` | Complete finite-credit computation, logit mapping, embedding gradients and bounded joint corrections |
 | `rosa_training_backward_approx` | Same local rule with explicit residual-row or numerical-channel estimation |
-| `rosa_training_backward_subquadratic` | Detailed alias for the same engine, accepting an optional approximation description and a structural diagnostic buffer |
+| `rosa_training_backward_subquadratic` | Same engine with optional saved forward routes, approximation description and structural diagnostic buffer |
 
-The detailed name exists for diagnostics and the versioned C interface; it is not a second backend. A null approximation pointer requests complete evaluation. All entries use the same hard routing rule and fixed local score.
+The detailed name exists for diagnostics and the versioned C interface; it is not a second backend. A null approximation pointer requests complete evaluation. The NumPy adapter uses this entry for both modes so the backward can reuse its forward-owned lengths and endpoints. Pass both route arrays or neither; omitting them computes the baseline with the same forward matcher. A null structural diagnostic buffer is permitted. All entries use the same hard routing rule and fixed local score.
 
 ## Options and ABI
 

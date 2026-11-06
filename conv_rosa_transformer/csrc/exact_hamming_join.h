@@ -1,6 +1,6 @@
 #pragma once
 // Exact Hamming-one neighbor discovery for distinct packed words.
-// One full-key join shared by the SAM repair roots and approximate control
+// One full-key join shared by the exact and sampled one-symbol control
 // variates. Randomization changes work and bucket placement, never membership.
 #include <algorithm>
 #include <cmath>
@@ -8,6 +8,7 @@
 #include <random>
 #include <stdexcept>
 #include <vector>
+#include "full_word_map.h"
 
 namespace rosa_exact {
 struct HammingJoinCounters {
@@ -30,30 +31,23 @@ namespace hamming_join_detail {
     struct RootBuckets {
         struct Group { uint64_t word; int head=-1,count=0; };
         uint64_t mask=0;
-        std::vector<int> table,next;
+        FullWordMap classes;
+        std::vector<int> next;
         std::vector<Group> groups;
-        RootBuckets(uint64_t bits,const std::vector<HammingRoot>& roots,uint64_t seed):mask(bits),next(roots.size(),-1) {
-            size_t capacity=8;
-            while(capacity<std::max(size_t(8),roots.size()*2))capacity*=2;
-            table.assign(capacity,-1);groups.reserve(roots.size());
+        RootBuckets(uint64_t bits,const std::vector<HammingRoot>& roots,uint64_t seed)
+            :mask(bits),classes(roots.size(),seed),next(roots.size(),-1) {
+            groups.reserve(roots.size());
             for(size_t i=0;i<roots.size();++i) {
                 const uint64_t word=roots[i].word&mask;
-                size_t slot=size_t(mix(word^seed))&(capacity-1);
-                while(table[slot]>=0 && groups[table[slot]].word!=word)
-                    slot=(slot+1)&(capacity-1);
-                int group=table[slot];
-                if(group<0) {group=int(groups.size());table[slot]=group;groups.push_back({word,-1,0});}
+                const auto inserted=classes.insert(word,int(groups.size()));
+                const int group=inserted.first;
+                if(inserted.second)groups.push_back({word,-1,0});
                 next[i]=groups[group].head;groups[group].head=int(i);++groups[group].count;
             }
         }
-        const Group* find(uint64_t word,uint64_t seed) const {
-            word&=mask;size_t slot=size_t(mix(word^seed))&(table.size()-1);
-            while(table[slot]>=0) {
-                const auto&group=groups[table[slot]];
-                if(group.word==word)return &group;
-                slot=(slot+1)&(table.size()-1);
-            }
-            return nullptr;
+        const Group* find(uint64_t word,uint64_t) const {
+            const int id=classes.find(word&mask);
+            return id<0?nullptr:&groups[id];
         }
     };
     static int singleton_bit(uint64_t word) {

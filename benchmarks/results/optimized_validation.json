@@ -1,0 +1,145 @@
+{
+  "status": "PASS",
+  "exhaustive": true,
+  "seconds": 108.68856909600072,
+  "tests_run": 68,
+  "skipped": 1,
+  "source_unchanged": true,
+  "source_sha256": {
+    "conv_rosa_transformer/__init__.py": "aa263607d3d1dd3409bc58474182ee3ceb512d8664fd0cd02da4e583d168f1f8",
+    "conv_rosa_transformer/build.py": "2b8d99aa72bad85bbe3d4be87e903d5d738f384e64ed784563ea2a8c60b94ee7",
+    "conv_rosa_transformer/causal_candidates.py": "56cdcc4f8be7224016d608d59ac285081cda52f13bfe83fe51000068bfde4fdc",
+    "conv_rosa_transformer/joint_credit.py": "d549df96b4738e55c8923099067459cd41c3003002b6cc5dabb32117c8e76ce0",
+    "conv_rosa_transformer/multiply_demo.py": "a4c5a77e16dcd0dabc69696a5d0193309cb0ef0f396f9810ccf50907011cbd8b",
+    "conv_rosa_transformer/native_training.py": "374a8399e861a42c3acb2d12b6b6619b54443cdbe790ccd1683d8c460abe6b53",
+    "conv_rosa_transformer/overfit_test.py": "62231f4a62f5ac73258e510c862a3787e8c9fcd2f885f8b18c501819601122be",
+    "conv_rosa_transformer/rosa_core.py": "5e9d499f256e6def82e1043e172cf9a9ba2f8e9153e5813c100cf3f36910ac87",
+    "conv_rosa_transformer/rosa_layer.py": "c9120b5560cf8959397e116b5bed1203b7d2c17662ddb3f169de6790fef15a18",
+    "conv_rosa_transformer/rosa_reference.py": "d5b43210aff0dbabf134878db03780bb9cfa2acfe188c6f0efa9ed5d6c1e31e7",
+    "conv_rosa_transformer/rosa_transformer.py": "5d6dfb59f6ebbc2a10539f128d051d937a22dcef80c9ae16b8fb30ff4f5d2f62",
+    "conv_rosa_transformer/self_test.py": "fea5f2ca387f73abd34342fb641e24c4f335c58ac3329e6d3309ec283f7a160e",
+    "conv_rosa_transformer/csrc/unified_core.cpp": "6ba2322c98ec91699426942017e3f4b74e69d803a5dfce1da442e6a167a9d9be",
+    "conv_rosa_transformer/csrc/approx_channel_pivotal.h": "a72e48d625622e51c1d9fdcc9480e9b7e884b3ef70cbaf2639c6eb06365be960",
+    "conv_rosa_transformer/csrc/approx_indexed_row.h": "397583252f8d15fc330646ebb68cf356b0084027fb9a26ff557977d6b4e1469f",
+    "conv_rosa_transformer/csrc/approx_onegram.h": "e5dbca14aa4c892b9bed87b0186d6f4317b029e75cd0097cbac5c1c804c964d7",
+    "conv_rosa_transformer/csrc/approx_route_helpers.h": "c246fd1ce1c10466d050a89b5b46ee1baa962194158c363a38005ba40d03b86b",
+    "conv_rosa_transformer/csrc/approx_row_certificate.h": "8f088bcb65dc005ff0ae6631f9f9d5149cd05f3ba39519c2356af22f18ccf1e6",
+    "conv_rosa_transformer/csrc/approx_sampling.h": "8d1bcfdbd6138281f28b1a83ac3ad0bdd39c5a02109fce20f566426883b91b3e",
+    "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+    "conv_rosa_transformer/csrc/exact_hamming_join.h": "804b3a3c207333a6d0bec513a4201651014130e10afa979358e52c5b3aa3b73a",
+    "conv_rosa_transformer/csrc/forward.h": "c18eeb09ea81396eee60c08cb4f26dc1f5eb410179eae238a42a6261f916ca48",
+    "conv_rosa_transformer/csrc/full_word_map.h": "786f657d0dabdf0b429be86449099a10029133b69d8bcec8b181ef7b394c64cd",
+    "conv_rosa_transformer/csrc/pair_candidates.h": "26952e61c452cbeb1c7a38f2975fb1560971d895b11ca1255b3961f9a7f76c31",
+    "conv_rosa_transformer/csrc/subquadratic/correlation.h": "fc070fc453f5163dde43ed7e345ddfb416b387efb9635abee3ae4fb9736d50b7",
+    "conv_rosa_transformer/csrc/subquadratic/delete.h": "4b8ccb9223347e57b4680790f6ba8e37abe28e295d6833786c10ba28b22a54da",
+    "conv_rosa_transformer/csrc/subquadratic/engine.h": "051c29364e4041616205a843149bcb0a5658ad1fcd924e2aa1a42b76b9573711",
+    "conv_rosa_transformer/csrc/subquadratic/fingerprint_k.h": "4a964af845b41354b7104edf53b1ccaf33abe1f708e1d25d36ed5036ff14446f",
+    "conv_rosa_transformer/csrc/subquadratic/index.h": "e459842ca8c7487c59da734c0a395bdfd4aed438615a343f42a2588d791d02ce",
+    "conv_rosa_transformer/csrc/subquadratic/near_k.h": "35748df7989446d6c800b0f684806538cf70cfc93a97537312083737ea41c458",
+    "conv_rosa_transformer/csrc/subquadratic/q_frontier.h": "7777de2c9d238e1d4d133c4d02ecc5836f7e015e3a482ecc42c372f658dc98bc",
+    "conv_rosa_transformer/csrc/subquadratic/repair.h": "500c7900500798539fa71fd5f57de6faf7ad4181c2e3d3740d6c2e91476aeb53",
+    "conv_rosa_transformer/csrc/subquadratic/short_k.h": "ba2eb2775a16bc6ef540c1f4724bbd1ee8ccc84816c652539ff2f60e62023a73",
+    "conv_rosa_transformer/csrc/subquadratic/types.h": "faea870269abd39fd778ae6a0c9e677cb12980c7cae3b64e63be9ddad908da8e",
+    "conv_rosa_transformer/csrc/training.h": "05ad7e18c1567371ad9936b20ac58aa35b5760df9172a166d80f184a7401d97d",
+    "conv_rosa_transformer/csrc/training_impl.h": "ff056e8457001fa896276df7a205f9dbb52e4ec30c2494515aa2d2d60b52bb17"
+  },
+  "coverage": {
+    "bounded_hash": {
+      "status": "PASS",
+      "adversarial_collision_checks": 2304
+    },
+    "all_bit_core": {
+      "binary_integer_inputs": 5461,
+      "floating_inputs": 160,
+      "structured_inputs": 16,
+      "wide_inputs": 25,
+      "max_abs_error": 2.042810365310288e-14,
+      "floating_atol": 1e-10,
+      "floating_rtol": 1e-10
+    },
+    "diagonal_quadratic_credit": {
+      "single_bit_checks": 21588,
+      "max_abs_error": 5.684341886080802e-14,
+      "model": "supplied_nonnegative_output_diagonal",
+      "training_claim": false
+    },
+    "expansion_fraction": {
+      "exact_representation_checks": 4052,
+      "correct_rounding_checks": 4052,
+      "max_components": 61,
+      "results_with_more_than_two_components": 3822
+    },
+    "expansion_ordinary": {
+      "updates": 1000000,
+      "spills": 0,
+      "max_components": 2
+    },
+    "lean_forward_binary_pairs": 21845,
+    "lean_forward_hash_seeds": 4,
+    "lean_forward_seed_cases": 68,
+    "subquadratic_q_frontier": {
+      "status": "PASS",
+      "fixtures": 5641,
+      "accepted": 33816,
+      "rejected": 30,
+      "forward_rows": 104553
+    },
+    "subquadratic_training": {
+      "status": "PASS",
+      "cases": 19,
+      "abi_calls": 635,
+      "compared_gradient_values": 2166640,
+      "compared_joint_costs": 2016,
+      "literal_fixtures": 52,
+      "literal_route_rows": 206568,
+      "row_sampled_streams": 132,
+      "channel_sampled_streams": 78,
+      "max_absolute_error": 7.10543e-14,
+      "seconds": 0.10646
+    },
+    "subquadratic_correlation": {
+      "status": "PASS",
+      "queries": 217267,
+      "max_absolute_error": 0.5051555816677464,
+      "max_error_over_l1": 1.6600420029026923e-16,
+      "zero_outputs_with_roundoff": 0,
+      "adversarial_absolute_error": 0.5051555816677464
+    },
+    "subquadratic_delete": {
+      "status": "PASS",
+      "cases": 5660
+    },
+    "subquadratic_repair": {
+      "status": "PASS",
+      "cases": 5708,
+      "literal_rows": 5728965,
+      "light_boundary_checks": 1962677,
+      "seconds": 1.48473
+    },
+    "subquadratic_indexed_row": {
+      "status": "PASS",
+      "cases": 5896,
+      "selected_rows": 31336,
+      "credit_components": 111392,
+      "literal_routes": 1995800,
+      "max_absolute_error": 1.42109e-14,
+      "seconds": 0.0498578
+    },
+    "subquadratic_fingerprint_k": {
+      "status": "PASS",
+      "fixtures": 5682,
+      "accepted": 68168,
+      "rejected": 8,
+      "values": 491348
+    },
+    "subquadratic_short": {
+      "status": "PASS",
+      "cases": 6932,
+      "credit_elements": 85338,
+      "literal_route_checks": 985458,
+      "dominance_components": 84128,
+      "max_absolute_error": 5.68434e-14,
+      "seconds": 0.727732
+    }
+  }
+}

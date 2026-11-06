@@ -19,12 +19,91 @@ struct Word {
     int start=0,length=0,edit=-1,end=-1;
 };
 
+// Prefix classes of a sorted string list. Adjacent LCPs form a Cartesian
+// compact trie; a weighted-ancestor query then returns a whole prefix range
+// using integer ancestors, without comparing virtual strings at every step
+// of a binary search. All arrays are reused between bounded-size batches.
+class PrefixIntervals {
+    std::vector<int> depth_,parent_,lo_,hi_,left_,right_,stack_,order_;
+    std::vector<std::vector<int>> up_;
+    int count_=0;
+public:
+    template<class Length,class Common>
+    void build(int count,const Length& length,const Common& common) {
+        count_=count;if(!count)return;
+        const int nodes=2*count-1;
+        depth_.assign(nodes,0);parent_.assign(nodes,-1);lo_.resize(nodes);hi_.resize(nodes);
+        left_.assign(count,-1);right_.assign(count,-1);stack_.clear();
+        for(int i=0;i<count;++i){depth_[i]=length(i);lo_[i]=i;hi_[i]=i+1;}
+        for(int i=1;i<count;++i) {
+            const int current=count+i-1;depth_[current]=common(i-1,i);
+            int last=-1;
+            while(!stack_.empty() && depth_[current]<depth_[count+stack_.back()-1]) {
+                last=stack_.back();stack_.pop_back();
+            }
+            left_[i]=last;if(!stack_.empty())right_[stack_.back()]=i;stack_.push_back(i);
+        }
+        const int root=count==1?0:count+stack_.front()-1;
+        for(int i=1;i<count;++i) {
+            const int node=count+i-1;
+            const int a=left_[i]<0?i-1:count+left_[i]-1;
+            const int b=right_[i]<0?i:count+right_[i]-1;
+            parent_[a]=parent_[b]=node;
+        }
+        order_.clear();order_.push_back(root);
+        for(std::size_t at=0;at<order_.size();++at)if(order_[at]>=count) {
+            const int i=order_[at]-count+1;
+            order_.push_back(left_[i]<0?i-1:count+left_[i]-1);
+            order_.push_back(right_[i]<0?i:count+right_[i]-1);
+        }
+        for(auto it=order_.rbegin();it!=order_.rend();++it)if(*it>=count) {
+            const int i=*it-count+1;
+            const int a=left_[i]<0?i-1:count+left_[i]-1;
+            const int b=right_[i]<0?i:count+right_[i]-1;
+            lo_[*it]=lo_[a];hi_[*it]=hi_[b];
+        }
+        int levels=1;while((std::size_t(1)<<levels)<std::size_t(nodes))++levels;
+        up_.resize(levels);up_[0]=parent_;
+        for(int level=1;level<levels;++level) {
+            up_[level].resize(nodes);
+            for(int i=0;i<nodes;++i){const int p=up_[level-1][i];up_[level][i]=p<0?-1:up_[level-1][p];}
+        }
+    }
+    std::pair<int,int> interval(int leaf,int depth) const {
+        assert(leaf>=0 && leaf<count_ && depth_[leaf]>=depth);
+        int node=leaf;
+        // Most competitive short prefixes need only one or two ancestors.
+        // Bound the direct climb so repeated strings still take O(log n).
+        for(int step=0;step<4;++step) {
+            const int p=parent_[node];
+            if(p<0 || depth_[p]<depth)return {lo_[node],hi_[node]};
+            node=p;
+        }
+        for(int level=int(up_.size())-1;level>=0;--level) {
+            const int p=up_[level][node];if(p>=0 && depth_[p]>=depth)node=p;
+        }
+        return {lo_[node],hi_[node]};
+    }
+    std::size_t bytes() const {
+        std::size_t bytes=(depth_.capacity()+parent_.capacity()+lo_.capacity()+hi_.capacity()
+            +left_.capacity()+right_.capacity()+stack_.capacity()+order_.capacity())*sizeof(int);
+        for(const auto& row:up_)bytes+=row.capacity()*sizeof(int);
+        return bytes;
+    }
+};
+
 // The integer suffix array contains separate sentinels; virtual characters
 // are compared as their original uint64 values. In particular, UINT64_MAX
 // and bit 63 never pass through an overflowing symbol-plus-two operation.
 class VirtualIndex {
     const SuffixArray& suffix_;
     std::vector<std::uint64_t> letters_;
+    struct Neighbors {int position,left,right;};
+    PrefixIntervals query_prefixes_,word_prefixes_;
+    std::vector<Neighbors> word_neighbors_,query_neighbors_;
+    std::vector<int> word_ranks_;
+    const Word* prepared_words_=nullptr;
+    bool query_prefixes_ready_=false;
 public:
     int n;
     std::vector<Word> query_words;
@@ -100,11 +179,65 @@ public:
         }
         return {first,lo};
     }
-    std::pair<int,int> query_interval(const Word& word,int depth) const {
+    void prepare(const std::vector<Word>& words,const std::vector<int>& sorted) {
+        const int count=int(words.size());prepared_words_=words.data();
+        word_neighbors_.resize(count);query_neighbors_.resize(n);
+        word_ranks_.resize(count);for(int at=0;at<count;++at)word_ranks_[sorted[at]]=at;
+        if(!query_prefixes_ready_) {
+            query_prefixes_.build(n,[&](int i){return query_words[i].length;},
+                [&](int a,int b){return common(query_words[a],query_words[b]);});
+            query_prefixes_ready_=true;
+        }
+        word_prefixes_.build(count,[&](int i){return words[sorted[i]].length;},
+            [&](int a,int b){return common(words[sorted[a]],words[sorted[b]]);});
+        int q=0,w=0;
+        while(q<n || w<count) {
+            if(w<count && (q==n || compare(words[sorted[w]],query_words[q])<=0)) {
+                const int id=sorted[w++];const Word& word=words[id];
+                word_neighbors_[id]={q,q?common(word,query_words[q-1]):0,q<n?common(word,query_words[q]):0};
+            } else {
+                const Word& query=query_words[q];
+                query_neighbors_[q++]={w,w?common(query,words[sorted[w-1]]):0,w<count?common(query,words[sorted[w]]):0};
+            }
+        }
+    }
+    std::pair<int,int> word_interval(int row,int depth) const {
+        if(depth>row+1)return {0,0};
+        if(depth<=0)return {0,int(word_neighbors_.size())};
+        const Neighbors& at=query_neighbors_[row_rank[row]];
+        if(at.right>=depth)return word_prefixes_.interval(at.position,depth);
+        if(at.left>=depth)return word_prefixes_.interval(at.position-1,depth);
+        return {at.position,at.position};
+    }
+    bool prepared(const std::vector<Word>& words) const {
+        return prepared_words_==words.data() && word_ranks_.size()==words.size();
+    }
+    int word_rank(int word) const {return word_ranks_[word];}
+    int row_word_position(int row) const {return query_neighbors_[row_rank[row]].position;}
+    std::pair<int,int> query_interval(const Word& word,int depth,int id=-1) const {
+        if(depth>word.length)return {0,0};
+        if(depth<=0)return {0,n};
+        if(id>=0 && id<int(word_neighbors_.size()) && &word==prepared_words_+id) {
+            const Neighbors& at=word_neighbors_[id];
+            if(at.right>=depth)return query_prefixes_.interval(at.position,depth);
+            if(at.left>=depth)return query_prefixes_.interval(at.position-1,depth);
+            return {at.position,at.position};
+        }
         return interval(n,[&](int p)->const Word&{return query_words[p];},word,depth);
     }
+    int maximum_query_match(const Word& word,int id,int insertion) const {
+        if(id>=0 && id<int(word_neighbors_.size()) && &word==prepared_words_+id)
+            return std::max(word_neighbors_[id].left,word_neighbors_[id].right);
+        int longest=0;
+        if(insertion)longest=common(word,query_words[insertion-1]);
+        if(insertion<n)longest=std::max(longest,common(word,query_words[insertion]));
+        return longest;
+    }
     std::size_t bytes() const {
-        return letters_.capacity()*sizeof(std::uint64_t)+query_words.capacity()*sizeof(Word)+row_rank.capacity()*sizeof(int);
+        return letters_.capacity()*sizeof(std::uint64_t)+query_words.capacity()*sizeof(Word)+row_rank.capacity()*sizeof(int)
+            +(word_neighbors_.capacity()+query_neighbors_.capacity())*sizeof(Neighbors)
+            +word_ranks_.capacity()*sizeof(int)
+            +query_prefixes_.bytes()+word_prefixes_.bytes();
     }
 };
 
@@ -176,7 +309,23 @@ class SupportedWords {
     int n_,base_=1;
     std::vector<Center> centers_;
     std::vector<Group> groups_;
-    std::vector<int> maximum_;
+    std::vector<int> maximum_,lookup_;
+    static std::uint64_t hash(std::uint64_t value) {
+        value^=value>>30;value*=UINT64_C(0xbf58476d1ce4e5b9);
+        value^=value>>27;value*=UINT64_C(0x94d049bb133111eb);
+        return value^(value>>31);
+    }
+    const Group* find_group(std::uint64_t symbol) const {
+        const int id=lookup_[hash(symbol)&(lookup_.size()-1)];
+        if(id>=0)return groups_[id].symbol==symbol?&groups_[id]:nullptr;
+        if(id==-1)return nullptr;
+        // Collision buckets retain a sorted-search fallback. An empty or
+        // single-key bucket proves absence without probing unrelated groups;
+        // a collision can change work but cannot decide equality or absence.
+        const auto found=std::lower_bound(groups_.begin(),groups_.end(),symbol,
+            [](const Group& a,std::uint64_t b){return a.symbol<b;});
+        return found!=groups_.end()&&found->symbol==symbol?&*found:nullptr;
+    }
     int last(int node,int lo,int hi,int qlo,int qhi,int owner) const {
         if(lo>=qhi || hi<=qlo || maximum_[node]<=owner)return -1;
         if(qlo<=lo && hi<=qhi) {
@@ -210,15 +359,20 @@ public:
             if(groups_.empty() || groups_.back().symbol!=c.symbol)groups_.push_back(Group{c.symbol,i,i+1,c.position});
             else {groups_.back().hi=i+1;groups_.back().latest=std::max(groups_.back().latest,c.position);}
         }
+        std::size_t slots=8;while(slots<groups_.size()*4)slots*=2;
+        lookup_.assign(slots,-1);
+        for(int i=0;i<int(groups_.size());++i) {
+            int& slot=lookup_[hash(groups_[i].symbol)&(slots-1)];
+            slot=slot==-1?i:-2;
+        }
         while(base_<int(centers_.size()))base_*=2;
         maximum_.assign(std::size_t(base_)*2,-1);
         for(int i=0;i<int(centers_.size());++i)maximum_[base_+i]=centers_[i].position;
         for(int i=base_-1;i>0;--i)maximum_[i]=std::max(maximum_[2*i],maximum_[2*i+1]);
     }
     int right_extension(std::uint64_t symbol,int owner) const {
-        const auto group=std::lower_bound(groups_.begin(),groups_.end(),symbol,
-            [](const Group& a,std::uint64_t b){return a.symbol<b;});
-        if(group==groups_.end() || group->symbol!=symbol || group->latest<=owner)return -1;
+        const Group* group=find_group(symbol);
+        if(!group || group->latest<=owner)return -1;
         const int target=suffix_.rank[n_+owner+2];
         const int split=int(std::lower_bound(centers_.begin()+group->lo,centers_.begin()+group->hi,target,
             [](const Center& a,int b){return a.rank<b;})-centers_.begin());
@@ -229,8 +383,18 @@ public:
         if(after>=0)result=std::max(result,suffix_.lcp_rank(centers_[after].rank,target));
         return std::min(result,n_-owner-1);
     }
+    int sparse_centers(std::uint64_t symbol,int owner,int* output,int limit) const {
+        const Group* group=find_group(symbol);
+        if(!group || group->latest<=owner)return 0;
+        if(group->hi-group->lo>limit)return -1;
+        int count=0;
+        for(int i=group->lo;i<group->hi;++i)
+            if(centers_[i].position>owner)output[count++]=centers_[i].position;
+        return count;
+    }
     std::size_t bytes() const {
-        return centers_.capacity()*sizeof(Center)+groups_.capacity()*sizeof(Group)+maximum_.capacity()*sizeof(int);
+        return centers_.capacity()*sizeof(Center)+groups_.capacity()*sizeof(Group)
+            +(maximum_.capacity()+lookup_.capacity())*sizeof(int);
     }
 };
 
@@ -291,7 +455,7 @@ public:
             // the omitted unchanged winner still lower-bounds DelK.
             const int first_depth=crossing_only?std::max(parent_depth+1,words[node.word].edit+1):parent_depth+1;
             if(node.depth<first_depth)continue;
-            const auto interval=ix.query_interval(words[node.word],first_depth);
+            const auto interval=ix.query_interval(words[node.word],first_depth,node.word);
             if(interval.first==interval.second)continue;
             const int id=int(paints_.size());
             paints_.push_back(Paint{interval.first,interval.second,parent_depth+1,node.word,std::min(node.depth,cutoff)});
@@ -321,12 +485,21 @@ public:
                 std::pop_heap(heap_.begin(),heap_.end(),lower_priority);heap_.pop_back();
             }
             if(at==bounds_.size() || heap_.empty())continue;
-            const int hi=bounds_[at].first,word=paints_[heap_.front()].word,ceiling=paints_[heap_.front()].ceiling;
+            const int hi=bounds_[at].first,word=paints_[heap_.front()].word;
+            int ceiling=paints_[heap_.front()].ceiling;
             if(mask_lo[word]<0) {
-                const auto mask=words[word].length==cutoff+1?ix.query_interval(words[word],cutoff+1):std::pair<int,int>{0,0};
+                const auto mask=words[word].length==cutoff+1?ix.query_interval(words[word],cutoff+1,word):std::pair<int,int>{0,0};
                 mask_lo[word]=mask.first;mask_hi[word]=mask.second;
             }
             const int ml=mask_lo[word],mr=mask_hi[word];
+            if(words[word].length==cutoff+1 && ml==mr) {
+                // The long-mask search also locates the virtual word among
+                // all Q suffixes. If the mask is empty, its two neighbors
+                // give the actual maximum LCP. Long unused trie tails must
+                // not force deletion exceptions out to the nominal cutoff.
+                const int longest=ix.maximum_query_match(words[word],word,ml);
+                ceiling=std::min(ceiling,longest);
+            }
             if(mr<=lo || ml>=hi)append(lo,hi,word,ceiling);
             else {append(lo,std::min(hi,ml),word,ceiling);append(std::max(lo,mr),hi,word,ceiling);}
         }
@@ -396,8 +569,18 @@ public:
     }
     Route query(const VirtualIndex& ix,const std::vector<Word>& words,const int* sorted,const Word& row) const {
         if(!active_)return {};
+        const bool prepared=ix.prepared(words);
+        const auto local_rank=[&](int rank) {
+            int lo=0,hi=count_;
+            while(lo<hi) {
+                const int mid=lo+(hi-lo)/2;
+                if(ix.word_rank(sorted[mid])<rank)lo=mid+1;else hi=mid;
+            }
+            return lo;
+        };
         int lo=0,hi=count_;
-        while(lo<hi) {
+        if(prepared)lo=local_rank(ix.row_word_position(row.length-1));
+        else while(lo<hi) {
             const int mid=lo+(hi-lo)/2;
             if(ix.compare(words[sorted[mid]],row)<0)lo=mid+1;
             else hi=mid;
@@ -407,7 +590,9 @@ public:
         if(before>=0)length=ix.common(words[sorted[before]],row);
         if(after>=0)length=std::max(length,ix.common(words[sorted[after]],row));
         if(!length)return {};
-        const auto range=ix.interval(count_,[&](int p)->const Word&{return words[sorted[p]];},row,length);
+        auto range=prepared?ix.word_interval(row.length-1,length):
+            ix.interval(count_,[&](int p)->const Word&{return words[sorted[p]];},row,length);
+        if(prepared)range={local_rank(range.first),local_rank(range.second)};
         return Route{length,maximum(range.first,range.second)};
     }
     std::size_t bytes() const {return (tree_.capacity()+rank_by_end_.capacity())*sizeof(int);}
@@ -529,9 +714,13 @@ class Dominance {
     }
 public:
     Dominance(int n,int width,const std::vector<double>& weights)
-      : n_(n),width_(width),weights_(weights),tree_((std::size_t(n)+1)*width,0.0),dirty_(std::size_t(n)+1,0) {}
+      : n_(n),width_(width),weights_(weights) {}
     void add(const std::vector<Event>& points,const std::vector<Event>& queries,int dimensions,std::vector<double>& answers) {
         if(points.empty() || queries.empty())return;
+        if(tree_.empty()) {
+            tree_.assign((std::size_t(n_)+1)*width_,0.0);
+            dirty_.assign(std::size_t(n_)+1,0);
+        }
         answers_=&answers;events_.clear();events_.reserve(points.size()+queries.size());
         events_.insert(events_.end(),points.begin(),points.end());
         events_.insert(events_.end(),queries.begin(),queries.end());
@@ -571,12 +760,10 @@ inline void short_k(const Index& index,const Scores& scores,int bits,int cutoff,
 
     VirtualIndex ix(index);
     std::vector<Route> baseline(n);
-    std::vector<double> row_weights(std::size_t(n)*(d+1));
+    std::vector<double> row_weights;
     std::vector<int> end_offsets(std::size_t(n)+1,0),end_rows;
     for(int t=0;t<n;++t) {
         baseline[t]=index.best(t);
-        std::copy_n(scores.row(t),d,row_weights.data()+std::size_t(t)*(d+1));
-        row_weights[std::size_t(t)*(d+1)+d]=scores.score(t,baseline[t].end);
         if(active[t] && baseline[t].end>=0)++end_offsets[baseline[t].end+1];
     }
     std::partial_sum(end_offsets.begin(),end_offsets.end(),end_offsets.begin());
@@ -594,14 +781,31 @@ inline void short_k(const Index& index,const Scores& scores,int bits,int cutoff,
     std::vector<Event> points_a,points_b,queries_a,queries_b;
     std::vector<Piece> batch_pieces;
     std::vector<Job> jobs;std::vector<double> sums;
-    std::vector<int> exception_rows;int exception_owner=-1;
+    std::vector<int> exception_rows;int exception_owner=-1,exception_length=-1;
+    std::vector<Route> sparse_winners;
+    std::vector<int> sparse_rows;
     CompactTrie trie;ActiveDictionary dictionary;CausalWords causal_words;
     Dominance dominance(n,d+1,row_weights);
 
-    const auto collect_exceptions=[&](int owner) {
-        if(exception_owner==owner)return;
-        exception_owner=owner;exception_rows.clear();
-        const int finish=end_offsets[std::min(n,owner+cutoff+1)];
+    const auto record_workspace=[&]() {
+        const std::size_t bytes=ix.bytes()+(baseline.capacity()+sparse_winners.capacity())*sizeof(Route)
+            +row_weights.capacity()*sizeof(double)
+            +(end_offsets.capacity()+end_rows.capacity()+cursor.capacity()+word_dictionary.capacity()+lexical.capacity()+rank.capacity()+local_order.capacity()+placed.capacity()+mask_lo.capacity()+mask_hi.capacity()+exception_rows.capacity()+sparse_rows.capacity())*sizeof(int)
+            +active.capacity()+support.bytes()+words.capacity()*sizeof(Word)
+            +dictionaries.capacity()*sizeof(Dictionary)+jobs.capacity()*sizeof(Job)+sums.capacity()*sizeof(double)
+            +(points_a.capacity()+points_b.capacity()+queries_a.capacity()+queries_b.capacity())*sizeof(Event)
+            +batch_pieces.capacity()*sizeof(Piece)+trie.bytes()+dictionary.bytes()+dominance.bytes()+minimum.bytes()+causal_words.bytes();
+        stats.peak_workspace_bytes=std::max<std::uint64_t>(stats.peak_workspace_bytes,bytes);
+    };
+
+    const auto collect_exceptions=[&](int owner,int maximum_length) {
+        if(exception_owner==owner && exception_length==maximum_length)return;
+        exception_owner=owner;exception_length=maximum_length;exception_rows.clear();
+        if(!maximum_length)return;
+        // A baseline endpoint farther than maximum_length past the edit
+        // retains a longer untouched suffix after deletion. No short winner
+        // in this dictionary can improve it, so those rows are not exceptions.
+        const int finish=end_offsets[std::min(n,owner+maximum_length+1)];
         for(int p=end_offsets[owner];p<finish;++p) {
             const int t=end_rows[p];
             if(owner>=baseline[t].end-baseline[t].length+1)exception_rows.push_back(t);
@@ -615,6 +819,7 @@ inline void short_k(const Index& index,const Scores& scores,int bits,int cutoff,
         std::sort(lexical.begin(),lexical.end(),[&](int a,int b) {
             const int order=ix.compare(words[a],words[b]);return order?order<0:a<b;
         });
+        ix.prepare(words,lexical);
         rank.resize(count);local_order.resize(count);placed.assign(dictionaries.size(),0);
         for(int p=0;p<count;++p) {
             const int word=lexical[p],di=word_dictionary[word];rank[word]=p;
@@ -625,7 +830,6 @@ inline void short_k(const Index& index,const Scores& scores,int bits,int cutoff,
         points_a.clear();points_b.clear();jobs.clear();batch_pieces.clear();
         int earliest_late=n;
         for(const Dictionary& dict:dictionaries)earliest_late=std::min(earliest_late,dict.owner+dict.count);
-        const auto get_word=[&](int p)->const Word&{return words[lexical[p]];};
         const auto signed_interval=[&](std::vector<Event>& output,int lo,int hi,int t,bool tie) {
             if(lo>=hi)return;
             // Small prefix intervals are the sparse base case of this same
@@ -658,13 +862,13 @@ inline void short_k(const Index& index,const Scores& scores,int bits,int cutoff,
         };
         const auto build_points=[&]() {
           for(int t=earliest_late;t<n;++t)if(active[t] && baseline[t].length<=cutoff) {
-            const Word row=ix.row(t);const int length=baseline[t].length;
+            const int length=baseline[t].length;
             std::pair<int,int> exact{0,0},strict;
             if(length) {
-                exact=ix.interval(count,get_word,row,length);
+                exact=ix.word_interval(t,length);
                 if(exact.first==exact.second)continue;
-                strict=ix.interval(count,get_word,row,length+1,exact.first,exact.second);
-            } else strict=ix.interval(count,get_word,row,1);
+                strict=ix.word_interval(t,length+1);
+            } else strict=ix.word_interval(t,1);
             signed_interval(points_a,strict.first,strict.second,t,false);
             if(length) {
                 if(strict.first==strict.second)signed_interval(points_b,exact.first,exact.second,t,true);
@@ -686,15 +890,35 @@ inline void short_k(const Index& index,const Scores& scores,int bits,int cutoff,
             stats.short_words+=dict.count;
             if(has_late) {
                 trie.build(ix,words,sorted,dict.count,cutoff,mask_lo,mask_hi,true);
-                dict.piece_count=int(trie.pieces.size());
-                batch_pieces.insert(batch_pieces.end(),trie.pieces.begin(),trie.pieces.end());
                 stats.short_pieces+=trie.pieces.size();
                 for(const Piece& piece:trie.pieces) {
                     if(!(Route{piece.ceiling,words[piece.word].end}>minimum.query(piece.lo,piece.hi)))continue;
+                    // The two rank axes need symmetric sparse base cases.
+                    // A word-prefix interval can be large while its winning
+                    // Q-rank piece contains only a handful of rows. Evaluate
+                    // at most sixteen here, before constructing CDQ events.
+                    // The affected-baseline correction below remains shared.
+                    if(piece.hi-piece.lo<=16) {
+                        const Word& word=words[piece.word];
+                        for(int qr=piece.lo;qr<piece.hi;++qr) {
+                            const Word& row=ix.query_words[qr];const int t=row.length-1;
+                            if(t<=last_early || !active[t])continue;
+                            const Route original=baseline[t];
+                            if(!(Route{piece.ceiling,word.end}>original))continue;
+                            const Route candidate{ix.common(word,row),word.end};
+                            if(candidate>original)
+                                correction+=difference(scores,t,candidate.end,original.end);
+                        }
+                        continue;
+                    }
+                    batch_pieces.push_back(piece);
                     jobs.push_back(Job{owner,bit,piece.lo,piece.hi,piece.word,n-last_early-2});
                 }
+                dict.piece_count=int(batch_pieces.size())-dict.piece_first;
             } else trie.pieces.clear();
-            collect_exceptions(owner);bool prepared=false;
+            int maximum_length=0;
+            for(const Piece& piece:trie.pieces)maximum_length=std::max(maximum_length,piece.ceiling);
+            collect_exceptions(owner,maximum_length);bool prepared=false;
             int early=owner+1;std::size_t exceptional=0;
             while(early<=last_early || exceptional<exception_rows.size()) {
                 while(early<=last_early && !active[early])++early;
@@ -732,7 +956,15 @@ inline void short_k(const Index& index,const Scores& scores,int bits,int cutoff,
             }
             credits[std::size_t(owner)*bits+bit]+=correction;
         }
-        build_points();
+        if(!jobs.empty())build_points();
+
+        if((!points_a.empty() || !points_b.empty()) && row_weights.empty()) {
+            row_weights.resize(std::size_t(n)*(d+1));
+            for(int t=0;t<n;++t) {
+                std::copy_n(scores.row(t),d,row_weights.data()+std::size_t(t)*(d+1));
+                row_weights[std::size_t(t)*(d+1)+d]=scores.score(t,baseline[t].end);
+            }
+        }
 
         for(std::size_t start=0;start<jobs.size() && (!points_a.empty() || !points_b.empty());start+=n) {
             const int size=int(std::min<std::size_t>(n,jobs.size()-start));
@@ -756,17 +988,52 @@ inline void short_k(const Index& index,const Scores& scores,int bits,int cutoff,
                 credits[std::size_t(job.owner)*bits+job.bit]+=value;
             }
         }
-        const std::size_t bytes=ix.bytes()+baseline.capacity()*sizeof(Route)+row_weights.capacity()*sizeof(double)
-            +(end_offsets.capacity()+end_rows.capacity()+cursor.capacity()+word_dictionary.capacity()+lexical.capacity()+rank.capacity()+local_order.capacity()+placed.capacity()+mask_lo.capacity()+mask_hi.capacity()+exception_rows.capacity())*sizeof(int)
-            +active.capacity()+support.bytes()+words.capacity()*sizeof(Word)
-            +dictionaries.capacity()*sizeof(Dictionary)+jobs.capacity()*sizeof(Job)+sums.capacity()*sizeof(double)
-            +(points_a.capacity()+points_b.capacity()+queries_a.capacity()+queries_b.capacity())*sizeof(Event)
-            +batch_pieces.capacity()*sizeof(Piece)+trie.bytes()+dictionary.bytes()+dominance.bytes()+minimum.bytes()+causal_words.bytes();
-        stats.peak_workspace_bytes=std::max<std::uint64_t>(stats.peak_workspace_bytes,bytes);
+        record_workspace();
     };
 
     for(int owner=0;owner<last_active;++owner)for(int bit=0;bit<bits;++bit) {
         const std::uint64_t symbol=index.k[owner]^(std::uint64_t(1)<<bit);
+        std::array<int,16> centers;
+        const int centers_count=support.sparse_centers(symbol,owner,centers.data(),int(centers.size()));
+        if(centers_count>=0) {
+            if(!centers_count)continue;
+            if(sparse_winners.empty())sparse_winners.resize(n);
+            int extension=0;sparse_rows.clear();
+            // This is the sparse base case of the same edited dictionary.
+            // Each eligible center generates one affine candidate interval.
+            // With at most sixteen centers, direct winner accumulation costs
+            // O(cutoff) per dictionary and needs one reusable row buffer.
+            for(int i=0;i<centers_count;++i) {
+                const int u=centers[i];
+                const int left=owner?index.lcs(u-1,owner-1):0;
+                const int right=index.lce(u+1,owner+1);
+                const int until=std::min(cutoff,right);extension=std::max(extension,until);
+                for(int offset=0;offset<=until;++offset) {
+                    const int t=u+offset;if(!active[t])continue;
+                    const Route candidate{left+offset+1,owner+offset};
+                    Route& best=sparse_winners[t];
+                    if(!best.length)sparse_rows.push_back(t);
+                    if(candidate>best)best=candidate;
+                }
+            }
+            std::sort(sparse_rows.begin(),sparse_rows.end());
+            double correction=0.;
+            for(int t:sparse_rows) {
+                const Route candidate=sparse_winners[t];sparse_winners[t]={};
+                ++stats.short_exceptions;
+                if(candidate.length>cutoff)continue;
+                const Route original=baseline[t];
+                const bool affected=original.length && owner<=original.end && owner>=original.end-original.length+1;
+                const Route surviving=affected?(original.end>owner?Route{original.end-owner,original.end}:Route{}):original;
+                if(!(candidate>surviving))continue;
+                const Route deleted=affected?index.deleted(t,owner):original;
+                if(affected)++stats.suffix_queries;
+                if(candidate>deleted)correction+=difference(scores,t,candidate.end,deleted.end);
+            }
+            credits[std::size_t(owner)*bits+bit]+=correction;
+            stats.short_words+=extension+1;
+            continue;
+        }
         const int extension=support.right_extension(symbol,owner);
         if(extension<0)continue;
         // Endpoints beyond this bound cannot reach the changed bit. Any
@@ -783,6 +1050,7 @@ inline void short_k(const Index& index,const Scores& scores,int bits,int cutoff,
         }
     }
     process();
+    record_workspace();
 }
 
 } // namespace rosa_subq

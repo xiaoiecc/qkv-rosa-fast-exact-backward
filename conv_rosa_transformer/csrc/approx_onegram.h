@@ -16,13 +16,25 @@
 #define ROSA_ONEGRAM_PLAN_DEFINED
 namespace rosa_random {
 struct GramNeighbor {int bit,other;};
+struct GramGroups {
+    std::vector<int> offsets;
+    std::vector<GramNeighbor> edges;
+    struct Range {
+        std::vector<GramNeighbor>::const_iterator first,last;
+        auto begin()const{return first;}
+        auto end()const{return last;}
+    };
+    Range operator[](int group)const {
+        return {edges.begin()+offsets[group],edges.begin()+offsets[group+1]};
+    }
+};
 struct OnegramPlan {
     int n,d,nq=0,nk=0;
     const uint64_t*q;const uint64_t*k;
     rosa_exact::FullWordMap qmap,kmap;
     std::vector<uint64_t> qwords,kwords;
     std::vector<int> qclass,kclass,qo,ko,qrows,krows,qsame,ksame,first_neighbor;
-    std::vector<std::vector<GramNeighbor>> qneighbors,kneighbors;
+    GramGroups qneighbors,kneighbors;
     std::vector<int32_t> birth_prefix;
     uint64_t births=0,join_work=0;
     std::vector<int> first_use_[2],numeric_begin_[2];
@@ -52,7 +64,8 @@ struct OnegramPlan {
     cursor=ko;
     for(int t=0;t<n;++t)krows[cursor[kclass[t]]++]=t;
     // Build Hamming-one class edges once and use the same edges both ways.
-    qneighbors.resize(nq);kneighbors.resize(nk);
+    qneighbors.offsets.assign(nq+1,0);kneighbors.offsets.assign(nk+1,0);
+    qneighbors.edges.reserve(nq);
     qsame.assign(nq,-1);ksame.assign(nk,-1);
     uint64_t varying=0;
     for(uint64_t word:kwords)varying|=word^kwords.front();
@@ -69,10 +82,18 @@ struct OnegramPlan {
         [&](size_t id,uint64_t mask,const int*targets) {
             for(;mask;mask&=mask-1) {
                 const int bit=row_bit(mask&(~mask+1)),other=targets[bit];
-                qneighbors[id].push_back({bit,other});
-                kneighbors[other].push_back({bit,int(id)});
+                qneighbors.edges.push_back({bit,other});
+                ++kneighbors.offsets[other+1];
             }
+            qneighbors.offsets[id+1]=int(qneighbors.edges.size());
         },join_counts);
+    // One contiguous adjacency array per direction avoids a separate heap
+    // allocation for each symbol. Stable transposition preserves the exact
+    // class/bit iteration order used by the numerical control.
+    for(int id=0;id<nk;++id)kneighbors.offsets[id+1]+=kneighbors.offsets[id];
+    kneighbors.edges.resize(qneighbors.edges.size());cursor=kneighbors.offsets;
+    for(int id=0;id<nq;++id)for(const auto&edge:qneighbors[id])
+        kneighbors.edges[cursor[edge.other]++]={edge.bit,id};
     join_work=join_counts.direct_queries+join_counts.bucket_queries+join_counts.bucket_members;
     // A repair ending at t has a Q mismatch owner u=t-F[r], so u belongs
     // to [t-L[t],t]. Its K mismatch owner s is strictly before u. Mark
@@ -110,15 +131,38 @@ struct OnegramPlan {
     }
     }
 
+    // Retained vector capacities and dictionary payloads, excluding allocator
+    // bookkeeping and the caller-owned Q/K streams.
+    size_t workspace_bytes() const {
+        size_t bytes=qmap.workspace_bytes()+kmap.workspace_bytes();
+        bytes+=(qwords.capacity()+kwords.capacity())*sizeof(uint64_t);
+        bytes+=(qclass.capacity()+kclass.capacity()+qo.capacity()+ko.capacity()
+            +qrows.capacity()+krows.capacity()+qsame.capacity()+ksame.capacity()
+            +first_neighbor.capacity())*sizeof(int);
+        bytes+=birth_prefix.capacity()*sizeof(int32_t);
+        bytes+=(qneighbors.offsets.capacity()+kneighbors.offsets.capacity())*sizeof(int)
+            +(qneighbors.edges.capacity()+kneighbors.edges.capacity())*sizeof(GramNeighbor);
+        for(int mode=0;mode<2;++mode) {
+            bytes+=(first_use_[mode].capacity()+numeric_begin_[mode].capacity())*sizeof(int);
+            bytes+=prefix_offset_[mode].capacity()*sizeof(size_t);
+        }
+        return bytes;
+    }
+
     template<bool Quadratic>
     void apply(const uint8_t*v,const double*g,const double*h,
       const double*e0,const double*e1,const int32_t*actual_routes,
       double*cq,double*ck,uint64_t*stats,bool include_deletion=true,
-      const double*row_weight=nullptr) const {
+      const double*row_weight=nullptr,size_t* numeric_workspace=nullptr,
+      bool baseline_is_onegram=false) const {
+    if(numeric_workspace)*numeric_workspace=0;
     if(!n)return;
     stats[11]+=join_work;stats[14]=births;
     if(!include_deletion&&!births)return;
-    const int stride=Quadratic?3*d:d,mode=int(include_deletion);
+    // When the caller has certified every contributing baseline length <=1,
+    // each K interval's `from` is that actual baseline. Its quadratic cost
+    // needs only sum(G) and sum(H), not separate +/- baseline H buckets.
+    const int stride=Quadratic?(baseline_is_onegram?2*d:3*d):d,mode=int(include_deletion);
     const auto&first_use=first_use_[mode];
     const auto&numeric_begin=numeric_begin_[mode];
     const auto&prefix_offset=prefix_offset_[mode];
@@ -133,6 +177,10 @@ struct OnegramPlan {
             for(int j=0;j<d;++j) {
                 const size_t x=size_t(t)*d+j;dst[j]=prev[j]+(row_weight?g[x]*row_weight[t]:g[x]);
                 if constexpr(Quadratic) {
+                    if(baseline_is_onegram) {
+                        dst[d+j]=prev[d+j]+(row_weight?h[x]*row_weight[t]:h[x]);
+                        continue;
+                    }
                     // Empty-baseline rows can only appear in an interval
                     // whose onegram `from` is empty. Only total H is used
                     // there, so place it in the positive bucket.
@@ -151,13 +199,18 @@ struct OnegramPlan {
             const double delta=a-b;const size_t x=size_t(t)*d+j;
             result+=(row_weight?g[x]*row_weight[t]:g[x])*delta;
             if constexpr(Quadratic) {
-                const double y=actual_routes[t]<0?e0[j]:(2*int(v[size_t(actual_routes[t]+1)*d+j])-1)*e1[j];
-                result+=(.5*(row_weight?h[x]*row_weight[t]:h[x])*delta)*((a-y)+(b-y));
+                if(from==actual_routes[t])
+                    result+=(.5*(row_weight?h[x]*row_weight[t]:h[x])*delta)*delta;
+                else {
+                    const double y=actual_routes[t]<0?e0[j]:(2*int(v[size_t(actual_routes[t]+1)*d+j])-1)*e1[j];
+                    result+=(.5*(row_weight?h[x]*row_weight[t]:h[x])*delta)*((a-y)+(b-y));
+                }
             }
         }
         stats[12]+=d;return result;
     };
     std::vector<int> latest(nk,-1);
+    if(numeric_workspace)*numeric_workspace=prefix.capacity()*sizeof(double)+latest.capacity()*sizeof(int);
     for(int t=0;t<n;++t) {
         if(t)latest[kclass[t-1]]=t-1;
         const int id=qclass[t],from=qsame[id]<0?-1:latest[qsame[id]];
@@ -169,13 +222,11 @@ struct OnegramPlan {
             if(to>=0)cq[size_t(t)*d+neighbor.bit]+=row_score(t,to,-1);
         }
     }
-    auto interval_score=[&](int id,int left,int right,int to,int from)->double {
-        if(to==from||left>=right)return 0.;
-        const auto begin=qrows.begin()+numeric_begin[id],end=qrows.begin()+qo[id+1];
-        const auto lo=std::lower_bound(begin,end,left),hi=std::lower_bound(lo,end,right);
-        if(lo==hi)return 0.;
+    auto interval_score=[&](int id,int lo,int hi,int to,int from)->double {
+        if(to==from||lo>=hi)return 0.;
         const double*start=prefix.data()+prefix_offset[id]*stride;
-        const double*upper=start+size_t(hi-begin)*stride,*lower=start+size_t(lo-begin)*stride;
+        const double*upper=start+size_t(hi-numeric_begin[id])*stride;
+        const double*lower=start+size_t(lo-numeric_begin[id])*stride;
         double result=0.;
         for(int j=0;j<d;++j) {
             const double a=to<0?e0[j]:(2*int(v[size_t(to+1)*d+j])-1)*e1[j];
@@ -183,35 +234,55 @@ struct OnegramPlan {
             const double delta=a-b;
             result+=(upper[j]-lower[j])*delta;
             if constexpr(Quadratic) {
-                const double hp=upper[d+j]-lower[d+j],hn=upper[2*d+j]-lower[2*d+j];
-                result+=(.5*delta*delta)*(hp+hn);
-                // Every interval's `from` is its unedited onegram route.
-                // If it is empty the full baseline is empty as well. If
-                // matched, full-baseline values are exactly +/- e1; form
-                // their differences first, before multiplying the metric.
-                if(from>=0)result+=delta*((b-e1[j])*hp+(b+e1[j])*hn);
+                if(baseline_is_onegram)result+=(.5*delta*delta)*(upper[d+j]-lower[d+j]);
+                else {
+                    const double hp=upper[d+j]-lower[d+j],hn=upper[2*d+j]-lower[2*d+j];
+                    result+=(.5*delta*delta)*(hp+hn);
+                    // Every interval's `from` is its unedited onegram route.
+                    // If it is empty the full baseline is empty as well. If
+                    // matched, full-baseline values are exactly +/- e1; form
+                    // their differences first, before multiplying the metric.
+                    if(from>=0)result+=delta*((b-e1[j])*hp+(b+e1[j])*hn);
+                }
             }
         }
         ++stats[13];stats[12]+=d;return result;
     };
-    for(int id=0;id<nk;++id)for(int index=ko[id];index<ko[id+1];++index) {
-        const int s=krows[index];if(s+1>=n)continue;
-        const int previous=index>ko[id]?krows[index-1]:-1;
-        const int next=index+1<ko[id+1]?krows[index+1]:n;
-        if(ksame[id]>=0&&include_deletion) {
-            const double deletion=interval_score(ksame[id],s+1,std::min(n,next+1),previous,s);
+    // For one owner and bit there is at most one neighboring Q class.
+    // Delete first, then visit each class edge in increasing owner order:
+    // this preserves the arithmetic order of every output coordinate while
+    // merging sorted occurrence lists instead of repeating binary searches.
+    if(include_deletion)for(int id=0;id<nk;++id)if(ksame[id]>=0) {
+        const int qid=ksame[id],qend=qo[qid+1];
+        int lo=numeric_begin[qid],hi=lo;
+        for(int index=ko[id];index<ko[id+1];++index) {
+            const int s=krows[index];if(s+1>=n)break;
+            const int previous=index>ko[id]?krows[index-1]:-1;
+            const int next=index+1<ko[id+1]?krows[index+1]:n;
+            while(lo<qend && qrows[lo]<=s)++lo;
+            hi=std::max(hi,lo);
+            while(hi<qend && qrows[hi]<=next)++hi;
+            const double deletion=interval_score(qid,lo,hi,previous,s);
             if(deletion!=0.)for(int j=0;j<d;++j)ck[size_t(s)*d+j]+=deletion;
         }
-        for(const auto&neighbor:kneighbors[id]) {
-            const int qid=neighbor.other,kid=qsame[qid];
+    }
+    for(int id=0;id<nk;++id)for(const auto&neighbor:kneighbors[id]) {
+        const int qid=neighbor.other,kid=qsame[qid],qend=qo[qid+1];
+        int lo=numeric_begin[qid],hi=lo;
+        int next_match=kid<0?0:ko[kid];
+        const int match_end=kid<0?0:ko[kid+1];
+        for(int index=ko[id];index<ko[id+1];++index) {
+            const int s=krows[index];if(s+1>=n)break;
             int before=-1,after=n;
             if(kid>=0) {
-                const auto begin=krows.begin()+ko[kid],end=krows.begin()+ko[kid+1];
-                const auto it=std::lower_bound(begin,end,s);
-                if(it!=begin)before=*(it-1);
-                if(it!=end)after=*it;
+                while(next_match<match_end && krows[next_match]<s)++next_match;
+                if(next_match>ko[kid])before=krows[next_match-1];
+                if(next_match<match_end)after=krows[next_match];
             }
-            ck[size_t(s)*d+neighbor.bit]+=interval_score(qid,s+1,std::min(n,after+1),s,before);
+            while(lo<qend && qrows[lo]<=s)++lo;
+            hi=std::max(hi,lo);
+            while(hi<qend && qrows[hi]<=after)++hi;
+            ck[size_t(s)*d+neighbor.bit]+=interval_score(qid,lo,hi,s,before);
         }
     }
     }

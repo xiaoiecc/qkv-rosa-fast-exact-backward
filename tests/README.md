@@ -27,13 +27,32 @@ sufficient. The optional CUDA transfer check is skipped when CUDA is absent.
 | `test_approx_row_certificate` | Exhaustive exact-zero certificates against independent edited routes; no research backend is imported |
 | `test_expansion` | Exact dyadic expansion and rounding against Python rational arithmetic |
 | `test_validation` | Input conversion boundaries and rejected complex/integer adjoints |
-| `test_structures` | C++ deletion, Q/long-K repair, compact short-K repair and complete C ABI oracles |
+| `test_bounded_hash` | Deliberately colliding full words, adjacent pairs and SAM transitions force the bounded-probe ordered fallback |
+| `test_structures` | C++ deletion, bounded Q frontier, Q/long-K repair, compact short/near K repair, complete residual rows and C ABI oracles |
 
 The C++ structural oracles include `subquadratic_delete.cpp`,
 `subquadratic_repair.cpp`, `subquadratic_short.cpp` and
 `subquadratic_training.cpp`. `subquadratic_correlation.cpp` independently tests
 shifted interval contractions, dimension 65, multiple FFT block sizes and severe
 cancellation. Its result is also checked by `test_subquadratic_engine`.
+
+`subquadratic_q_frontier.cpp` compares both repair-only and full-Q results with
+literal edited routes; separate fixtures force the live-count and transition
+budgets to reject without changing credit or statistics. The short-K oracle
+also checks the two exact half witnesses and shared deletion summaries in
+`near_k.h`. `subquadratic_indexed_row.cpp` checks full row repair and its
+one-symbol residual separately, including adjacent/gapped rows, noninteger
+weights, curvature-only scores and bit 63.
+
+`subquadratic_fingerprint_k.cpp` forces window-fingerprint collisions as well
+as ordinary full-width hashes, verifies complete and repair-only K credit,
+checks budget rejection without writes, and compares long binary fixtures
+with literal selected bit edits. Fingerprints select candidates; exact
+matching establishes every winning route.
+
+For address and undefined-behavior checks, run `python tests/sanitize.py
+--jobs 2 --output build/sanitizers.json`. In environments that cannot run
+LeakSanitizer, add `--no-leaks`; the receipt records this choice explicitly.
 
 ## Numerical and randomization contracts
 
