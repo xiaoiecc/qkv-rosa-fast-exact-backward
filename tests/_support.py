@@ -16,7 +16,7 @@ def source_hashes():
     # The ordinary layer now delegates to production joint/candidate helpers.
     # A validation snapshot must cover those files, not just the C++ wrapper.
     paths = sorted((ROOT / "conv_rosa_transformer").glob("*.py"))
-    paths += sorted(CSRC.glob("*.cpp")) + sorted(CSRC.glob("*.h"))
+    paths += sorted(CSRC.glob("*.cpp")) + sorted(CSRC.rglob("*.h"))
     return {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
             for p in paths if p.is_file()}
 

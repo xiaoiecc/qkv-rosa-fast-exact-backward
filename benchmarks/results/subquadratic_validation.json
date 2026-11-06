@@ -1,0 +1,115 @@
+{
+  "status": "PASS",
+  "exhaustive": true,
+  "seconds": 64.44554942600007,
+  "tests_run": 64,
+  "skipped": 1,
+  "source_unchanged": true,
+  "source_sha256": {
+    "conv_rosa_transformer/__init__.py": "aa263607d3d1dd3409bc58474182ee3ceb512d8664fd0cd02da4e583d168f1f8",
+    "conv_rosa_transformer/build.py": "2b8d99aa72bad85bbe3d4be87e903d5d738f384e64ed784563ea2a8c60b94ee7",
+    "conv_rosa_transformer/causal_candidates.py": "56cdcc4f8be7224016d608d59ac285081cda52f13bfe83fe51000068bfde4fdc",
+    "conv_rosa_transformer/joint_credit.py": "d549df96b4738e55c8923099067459cd41c3003002b6cc5dabb32117c8e76ce0",
+    "conv_rosa_transformer/multiply_demo.py": "a4c5a77e16dcd0dabc69696a5d0193309cb0ef0f396f9810ccf50907011cbd8b",
+    "conv_rosa_transformer/native_training.py": "ba84045721f6de7fc887c7ba2964df9487dd8bd4a20a4743fdf6ff7fad9419e7",
+    "conv_rosa_transformer/overfit_test.py": "62231f4a62f5ac73258e510c862a3787e8c9fcd2f885f8b18c501819601122be",
+    "conv_rosa_transformer/rosa_core.py": "5e9d499f256e6def82e1043e172cf9a9ba2f8e9153e5813c100cf3f36910ac87",
+    "conv_rosa_transformer/rosa_layer.py": "c9120b5560cf8959397e116b5bed1203b7d2c17662ddb3f169de6790fef15a18",
+    "conv_rosa_transformer/rosa_reference.py": "d5b43210aff0dbabf134878db03780bb9cfa2acfe188c6f0efa9ed5d6c1e31e7",
+    "conv_rosa_transformer/rosa_transformer.py": "5d6dfb59f6ebbc2a10539f128d051d937a22dcef80c9ae16b8fb30ff4f5d2f62",
+    "conv_rosa_transformer/self_test.py": "fea5f2ca387f73abd34342fb641e24c4f335c58ac3329e6d3309ec283f7a160e",
+    "conv_rosa_transformer/csrc/unified_core.cpp": "6ba2322c98ec91699426942017e3f4b74e69d803a5dfce1da442e6a167a9d9be",
+    "conv_rosa_transformer/csrc/approx_channel_pivotal.h": "a72e48d625622e51c1d9fdcc9480e9b7e884b3ef70cbaf2639c6eb06365be960",
+    "conv_rosa_transformer/csrc/approx_indexed_row.h": "2b1a9c6fd375a9309a3268fb7bc358bbc10a358f85302faa9b776fad0a0e8a49",
+    "conv_rosa_transformer/csrc/approx_onegram.h": "222604c2918292ac29c9fc30b5ed235e204fd3d0f2aad08fbaae74d3d23ef270",
+    "conv_rosa_transformer/csrc/approx_route_helpers.h": "c246fd1ce1c10466d050a89b5b46ee1baa962194158c363a38005ba40d03b86b",
+    "conv_rosa_transformer/csrc/approx_row_certificate.h": "004e90f96c496a0f8392345328b012d8e76b279c3943c8cd78793044e83aeefd",
+    "conv_rosa_transformer/csrc/approx_sampling.h": "8d1bcfdbd6138281f28b1a83ac3ad0bdd39c5a02109fce20f566426883b91b3e",
+    "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+    "conv_rosa_transformer/csrc/exact_hamming_join.h": "4333e7f7df75b558800b40887c5e8661089dddada999f865bf1f9631f4aa15c1",
+    "conv_rosa_transformer/csrc/forward.h": "76a0d37bfb258de0fb9fcaa2a6ad63a91a997dc5bb98b13aaa0ea606df043c26",
+    "conv_rosa_transformer/csrc/full_word_map.h": "3f886d5ffd63284af5273a8d275049838474071b541de10d0d035ffe6fd0479b",
+    "conv_rosa_transformer/csrc/pair_candidates.h": "26952e61c452cbeb1c7a38f2975fb1560971d895b11ca1255b3961f9a7f76c31",
+    "conv_rosa_transformer/csrc/subquadratic/correlation.h": "2b5e4efb4c5fd336525a0170f9e5fbf70d6911c05b271c2b8045738302540c8a",
+    "conv_rosa_transformer/csrc/subquadratic/delete.h": "7cf8bda9abfbb39655f3d3bca61fa8b9ab00508e8562f088e7ed13676371668c",
+    "conv_rosa_transformer/csrc/subquadratic/engine.h": "5b02eb362905843f0b1825907e3578d33d4dc21f28fcc84d08834fda05500649",
+    "conv_rosa_transformer/csrc/subquadratic/index.h": "4b816cd107fd292d0353065d139ed15345b1960f08d8cad9b62b612a11ee03c9",
+    "conv_rosa_transformer/csrc/subquadratic/repair.h": "4291ab72e08f1d90c055b6b67e6c38562ccd1c9b1628640f3e3f0ed8a7620a84",
+    "conv_rosa_transformer/csrc/subquadratic/short_k.h": "390e71922af2eb111e0364fd634bdbcb4069e76ea6bef733dfb306400fc619ca",
+    "conv_rosa_transformer/csrc/subquadratic/types.h": "faea870269abd39fd778ae6a0c9e677cb12980c7cae3b64e63be9ddad908da8e",
+    "conv_rosa_transformer/csrc/training.h": "05ad7e18c1567371ad9936b20ac58aa35b5760df9172a166d80f184a7401d97d",
+    "conv_rosa_transformer/csrc/training_impl.h": "9f76e5e3c5e62e7498331eae9adc9ac694b58dcc7caa2daea341e5f888b7b3fa"
+  },
+  "coverage": {
+    "all_bit_core": {
+      "binary_integer_inputs": 5461,
+      "floating_inputs": 160,
+      "structured_inputs": 16,
+      "wide_inputs": 25,
+      "max_abs_error": 2.398081733190338e-14,
+      "floating_atol": 1e-10,
+      "floating_rtol": 1e-10
+    },
+    "diagonal_quadratic_credit": {
+      "single_bit_checks": 21588,
+      "max_abs_error": 5.684341886080802e-14,
+      "model": "supplied_nonnegative_output_diagonal",
+      "training_claim": false
+    },
+    "expansion_fraction": {
+      "exact_representation_checks": 4052,
+      "correct_rounding_checks": 4052,
+      "max_components": 61,
+      "results_with_more_than_two_components": 3822
+    },
+    "expansion_ordinary": {
+      "updates": 1000000,
+      "spills": 0,
+      "max_components": 2
+    },
+    "lean_forward_binary_pairs": 21845,
+    "lean_forward_hash_seeds": 4,
+    "lean_forward_seed_cases": 68,
+    "subquadratic_training": {
+      "status": "PASS",
+      "cases": 19,
+      "abi_calls": 635,
+      "compared_gradient_values": 2166640,
+      "compared_joint_costs": 2016,
+      "literal_fixtures": 52,
+      "literal_route_rows": 206568,
+      "row_sampled_streams": 132,
+      "channel_sampled_streams": 84,
+      "max_absolute_error": 6.57252e-14,
+      "seconds": 0.150404
+    },
+    "subquadratic_correlation": {
+      "status": "PASS",
+      "queries": 217157,
+      "max_absolute_error": 0.5051555816677464,
+      "max_error_over_l1": 1.6600420029026923e-16,
+      "zero_outputs_with_roundoff": 0,
+      "adversarial_absolute_error": 0.5051555816677464
+    },
+    "subquadratic_delete": {
+      "status": "PASS",
+      "cases": 5660
+    },
+    "subquadratic_repair": {
+      "status": "PASS",
+      "cases": 5707,
+      "literal_rows": 5926137,
+      "light_boundary_checks": 2061897,
+      "seconds": 1.77921
+    },
+    "subquadratic_short": {
+      "status": "PASS",
+      "cases": 6924,
+      "credit_elements": 84186,
+      "literal_route_checks": 924594,
+      "dominance_components": 84128,
+      "max_absolute_error": 5.68434e-14,
+      "seconds": 0.402913
+    }
+  }
+}

@@ -57,59 +57,55 @@ candidate has one mismatch at the edited bit and exact matches everywhere else.
 The flipped route is the lexicographic maximum of delete and repair. A V flip
 changes only the value of outputs already routed to that payload.
 
-The production implementation applies this same decomposition on every input.
-Its data structures exploit exact structural certificates within the algorithm:
+The engine represents these choices without enumerating every edit/time pair:
 
-* A suffix automaton advances ordinary edited Q suffixes. Its terminal-order
-  occurrence chain activates endpoints as they become causal. Reporting visits
-  current occurrences without scanning future entries. Latest-endpoint queries
-  can return directly when an exact upper-bound or contiguity certificate holds.
+* Repeated occurrences of a long context inside a short window form an
+  arithmetic progression. Deletion streams use that progression and its
+  capped-affine suffix lengths, with explicit boundary exceptions.
+* Q repair divides suffix contexts by occurrence count. Frequent contexts
+  produce shared winner intervals; rare contexts enumerate only their few
+  possible sources.
+* K repair divides by context length. Short contexts become virtual edited
+  suffix words and offline dominance queries. Long contexts cross a block
+  anchor; their exact extensions and blocker inequalities produce intervals.
+* An interval route ends at t + beta. Its numeric contribution is a restricted
+  shifted correlation. Shared FFT blocks and direct fringes evaluate these
+  correlations without expanding all interval rows.
 
-* The deletion index represents endpoint/length families with formula intervals.
-  If Q's equal-character suffix has length h and a matching K run begins at l,
-  then F_t(r)=min(h,r-l+1), except at the single simultaneous boundary r=l+h-1.
-  That boundary receives a genuine suffix query, since matching may cross both
-  runs. Intersections with the other deletion envelope are solved as linear
-  inequalities; compressed families need not be expanded into all owners.
+The thresholds balance costs inside this one algorithm. They do not select
+kernels for particular input families. The two full tutorials start from the
+literal O(D*T**4) counterfactual implementation and derive these representations:
+ALGORITHM.md and ALGORITHM.zh-CN.md. Independent naive functions remain only
+as definitions and small-input test oracles.
 
-* An edited Q suffix may leave ordinary SAM processing only if its *short full
-  edited suffix* occurs once in the full K stream and has a matching next step.
-  Its remaining route then has the form (t+alpha, t+beta), up to a certified
-  extension endpoint. A mismatch permanently ends this family. Q credits use
-  interval snapshots; K candidates share heaps keyed by their fixed owner/bit.
-  Ordinary states and these certified families contribute to the same maximum.
+4. Complexity, training choices and numeric scope
+=================================================
+For fixed bit width, numeric dimension and selected joint-pair budget, the
+proved bounds are soft-O(T**(7/4)) time and soft-O(T**(4/3)) working space.
+Width-dependent terms are given in the tutorial; finite-length timings also
+depend on the actual number of intervals and query fringes. A better worst-case
+bound does not guarantee faster execution on every input.
 
-* Numeric contraction follows these representations. Moving payload endpoints
-  use owner ranges with two gradient buckets per baseline bit; equal payload
-  bits cancel structurally. Shared payload classes reuse dot products under
-  a fixed admission bound of at most 4D classes, with at most 4TD cached doubles.
+The default adds a diagonal output trust penalty to Q/K route credits and a
+small number of disjoint joint-bit corrections. Select credit_order="first"
+for the original linear finite credit. V stays linear. Both fit the usual
+model forward / loss.backward() / optimizer.step() loop.
 
-Read the current English/Chinese explanations in ALGORITHM.md and ALGORITHM.zh-CN.md
-alongside ``conv_rosa_transformer/csrc``. The implementation is split into small
-files for the deletion index, suffix structures, accumulation, and orchestration;
-there is one production credit engine. This teaching module re-exports it.
+randomized=True enables a bounded full-key verified cache: its hits cannot
+change route or numerical outputs. backward_mode="approximate" explicitly
+opts into a residual-row estimator, or centered-feature PPS with a positive
+approximation_channels budget. These noisy choices have no universal loss
+or relative-error guarantee.
 
-4. Complexity and numerical scope
-=================================
-Costs depend on actual ordinary edited-state visits, causal occurrences,
-compressed deletion records, and the lifetimes of certified families. The sum
-of family lifetimes can remain Theta(T**2). Compression substantially changes
-work on repeated structure but does not establish a generally subquadratic
-worst-case algorithm. A suffix state is not automatically O(1) work, and a
-compact route family is not automatically O(1) numeric contraction work.
+Routing is exact integer logic. Numeric contractions use binary64 with
+expansion accumulation of already rounded events, plus FFT where profitable.
+This is not exact real arithmetic or a promise of bitwise equality with an
+older reduction order. Cache on/off is bitwise equal within this engine.
+Strongly cancelling values can still have substantial relative error.
 
-Routing uses exact unsigned symbols and integer comparisons. Numeric credits
-use binary64 arithmetic, with error-free expansion accumulation for cancellation-
-sensitive ranges and snapshots. Nonzero residuals are retained, growing beyond
-inline storage when required. Already rounded dot-product events do not become
-arbitrary-precision real arithmetic. Float outputs are compared with documented
-tolerances; the implementation does not promise bitwise parity with another
-summation order. Compilation preserves the required floating-point semantics.
-
-The core is CPU code. PyTorch layers accept their normal tensor device and
-explicitly transfer routing/credit inputs to CPU. GPU tensors incur transfers
-and synchronization; CPU core measurements are not GPU or training throughput
-measurements.
+The core is CPU code. The PyTorch adapter accepts its normal tensor device,
+but CUDA tensors incur CPU transfers and synchronization. Component timings
+do not measure a whole Transformer or a GPU kernel.
 
 5. Running the implementation and the independent audit
 =======================================================

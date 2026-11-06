@@ -3,7 +3,12 @@
 // apply() adds into caller-owned Q/K arrays.
 // Each apply reports construction counters once; callers reusing the plan for
 // multiple applies should count join_work once in their aggregate statistics.
-#include "sam_q.h"
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <numeric>
+#include <vector>
+#include "exact_expansion.h"
 #include "full_word_map.h"
 #include "exact_hamming_join.h"
 #include "approx_route_helpers.h"
@@ -24,7 +29,7 @@ struct OnegramPlan {
     std::vector<size_t> prefix_offset_[2];
 
     OnegramPlan(const uint64_t*q_,const uint64_t*k_,int n_,int d_,
-        uint64_t seed=rosa_exact::SamQRepairs::process_hash_seed())
+        uint64_t seed=UINT64_C(0x243f6a8885a308d3))
       : n(n_),d(d_),q(q_),k(k_),qmap(size_t(n_),seed),
         kmap(size_t(n_),seed^UINT64_C(0xd6e8feb86659fd93)),
         qclass(n_),kclass(n_),qrows(n_),krows(n_),birth_prefix(size_t(n_)+1,0) {

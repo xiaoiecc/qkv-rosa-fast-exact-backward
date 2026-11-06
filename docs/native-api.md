@@ -1,73 +1,52 @@
 # Standalone C++ training API
 
-The selected production rule is implemented in C++17. The Python layer only
-performs dense projections, layout/device conversion, and ordinary autograd
-bookkeeping. There is one batched native forward call and one batched native
-backward call; there is no Python loop over streams in the layer.
+[Training guide](native-training.md) · [Algorithm](../ALGORITHM.md) · [Current measurements](subquadratic-results.md)
 
-Public declarations are in
-[`training.h`](../conv_rosa_transformer/csrc/training.h), implementation in
-[`training_impl.h`](../conv_rosa_transformer/csrc/training_impl.h), and thin
-NumPy bindings in [`native_training.py`](../conv_rosa_transformer/native_training.py).
-The implementation is included by the same `unified_core.cpp` that supplies
-the single-bit engine. It reuses the existing lean `SamForward` and unified
-deletion/repair algorithm; it does not embed a second optimized kernel.
+One C++17 implementation provides the hard forward and subquadratic credit computation. The C complete and approximate backward functions are entry points into that same engine. There is no engine selector. Python performs projections, array/device conversion, and normal autograd bookkeeping; a batch/group collection is processed in one native call.
 
-The default is **exact backward with randomized search**: C options use
-`randomized=1`, and the Python layer uses `backward_mode="exact",
-randomized=True`. Randomized search checks complete keys, preserves numerical
-accumulation order, and falls back to direct lookup when appropriate. With
-the same inputs, credit rule and seeds, turning this exact acceleration on or
-off preserves the native gradient outputs bit for bit. Search-work counters
-may differ. This contract does not describe the optional approximate API,
-which may reorder floating-point sums or sample numerical corrections.
+Public declarations: [training.h](../conv_rosa_transformer/csrc/training.h). Implementation: [training_impl.h](../conv_rosa_transformer/csrc/training_impl.h). NumPy adapter: [native_training.py](../conv_rosa_transformer/native_training.py).
 
-See the [randomized-backward tutorial](randomized-backward.md) for the
-derivation and the [measurements and training results](randomized-results.md)
-for speed, error and counterexamples. Both have linked Chinese editions.
-
-## Build without a framework
-
-From the repository root:
+## Build and call
 
 ```bash
 c++ -O3 -std=c++17 -ffp-contract=off examples/native_training.cpp \
     conv_rosa_transformer/csrc/unified_core.cpp -o /tmp/rosa-native
 /tmp/rosa-native
+/tmp/rosa-native --first --deterministic
+/tmp/rosa-native --approximate
 ```
 
-The [complete example](../examples/native_training.cpp) constructs options,
-packs hard Q/K/V through the native forward, computes one output gradient, and
-calls the native backward. It needs no Python, NumPy, Torch headers, or CUDA.
-`training.h` itself is C-compatible; its implementation is compiled as C++17.
+The example needs no Python, NumPy, PyTorch headers, or CUDA. `training.h` is C-compatible; compile its implementation as C++17. Initialize options through `rosa_training_defaults` and `rosa_approximation_defaults`, rather than hard-coding layouts or uninitialized fields.
 
-## Options and seeds
-
-Call `rosa_training_defaults(&options)` before setting individual fields.
-**`RosaTrainingOptions` remains ABI version 1 with its original layout.** The
-original `rosa_training_forward` and `rosa_training_backward` signatures are
-unchanged. Approximation has a separate options struct and backward entry
-point; no approximation fields were appended to `RosaTrainingOptions`.
-Both option structs carry `abi_version` and `struct_size`; unsupported
-versions or sizes return status 1.
-
-| Field | Meaning |
+| Function | Purpose |
 |---|---|
-| `credit_order` | 1 = original first-order singleton credits; 2 = diagonal trust plus independent joint blocks |
-| `randomized` | 0 or 1; default 1. Answer-exact randomized root preparation; it never requests repair thinning or numerical approximation |
-| `logit_mode` | 0 = oriented finite credit times sigmoid derivative; 1 = oriented identity mapping |
-| `joint_pairs` | Maximum disjoint two-bit blocks per stream; default 1 |
-| `joint_rows` | Maximum proposal query rows; default 32 |
-| `active_rows` | 1 = nonzero upstream-gradient rows, 0 = evenly spaced input rows |
-| `tau` | Positive sigmoid temperature; default 1 |
-| `trust_diagonal` | Default 0.5, equivalent to gradient norm divided by output-set diameter |
-| `proposal_seed` | Joint proposal seed, frozen for this forward/backward |
-| `repair_seed` | Independent seed for exact root layout and optional explicit repair sampling |
-| `repair_budget` | Default 0 = complete exact repair computation; positive = legacy research estimator, independently selected. Must be 0 with `rosa_training_backward_approx` |
+| `rosa_training_forward` | Pack hard Q/K/V, run the causal matcher, return output and saved routes |
+| `rosa_training_backward` | Complete finite-credit computation, logit mapping, embedding gradients and bounded joint corrections |
+| `rosa_training_backward_approx` | Same local rule with explicit residual-row or numerical-channel estimation |
+| `rosa_training_backward_subquadratic` | Detailed alias for the same engine, accepting an optional approximation description and a structural diagnostic buffer |
 
-The C struct is explicit: `rosa_training_defaults` initializes the complete
-second-order configuration (`credit_order=2`, `joint_pairs=1`,
-`trust_diagonal=0.5`). To select first order, change all three related fields:
+The detailed name exists for diagnostics and the versioned C interface; it is not a second backend. A null approximation pointer requests complete evaluation. All entries use the same hard routing rule and fixed local score.
+
+## Options and ABI
+
+`RosaTrainingOptions` retains ABI version 1 and its established layout. Every options struct carries `abi_version` and `struct_size`; initialize these from the header's defaults function. Unsupported sizes or versions return status 1.
+
+| Training field | Default | Meaning |
+|---|---:|---|
+| `credit_order` | 2 | 1 = first-order singleton credit; 2 = diagonal trust and joint-bit cooperation |
+| `randomized` | 1 | Verified full-query-key cache; never requests numerical sampling |
+| `logit_mode` | 0 | 0 = oriented credit times sigmoid derivative; 1 = oriented identity |
+| `joint_pairs` | 1 | Maximum disjoint two-bit blocks per stream |
+| `joint_rows` | 32 | Maximum proposal rows inspected |
+| `active_rows` | 1 | 1 = nonzero upstream-gradient rows; 0 = evenly spaced input rows |
+| `tau` | 1 | Positive sigmoid temperature |
+| `trust_diagonal` | 0.5 | Local trust scale; default gives gradient norm divided by output-set diameter |
+| `proposal_seed` | 0 | Joint proposal seed |
+| `repair_seed` | 0 | Independent query-cache layout seed and approximation sampling salt |
+| `repair_budget` | 0 | Reserved for layout compatibility; must remain zero |
+| `reserved` | 0 | Leave at the initialized value |
+
+To choose first order in C, set the related fields consistently:
 
 ```cpp
 RosaTrainingOptions options;
@@ -77,32 +56,9 @@ options.joint_pairs = 0;
 options.trust_diagonal = 0.0;
 ```
 
-Setting only `credit_order=1` leaves inconsistent second-order settings and
-returns status 1. The Python `credit_order="first"` constructor sets coherent
-defaults automatically. The standalone example accepts `--first` to exercise
-this configuration. For every stream s, seeds receive the same fixed uint64
-offset `0x9e3779b97f4a7c15 * (s+1)` with wraparound. Turning exact acceleration
-on or off does not change proposal seeds or framework RNG consumption.
+Changing only `credit_order` leaves the default joint/trust settings inconsistent and returns status 1. Python's `credit_order="first"` derives coherent defaults automatically. There is no public repair-lane thinning option.
 
-The Torch adapter consumes two CPU Torch RNG draws when joint proposals,
-explicit legacy repair sampling, or `backward_mode="approximate"` is enabled,
-identically for exact acceleration on/off. First-order exact training without
-joint proposals or repair sampling consumes no such RNG. Evaluation consumes
-no proposal RNG. Checkpoint recomputation can therefore use the normal
-framework RNG-preservation contract. Native row and channel sampling use a
-local generator seeded from the stream's salted `repair_seed` XOR the
-approximation option's `seed`; they do not consume the joint-proposal generator.
-
-Joint-proposal row selection uses weighted exponential races with `mt19937_64`. For
-more than `joint_rows` nonzero rows, this changes the old NumPy `PCG64` seed
-trajectory, while preserving the stated sampling law. When all active rows
-fit the budget, rows and native joint proposals are unchanged. All selected
-joint corners are evaluated exactly under the frozen local trust model.
-
-### Separate approximation options
-
-Initialize the additional struct with
-`rosa_approximation_defaults(&approximation)`. Its public declaration is:
+`RosaApproximationOptions` has ABI version 1:
 
 ```c
 typedef struct RosaApproximationOptions {
@@ -116,251 +72,91 @@ typedef struct RosaApproximationOptions {
 } RosaApproximationOptions;
 ```
 
-`ROSA_APPROXIMATION_ABI_VERSION` is **1**, and this layout has
-`sizeof(RosaApproximationOptions) == 32`. Initialize it through the defaults
-function so `struct_size` uses the actual C declaration, rather than
-hard-coding the size in a binding.
-
-| Field | Default | Valid values and meaning |
+| Approximation field | Default | Meaning |
 |---|---:|---|
-| `abi_version` | 1 | Must equal `ROSA_APPROXIMATION_ABI_VERSION` |
-| `struct_size` | 32 | Must equal `sizeof(RosaApproximationOptions)` |
-| `sample_rows` | 32 | Positive int32 budget for complete correction rows per stream; capped by the certified population size |
-| `importance` | 1 | 0 = uniform temporal strata; 1 = gradient-norm weighting with a uniform probability floor inside each stratum. Controls row sampling |
-| `sample_channels` | 0 | 0 = retain all FFT channels; 1–64 = explicit PPS budget for eligible nonzero signed channels, capped by their count |
+| `sample_rows` | 32 | Positive int32 complete-residual-row budget per stream |
+| `importance` | 1 | 1 = gradient-norm probabilities with a uniform floor; 0 = uniform temporal strata |
+| `sample_channels` | 0 | 0 = row estimator with all channels; 1–64 = fixed-size PPS of eligible centered channels |
 | `reserved` | 0 | Leave at the initialized value |
-| `seed` | 0 | Additional sampling salt, independent of joint-proposal randomness |
+| `seed` | 0 | Additional sampling salt, separate from joint proposal randomness |
 
-**A zero channel budget means all channels, not zero work.** It does not turn
-off row sampling: a cost planner chooses shared-boundary numerical contraction
-or the controlled residual-row calculation. `sample_rows` applies to the row
-path; `sample_channels` applies to the FFT path. The full constant control and
-sparse one-hot channels are retained even with a positive channel budget.
-Channel PPS has its own probability construction; `importance=0` does not
-change it to uniform channel sampling.
+For `sample_channels > 0`, the complete structural algorithm runs on the weighted feature sample and `sample_rows` is unused. The empty feature remains complete. If every eligible channel fits the budget, no channel sampling is needed. In the row estimator, complete deletion and one-symbol control precede stratified residual evaluation; large/full budgets use complete structural evaluation. A budget is not a universal error tolerance.
 
-The Python names are `approximation_rows` and `approximation_channels`, with
-the same defaults of 32 and 0. Approximate mode is explicitly selected through
-`backward_mode="approximate"`. Exact mode continues to call the original C
-entry point. Increasing a budget spends more work on the corresponding
-correction, but neither budget is a universal error tolerance; see the
-[first-order cancellation cases](randomized-results.md).
+The Python names are `backward_mode="approximate"`, `approximation_rows`, and `approximation_channels`. Complete mode is `backward_mode="exact"`; no statistical sample is requested in that mode. See [the estimator derivation](randomized-backward.md).
 
-### Calling approximate backward
+## Arrays, bounds, and ownership
 
-Use the ordinary forward once, retain its packed codes **and its
-`lengths`/`routes` arrays**, then call `rosa_training_backward_approx` instead
-of `rosa_training_backward`. The following sketch assumes the dimensions and
-named pointer buffers have already been allocated as listed below:
+All arrays are contiguous and row-major. Floating arrays use IEEE binary64.
+
+| Array | Shape | Type |
+|---|---|---|
+| Q/K/V logits, output, upstream gradient, Q/K/V logit gradients | `[B,G,T,D]` | `double` |
+| Empty embedding, signed-payload scale, their gradients | `[G,D]` | `double` |
+| Packed Q/K | `[B,G,T]` | `uint64_t` |
+| V bits | `[B,G,T,D]` | `uint8_t` |
+| Match lengths and endpoints | `[B,G,T]` | `int32_t` |
+| Forward counters | `[B*G, ROSA_FORWARD_COUNTERS]` | `uint64_t` |
+| Training counters | `[B*G, ROSA_TRAINING_COUNTERS]` | `uint64_t` |
+| Approximation counters | `[B*G, ROSA_APPROXIMATION_COUNTERS]` | `uint64_t` |
+| Detailed structural counters | `[B*G, ROSA_SUBQUADRATIC_COUNTERS]` | `uint64_t` |
+
+Supported shapes have `B ≥ 0`, `G > 0`, `0 ≤ T < 2^28`, `1 ≤ D ≤ 64`, `T*D ≤ INT32_MAX`, and `B*G ≤ INT32_MAX`. Empty streams are supported. Bit 63 is a normal packed coordinate. The caller allocates outputs and keeps all input buffers alive during the call; use distinct writable output storage.
+
+Backward must use packed codes, logits, embeddings, and options from the same forward. Approximate calls also receive that forward's `saved_lengths` and `saved_routes`; do not substitute or mutate a cache from another model evaluation. The NumPy adapter owns snapshots of retained floating inputs, and the Torch adapter saves the state automatically. Embedding gradients sum across batch streams for each group.
+
+Optional `pair_codes` and `pair_costs` may be null. Their shapes are `[B*G,joint_pairs,2]` and `[B*G,joint_pairs,4]`. Only the first `selected_pairs` records of each stream are valid. Codes below `T*D` identify K bits; subtract `T*D` for Q codes, then divide by D for position and use modulo D for bit index. Costs are `C_i,C_j,C_ij,kappa`.
+
+## Complete and approximate calls
+
+After ordinary forward, complete backward uses the saved hard state:
 
 ```cpp
-RosaTrainingOptions options;
-rosa_training_defaults(&options);  // Exact randomized search; repair_budget=0.
-
-RosaApproximationOptions approximation;
-rosa_approximation_defaults(&approximation);  // 32 rows, all FFT channels.
-// approximation.sample_channels = 8;        // Explicitly more aggressive.
-
-std::vector<uint64_t> approximation_counts(
-    size_t(B) * G * ROSA_APPROXIMATION_COUNTERS);
-
-int status = rosa_training_backward_approx(
-    &options, &approximation, B, G, T, D,
-    q, k, v_bits, q_logits, k_logits, v_logits,
-    grad_y, emb0, emb1,
-    grad_q, grad_k, grad_v, grad_emb0, grad_emb1, counters,
-    nullptr, nullptr,  // Optional pair-code and corner-cost traces.
-    saved_lengths, saved_routes, approximation_counts.data());
+int status = rosa_training_backward(
+    &options, B, G, T, D, q, k, v_bits,
+    q_logits, k_logits, v_logits, grad_y, emb0, emb1,
+    grad_q, grad_k, grad_v, grad_emb0, grad_emb1,
+    training_counts, nullptr, nullptr);
 ```
 
-`saved_lengths` and `saved_routes` are the unmodified outputs of that same
-forward, with layout `[B,G,T]`. They are inputs to this backward call, not
-scratch outputs. Their causal bounds are checked by the native API. For
-`B*G>0`, the approximation counter buffer is required, including when `T=0`, and has
-**40 uint64 values per stream**. The ordinary 35-value backward counter buffer
-is still required separately. Passing a null approximation-options pointer,
-invalid approximation fields, or a nonzero legacy `repair_budget` returns
-status 1.
+To request residual-row estimation explicitly:
 
-## Arrays and ownership
+```cpp
+RosaApproximationOptions approximation;
+rosa_approximation_defaults(&approximation);
+approximation.sample_rows = 32;
+approximation.sample_channels = 0;
+int status = rosa_training_backward_approx(
+    &options, &approximation, B, G, T, D, q, k, v_bits,
+    q_logits, k_logits, v_logits, grad_y, emb0, emb1,
+    grad_q, grad_k, grad_v, grad_emb0, grad_emb1,
+    training_counts, nullptr, nullptr,
+    lengths, routes, approximation_counts);
+```
 
-All arrays are contiguous, row-major, host memory. Floating inputs/outputs use
-binary64, packed words uint64, V bits uint8, and routes/lengths int32.
+These sketches assume the named arrays have already been allocated with the layouts above. The [standalone example](../examples/native_training.cpp) is a complete runnable program. For NumPy, call `training_forward_numpy(...)` and pass its owned cache unchanged to `training_backward_numpy(cache, grad_y)`.
 
-| Arrays | Shape |
-|---|---|
-| Q/K/V logits, output, upstream gradient, Q/K/V logit gradients | `[B,G,T,D]` |
-| Q/K packed words, lengths, routes | `[B,G,T]` |
-| V bits | `[B,G,T,D]` |
-| Embeddings and their gradients | `[G,D]` |
-| Forward counters | `[B*G,4]` |
-| Backward counters | `[B*G,35]` |
-| Approximation counters, only for `rosa_training_backward_approx` | `[B*G,40]` |
-| Optional pair codes | `[B*G,joint_pairs,2]` |
-| Optional corner costs | `[B*G,joint_pairs,4]` |
+## Accuracy, seeds, and training integration
 
-The caller owns every buffer and keeps it alive during the call. Forward emits
-packed Q/K/V to reuse in backward. Backward must receive those same hard codes,
-logits, and embeddings; replacing them independently invalidates the cache
-contract. The NumPy `TrainingCache` independently copies the logits, embeddings
-and options, including the separate approximation options when present, so
-later changes to caller storage do not alter its backward.
-Do not mutate the cache itself between forward and backward. These snapshots
-require an additional copy of the five floating input arrays. Torch additionally saves the original tensors
-so its version checks detect ordinary in-place modification.
+Complete mode includes every finite-credit term. String comparisons, causal cutoffs and longest/latest ties are exact. Batched binary64 sums and FFT can round differently from a direct historical reduction; FFT is part of the complete construction, not a statistical omission. For the same inputs, rule and other seeds, turning the verified query cache on/off preserves this engine's numerical result bitwise.
 
-Only optional pair codes/costs may be null for nonempty outputs. A null pointer
-for a zero-sized array is allowed. Domains are `B>=0`, `G>0`, `0<=T<2**28`,
-`1<=D<=64`, `T*D<=2**31-1`, and `B*G<=2**31-1`. Actual allocations must fit
-available memory. CPU caches retain double logits and packed hard codes; CUDA
-inputs require transfers and synchronization, not a GPU execution path.
+Approximate mode adds conditional sampling error. It settles each evaluated route maximum completely, retains V/embedding gradients, and restores chosen joint corners with complete internal evaluations when necessary. Those edited-route replays do not run the surrounding model or loss. The Q/K diagonal is an explicit local model, not the true downstream Hessian.
 
-## Operations and costs
+The adapter freezes options and seeds during forward. Streams receive deterministic uint64 seed salts; cache on/off preserves proposal randomness and framework RNG consumption. Row/channel sampling uses a local generator separate from the proposal generator. Fixed seeds give reproducibility within the same implementation, not identical trajectories across numerical environments.
 
-`rosa_training_forward` packs hard bits using `logit > 0`, runs the lean exact
-causal matcher, and gathers the signed payload or empty embedding. Forward
-semantics are identical for first/second order and exact acceleration on/off.
+Trust and proposal decisions depend on the incoming gradient, so separate backwards on different losses need not add to one backward on their combined loss. Positive loss scaling is supported; hard-credit double autograd is not. The Torch adapter propagates nonfinite incoming gradients so ordinary GradScaler overflow skipping works. CPU matching entails transfer/synchronization for CUDA tensors.
 
-`rosa_training_backward` constructs the local metric, chooses bounded disjoint
-blocks, calls the shared full credit engine, reruns one exact joint route per
-selected block, maps credits to logits, and scatters V/embedding gradients.
-There is no downstream model replay. A zero upstream adjoint returns zero
-gradients without constructing credit indices. Other streams use the same
-general engine. No cross-call routing index or model state is silently cached.
-
-`rosa_training_backward_approx` uses the same hard forward, frozen local
-credit model and logit mapping. Its planner may combine shared corridor sums
-with FFT, whose floating reduction order differs from the exact engine, or
-sample complete residual rows around a fully computed control. A positive
-channel budget adds fixed-size PPS sampling of signed numerical channels.
-Route maxima are resolved before these numerical samples. V and embedding
-gradients remain exact, and selected joint blocks retain complete internal
-matcher evaluations of their corners. These internal matcher passes do not
-replay the surrounding model or require an extra user backward call.
-
-This approximate entry point does **not** promise bitwise Q/K gradients or a
-uniform relative-error bound. Conversely, `randomized=1` on the original exact
-entry point enables none of FFT reordering, row sampling or channel sampling.
-
-The diagonal penalty protects Q/K routing edits; V keeps its first-order
-credit. The default is a geometric trust model, not an inferred Hessian. The
-metric and active-row proposals depend on g, so separate loss backward calls
-need not add to the result of one combined loss backward. Positive scaling is
-supported. The Torch hard-credit path explicitly rejects double autograd.
-
-Joint cost accumulation uses the existing residual-preserving expansion on
-baseline-relative terms. Native sigmoid and accumulation use binary64 before
-the adapter casts to tensor dtype. Consequently, comparison to the previous
-Python/Torch float32 implementation uses a floating tolerance rather than a
-false bitwise claim. Exact acceleration on/off preserves the same numerical
-order and is checked bitwise, including stochastic downstream models.
-
-## Return codes and counters
+## Return codes and diagnostics
 
 | Status | Meaning |
 |---|---|
 | 0 | Success |
 | 1 | Invalid shape, option, ABI, or required pointer |
 | 2 | Allocation failure |
-| 3 | Core/numerical execution failure |
+| 3 | Numerical/core execution failure |
 | 4 | Nonfinite required input |
 
-The Torch adapter catches nonfinite incoming gradients before this strict
-native interface and returns nonfinite tensor gradients. This permits an
-ordinary GradScaler to detect overflow and skip its optimizer step.
+Use the header constants rather than literals when allocating counters: forward has 4 entries, training 35, approximation 40, detailed structure 22. The first 22 training entries are the structural-engine counters, followed by one reserved entry; indices 23–34 retain training-level diagnostics such as selected pairs, joint replay count, proposal work, gradient elements, and engine calls. The detailed alias exposes the same structural counters separately.
 
-Forward counters are baseline passes, transition probes, hash probe steps,
-and endpoint queries. Backward indices 0–22 are the existing singleton-engine
-work counters. Remaining indices are:
+The authoritative names are `TRAINING_COUNTER_NAMES`, `SUBQUADRATIC_COUNTER_NAMES`, and `APPROXIMATION_COUNTER_NAMES` in [native_training.py](../conv_rosa_transformer/native_training.py). Structural counters cover AP pieces/events, Q heavy/light work, long anchors, short dictionaries, correlations, range blocks/fringes, cache probes/hits, and sampled channels. Workspace accounting is diagnostic allocated-buffer accounting, not a measurement of process peak RSS.
 
-| Index | Counter |
-|---:|---|
-| 23 | Selected pairs |
-| 24 | Joint matcher replays |
-| 25 | Active/input proposal rows |
-| 26 | Candidate events |
-| 27 | Supported repair lanes |
-| 28 | Selected repair lanes |
-| 29 | Whether this stream's repairs were exact |
-| 30 | Logit-gradient elements per Q/K/V array |
-| 31 | Whether exact randomized root preparation was requested |
-| 32 | Proposal rows retained |
-| 33 | Nonzero-cost joint contraction components visited |
-| 34 | Singleton-engine calls (zero for zero-adjoint short circuit) |
-
-Optional pair codes below `T*D` refer to K; codes at least `T*D` refer to Q
-after subtracting `T*D`. Divide the remaining code by D for its position and
-take modulo D for its bit. Corner costs are `C_i,C_j,C_ij,kappa` in that order.
-Only the first `selected_pairs` trace entries are valid.
-
-### Approximation counters
-
-`ROSA_APPROXIMATION_COUNTERS` is **40**. The separate buffer uses the following
-indices; names match `APPROXIMATION_COUNTER_NAMES` in the NumPy binding:
-
-| Index | Counter |
-|---:|---|
-| 0 | `sampled_rows` |
-| 1 | `row_endpoints` |
-| 2 | `row_lce_queries` |
-| 3 | `row_onebit_pairs` |
-| 4 | `row_q_touched` |
-| 5 | `row_k_touched` |
-| 6 | `row_score_components` |
-| 7 | `row_deletion_updates` |
-| 8 | `rebuilt_baseline_rows` |
-| 9 | `row_index_materializations` |
-| 10 | `evaluated_rows` |
-| 11 | `control_neighbor_probes` |
-| 12 | `control_score_components` |
-| 13 | `control_intervals` |
-| 14 | `repair_births` |
-| 15 | `lce_history_rows` |
-| 16 | `active_rows` |
-| 17 | `uncertified_rows` |
-| 18 | `certificate_bucket_queries` |
-| 19 | `certificate_member_checks` |
-| 20 | `certificate_full_pair_probes` |
-| 21 | `certificate_hash_probes` |
-| 22 | `certificate_distinct_pairs` |
-| 23 | `certificate_indexes` |
-| 24 | `population_rows` |
-| 25 | `selected_rows` |
-| 26 | `row_budget` |
-| 27 | `complete_residual_streams` |
-| 28 | `extra_joint_replays` |
-| 29 | `certified_zero_rows` |
-| 30 | `importance_streams` |
-| 31 | `full_deletion_calls` |
-| 32 | `spectral_groups` |
-| 33 | `spectral_queries` |
-| 34 | `spectral_rows` |
-| 35 | `spectral_transforms` |
-| 36 | `spectral_columns` |
-| 37 | `spectral_channels` |
-| 38 | `spectral_exact_fallbacks` |
-| 39 | `spectral_fallback_rows` |
-
-Indices 0–15 describe selected-row work and the one-symbol control; 16–23
-describe exact support certificates; 24–31 describe the resulting population,
-sampling and additional replays. The FFT branch also sets index 27, so it is
-**not** a bitwise-exactness flag. Index 31 counts separate full-deletion-only
-calls in the residual-row path.
-
-For the spectral counters, `spectral_rows` counts represented active interval
-rows and can exceed T because intervals overlap. `spectral_channels` counts
-available numerical channels before optional channel sampling, whereas
-`spectral_transforms` counts the transforms actually executed. Exact recovery
-may use either direct expansion or a proven zero-payload identity; therefore
-`spectral_exact_fallbacks` can be nonzero while `spectral_fallback_rows` is zero.
-
-## Validation scope
-
-`tests/test_native_training.py` compares the native complete rule with the
-frozen previous Python calculation, including both mappings, empty inputs,
-multiple groups, bit 63, first/second order, and the real zero-signal joint
-barrier. Double comparisons use `2e-11` absolute/relative tolerance; float32
-mapping uses `2e-6`. On/off acceleration comparisons require bitwise equality.
-Normal optimizer, GradScaler, checkpoint, and serialization tests exercise
-the production layer. Historical Python-mocking checks explicitly load a
-test-only snapshot; production never selects it as a backend.
+Approximation diagnostics distinguish the residual population, selected rows, complete residual evaluation, extra joint replays, and channel sampling. A complete-residual flag is not a bitwise-compatibility flag: complete numerical grouping still has the stated floating contract. Counters should accompany [measured time and error](subquadratic-results.md), not substitute for them.

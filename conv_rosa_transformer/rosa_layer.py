@@ -50,9 +50,7 @@ class _HardQKVRosaFn(torch.autograd.Function):
         # On/off exact acceleration never changes framework RNG consumption.
         # First-order/no-MC has no draws, including when acceleration is on.
         seeds=torch.randint(0,2**63-1,(2,),device="cpu").tolist() if (
-            config["joint_pairs"]>0 or (config["repair_samples"] is not None
-                                       and config["repair_samples"]<d)
-            or config["backward_mode"]=="approximate") else (0,0)
+            config["joint_pairs"]>0 or config["backward_mode"]=="approximate") else (0,0)
         native_config=dict(config)
         backward_mode=native_config.pop("backward_mode")
         approximation_rows=native_config.pop("approximation_rows")
@@ -96,23 +94,23 @@ class NBitQKVRosa(nn.Module):
     trust model, not an automatically recovered loss Hessian. The interface
     remains one model forward and one loss.backward(), with no special optimizer.
 
-    ``randomized=True`` (default) enables answer-exact randomized root preparation. It
-    does not thin gradients or change joint proposals. Detailed legacy block
-    options remain explicit for reproducible studies. ``repair_samples`` is a
-    separate noisy research option and is never implied by ``randomized``.
+    One structural engine handles every packed alphabet. Its fixed-width
+    bound is soft-O(T**(7/4)) time and soft-O(T**(4/3)) space. Complete credit
+    uses exact routes with FFT/reassociated numerical sums where profitable;
+    it is not a bitwise reproduction of an older accumulation order.
 
-    ``backward_mode="approximate"`` enables the explicit aggressive mode.
-    A certified cost planner contracts profitable shared-boundary corridors
-    by FFT; otherwise full deletion plus a one-symbol repair control leaves
-    a residual sampled within temporal strata. ``approximation_rows`` sets
-    that per-stream residual budget. Selected row maxima remain complete.
-    V, embeddings and selected joint corners retain complete evaluation.
-    Row sampling is conditionally unbiased in real arithmetic; FFT changes
-    floating reduction order. ``approximation_channels=0`` keeps all FFT
-    channels; a positive budget explicitly samples signed numerical channels
-    with exact constants and fixed-size PPS. It can have high error when the
-    control is weak. There is no universal relative-error or convergence
-    guarantee. The default exact mode never invokes the FFT.
+    ``randomized=True`` (default) enables full-key verified lookup caching.
+    It changes work, never credit or joint proposals. ``randomized=False``
+    disables that cache without selecting a different algorithm.
+
+    ``backward_mode="approximate"`` is a separate, explicit noisy option.
+    Full deletion and a one-symbol repair control leave a stratified residual
+    estimator, with ``approximation_rows`` as the per-stream budget. A positive
+    ``approximation_channels`` instead uses fixed-size PPS on centered numeric
+    features of the full route structure; the empty indicator stays complete
+    and the row budget is unused. V, embeddings and selected joint corners
+    remain fully evaluated. Estimators are unbiased in real arithmetic but
+    have no universal relative-error or convergence guarantee.
 
     All arithmetic after dense projections uses the batched C++ engine.
     Parameters/state names are unchanged. Save configuration with weights.
@@ -126,7 +124,7 @@ class NBitQKVRosa(nn.Module):
                  backward_mode:str="exact",approximation_rows:int=32,approximation_channels:int=0,
                  joint_pairs:int|None=None,joint_rows:int=32,
                  trust_diagonal:float|None=None,joint_row_selection:str="active",
-                 repair_samples:int|None=None,stochastic_values:bool=False,
+                 stochastic_values:bool=False,
                  training_rule:str="hard_credit"):
         super().__init__()
         channels,n_bits=operator.index(channels),operator.index(n_bits)
@@ -138,23 +136,17 @@ class NBitQKVRosa(nn.Module):
             raise ValueError("experimental stochastic V/output mixtures are not production training rules")
         options=make_options(credit_order=credit_order,randomized=randomized,tau=tau,
             credit_to_logit=credit_to_logit,joint_pairs=joint_pairs,joint_rows=joint_rows,
-            trust_diagonal=trust_diagonal,joint_row_selection=joint_row_selection,
-            repair_samples=repair_samples)
+            trust_diagonal=trust_diagonal,joint_row_selection=joint_row_selection)
         make_approximation_options(backward_mode=backward_mode,approximation_rows=approximation_rows,
             approximation_channels=approximation_channels)
-        if backward_mode=="approximate" and options.repair_budget:
-            raise ValueError("approximate backward cannot be combined with legacy repair_samples")
         self.backward_mode=backward_mode;self.approximation_rows=operator.index(approximation_rows)
         self.approximation_channels=operator.index(approximation_channels)
-        if options.repair_budget>n_bits:
-            raise ValueError("repair_samples must not exceed n_bits")
         self.channels,self.n_bits=channels,n_bits;self.groups=channels//n_bits
         self.credit_order,self.randomized=credit_order,bool(randomized)
         self.tau,self.credit_to_logit=float(options.tau),credit_to_logit
         self.joint_pairs,self.joint_rows=int(options.joint_pairs),int(options.joint_rows)
         self.trust_diagonal=float(options.trust_diagonal)
         self.joint_row_selection=joint_row_selection
-        self.repair_samples=repair_samples
         self.stochastic_values=False;self.training_rule="hard_credit"
         self.last_forward_work=None
         self.q_proj=nn.Linear(channels,channels,bias=bias)
@@ -170,7 +162,6 @@ class NBitQKVRosa(nn.Module):
             joint_pairs=self.joint_pairs if self.training else 0,joint_rows=self.joint_rows,
             trust_diagonal=self.trust_diagonal if self.training else 0.,
             joint_row_selection=self.joint_row_selection,
-            repair_samples=self.repair_samples if self.training else None,
             backward_mode=self.backward_mode if self.training else "exact",
             approximation_rows=self.approximation_rows,approximation_channels=self.approximation_channels)
         self.last_forward_work={}
