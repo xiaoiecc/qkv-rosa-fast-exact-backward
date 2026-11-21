@@ -4,6 +4,7 @@
 #include "../../conv_rosa_transformer/csrc/subquadratic/packed_context.h"
 #include "../../conv_rosa_transformer/csrc/subquadratic/run_credit.h"
 #include "../../conv_rosa_transformer/csrc/subquadratic/random_context.h"
+#include "../../conv_rosa_transformer/csrc/subquadratic/suffix_frontier.h"
 #include <iostream>
 #include <random>
 
@@ -11,7 +12,7 @@ using namespace rosa_subq;
 using Words=std::vector<uint64_t>;
 using Values=std::vector<double>;
 int cases=0,context_accepted=0,context_deep=0,context_budget_stops=0,context_length_stops=0;
-uint64_t components=0;
+uint64_t components=0,frontier_values=0;
 std::mt19937_64 rng(2026112204);
 
 std::vector<Route> literal(const Words& q,const Words& k) {
@@ -73,6 +74,12 @@ void check(Words q,Words k,int bits,bool test_residual=false) {
         endpoint_credit::equal_sweep(plan,exact,base,rows,value.data(),gradient.data(),
             quadratic?diagonal.data():nullptr,empty_value.data(),scale.data(),ends.data(),false,0,a,b,st);
         compare("equality Q",a,equal_q);compare("equality K",b,equal_k);
+        Values qc(n*bits),kc(n*bits);Stats frontier_stats;
+        suffix_frontier::evaluate(q.data(),k.data(),n,bits,base,value.data(),gradient.data(),quadratic?diagonal.data():nullptr,
+            empty_value.data(),scale.data(),qc,kc,frontier_stats);
+        compare("frontier Q",qc,equal_q);compare("frontier K",kc,equal_k);
+        frontier_values+=qc.size()+kc.size();
+
     }
     auto sweep=[&](const std::vector<int32_t>& rows,Values& cq,Values& ck) {
         Stats st;
@@ -252,5 +259,5 @@ int main() {
         throw std::runtime_error("uncovered trie path");
     std::cout<<"{\"context_accepted\":"<<context_accepted<<",\"context_deep\":"<<context_deep
              <<",\"context_budget_stops\":"<<context_budget_stops
-             <<",\"context_length_stops\":"<<context_length_stops<<",\"status\":\"PASS\",\"stream_pairs\":"<<cases<<",\"compared_scalars\":"<<components<<"}\n";
+             <<",\"context_length_stops\":"<<context_length_stops<<",\"status\":\"PASS\",\"stream_pairs\":"<<cases<<",\"frontier_values\":"<<frontier_values<<",\"compared_scalars\":"<<components<<"}\n";
 }

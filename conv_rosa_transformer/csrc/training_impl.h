@@ -139,85 +139,6 @@ inline double train_radius(const double*e0,const double*e1,int d) {
     return std::max({std::sqrt(a),.5*std::sqrt(b),1e-12});
 }
 
-// A zero-length baseline on every row certifies that no causal equal symbol
-// pair exists. Consequently a flip can make exactly one symbol match, and
-// only a last-word Hamming-one endpoint can change a payload. Store just
-// those edits. The API still receives its complete, correctly oriented arrays.
-inline bool empty_route_credit(const RosaTrainingOptions& o,int n,int d,const uint64_t* q,
-        const uint64_t* k,const uint8_t* v,const double* qz,const double* kz,const double* g,
-        const double* e0,const double* e1,double* gq,double* gk,double* gv,double* ge0,
-        const int32_t* lengths,const int32_t* routes,rosa_subq::Stats& work) {
-    if(d<16 || !lengths || !routes || (!o.logit_mode && o.tau<std::numeric_limits<double>::min()))
-        return false;
-    for(int t=0;t<n;++t)if(lengths[t] || routes[t]!=-1)return false;
-    rosa_subq::endpoint_credit::Reports neighbors;
-    if(!neighbors.build(q,k,n,d))return false;
-    for(int t=1;t<n;++t)for(size_t i=neighbors.offsets[t];i<neighbors.offsets[t+1];++i)
-        if(q[t]==k[neighbors.ends[i]])return false;
-    std::vector<size_t> touched;
-    const double radius=o.trust_diagonal?train_radius(e0,e1,d):1.;
-    std::array<int,64> latest;
-    static const auto zeros=[] {
-        std::array<std::array<double,8>,256> table{};
-        for(int byte=0;byte<256;++byte)for(int j=0;j<8;++j)table[byte][j]=(byte>>j)&1?-0.:0.;
-        return table;
-    }();
-    for(int t=0;t<n;++t) {
-        const size_t at=size_t(t)*d;
-        uint64_t query=q[t],key=k[t];
-        int j=0;
-        for(;j+8<=d;j+=8,query>>=8,key>>=8) {
-            std::copy_n(zeros[query&255].data(),8,gq+at+j);
-            std::copy_n(zeros[key&255].data(),8,gk+at+j);
-        }
-        for(int b=0;j+b<d;++b) {
-            gq[at+j+b]=(query>>b)&1?-0.:0.;
-            gk[at+j+b]=(key>>b)&1?-0.:0.;
-        }
-        for(int c=0;c<d;++c){gv[at+c]=v[at+c]?-0.:0.;ge0[c]+=g[at+c];}
-    }
-    for(int t=1;t<n;++t) {
-        const size_t begin=neighbors.offsets[t],stop=neighbors.offsets[t+1];
-        if(begin==stop)continue;
-        const size_t at=size_t(t)*d;
-        const double* row=g+at;
-        double diagonal=0.;
-        if(o.trust_diagonal) {
-            double norm=0.;for(int c=0;c<d;++c)norm+=row[c]*row[c];
-            diagonal=o.trust_diagonal*std::sqrt(norm)/radius;
-        }
-        latest.fill(-1);
-        for(size_t i=begin;i<stop;++i) {
-            const int r=neighbors.ends[i];
-            const uint64_t diff=q[t]^k[r];
-            const int bit=rosa_subq::near_detail::one_bit_index(diff);
-            if(bit>=d)continue;
-            double sum=0.;
-            for(int c=0;c<d;++c) {
-                const double delta=(2*int(v[size_t(r+1)*d+c])-1)*e1[c]-e0[c];
-                sum+=row[c]*delta;
-                if(diagonal)sum+=(.5*diagonal*delta)*delta;
-            }
-            if(r>latest[bit]) {
-                latest[bit]=r;
-                gq[at+bit]=train_chain(qz[at+bit],(q[t]>>bit)&1,sum,o);
-            }
-            const size_t cell=size_t(r)*d+bit;
-            // The initial signed zero is the orientation of +0; reset
-            // nonpositive zero on first addition to match raw summation.
-            if(gk[cell]==0.)gk[cell]=0.;
-            gk[cell]+=sum;touched.push_back(cell);
-        }
-    }
-    std::sort(touched.begin(),touched.end());
-    touched.erase(std::unique(touched.begin(),touched.end()),touched.end());
-    for(size_t cell:touched)gk[cell]=train_chain(kz[cell],(k[cell/d]>>(cell%d))&1,gk[cell],o);
-    work.k_centers=neighbors.ends.size();
-    work.peak_workspace_bytes=std::max(neighbors.peak_bytes,
-        (neighbors.offsets.capacity()+touched.capacity())*sizeof(size_t)+neighbors.ends.capacity()*sizeof(int));
-    return true;
-}
-
 inline std::vector<int32_t> train_rows(const double*g,int n,int d,
                                       int count,bool active,uint64_t seed) {
     std::vector<int32_t> rows;
@@ -307,19 +228,6 @@ inline int train_stream(const RosaTrainingOptions&o,int n,int d,
         }
     }
     rosa_subq::Stats work;
-    if(!approximation && !pair_count && empty_route_credit(o,n,d,q,k,v,qz,kz,g,e0,e1,
-            gq,gk,gv,ge0,saved_lengths,saved_routes,work)) {
-        store_subquadratic_counters(work,stats);
-        if(subquadratic_stats)std::copy_n(stats,ROSA_SUBQUADRATIC_COUNTERS,subquadratic_stats);
-        stats[27]=stats[28]=d;stats[29]=1;stats[30]=nd;stats[31]=o.randomized!=0;
-        stats[32]=rows.size();stats[34]=1;
-        if(approximation_stats) {
-            for(int t=0;t<n;++t)approximation_stats[16]+=std::any_of(g+size_t(t)*d,
-                g+size_t(t+1)*d,[](double value){return value!=0.;});
-            approximation_stats[27]=1;
-        }
-        return 0;
-    }
     std::vector<double> cq,ck,h;
     double* cv=gv;
     std::fill_n(cv,nd,0.);

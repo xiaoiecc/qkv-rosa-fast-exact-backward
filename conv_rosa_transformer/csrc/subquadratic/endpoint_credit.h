@@ -13,8 +13,8 @@ namespace endpoint_credit {
 struct Step { int low,high,end; };
 struct Repair { int owner,bit; Route route; };
 
-class RowSweep {
-    const Index& index;
+class EventSweep {
+    const uint64_t *q,*k;
     int bits;
     Stats& stats;
     std::vector<Route> exact,prefix;
@@ -83,25 +83,20 @@ class RowSweep {
         }
     }
 public:
-    RowSweep(const Index& ix,int b,Stats& work):index(ix),bits(b),stats(work){}
+    EventSweep(const uint64_t* query,const uint64_t* keys,int b,Stats& work):q(query),k(keys),bits(b),stats(work){}
     template<class Report,class Cost>
-    void row(int t,Report&& report,Cost&& cost,std::vector<double>& qdiff,std::vector<double>& kdiff,
-             std::vector<double>& cq,std::vector<double>& ck,const std::array<int,64>* singleton=nullptr) {
-        const Route base=index.baseline()[t];
+    void row_events(int t,Route base,Report&& report,Cost&& cost,
+            std::vector<double>& qdiff,std::vector<double>& kdiff,std::vector<double>& cq,
+            std::vector<double>& ck,const std::array<int,64>* singleton=nullptr) {
         exact.clear();qr.clear();kr.clear();
-        report([&](int r) {
-            const int a=index.q[t]==index.k[r]?index.lcs(t,r):0;
-            if(a)exact.push_back({a,r});
-            const int u=t-a,s=r-a;
-            if(s<0)return;
-            const auto mask=index.q[u]^index.k[s];
-            if(!mask || (mask&(mask-1)))return;
-            const int bit=near_detail::one_bit_index(mask);
-            if(bit>=bits)return;
-            const Route candidate{a+1+index.lcs(u-1,s-1),r};
-            qr.push_back({u,bit,candidate});kr.push_back({s,bit,candidate});
+        auto emit_both=[&](int tail,int bit,int len,int end){
+            qr.push_back({t-tail,bit,{len,end}});
+            kr.push_back({end-tail,bit,{len,end}});
             ++stats.k_centers;
-        });
+        };
+        report([&](int len,int end){exact.push_back({len,end});},emit_both,
+               [&](int tail,int bit,int len,int end){qr.push_back({t-tail,bit,{len,end}});},
+               [&](int tail,int bit,int len,int end){kr.push_back({end-tail,bit,{len,end}});});
         prepare();
         auto range=[&](std::vector<double>& diff,int lo,int hi,int end) {
             if(end==base.end)return;
@@ -125,7 +120,7 @@ public:
             return q_deleted(t,u,base);
         },cost,cq);
         repairs(kr,[&](int s,int bit){
-            if(singleton && base.length<=1 && s>base.end && (index.q[t]^index.k[s])==(UINT64_C(1)<<bit))
+            if(singleton && base.length<=1 && s>base.end && (q[t]^k[s])==(UINT64_C(1)<<bit))
                 return Route{1,s};
             return k_deleted(s,base);
         },cost,ck);
@@ -133,6 +128,30 @@ public:
     size_t bytes() const {
         return (exact.capacity()+prefix.capacity())*sizeof(Route)+steps.capacity()*sizeof(Step)
             +(qr.capacity()+kr.capacity())*sizeof(Repair);
+    }
+};
+
+// Adapter for the independently indexed structural/approximation routines.
+class RowSweep:public EventSweep {
+    const Index& index;
+    int width;
+public:
+    RowSweep(const Index& ix,int b,Stats& work):EventSweep(ix.q.data(),ix.k.data(),b,work),index(ix),width(b){}
+    template<class Report,class Cost>
+    void row(int t,Report&& report,Cost&& cost,std::vector<double>& qdiff,std::vector<double>& kdiff,
+             std::vector<double>& cq,std::vector<double>& ck,const std::array<int,64>* singleton=nullptr) {
+        row_events(t,index.baseline()[t],[&](auto exact,auto repair,auto,auto) {
+            report([&](int r) {
+                const int a=index.q[t]==index.k[r]?index.lcs(t,r):0;
+                if(a)exact(a,r);
+                const int u=t-a,s=r-a;
+                if(s<0)return;
+                const auto mask=index.q[u]^index.k[s];
+                if(!mask || (mask&(mask-1)))return;
+                const int bit=near_detail::one_bit_index(mask);
+                if(bit<width)repair(a,bit,a+1+index.lcs(u-1,s-1),r);
+            });
+        },cost,qdiff,kdiff,cq,ck,singleton);
     }
 };
 

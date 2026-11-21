@@ -9,11 +9,8 @@
 #include "fingerprint_k.h"
 #include "q_frontier.h"
 #include "correlation.h"
-#include "run_credit.h"
 #include "endpoint_credit.h"
-#include "packed_context.h"
-#include "random_context.h"
-#include "bigram_credit.h"
+#include "suffix_frontier.h"
 #include "../training.h"
 #include "../forward.h"
 #include <memory>
@@ -380,10 +377,8 @@ inline bool sparse_residual(const rosa_random::OnegramPlan&plan,
     return true;
 }
 
-// First settle the one-symbol control. Only rows that can have a longer
-// original or edited route require a correction. Sparse correction rows use
-// the complete endpoint join; dense correction uses the shared interval
-// construction. Both are evaluations of the same delete/repair identity.
+// Exact mode always uses the suffix frontier. Explicit statistical mode
+// retains its independently selected control variate and sampling rules.
 inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
     const double*g,const double*h,const double*e0,const double*e1,bool randomized,
     uint64_t seed,const RosaApproximationOptions*approximation,
@@ -414,137 +409,16 @@ inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
         if(nonzero){active.push_back(t);short_deletion&=lengths[t]<=1;}
     }
     if(active.empty()){if(approx_stats)approx_stats[27]=1;return 0;}
-    const uint64_t random_seed=seed^(approximation?approximation->seed:0);
-    const int channels=approximation?approximation->sample_channels:0;
-    if(!approximation && n>1) {
-        int longest_run=1,run=1;uint64_t word=q[1];
-        for(int t=2;t<n;++t) {
-            run=q[t]==q[t-1]?run+1:1;
-            if(run>longest_run){longest_run=run;word=q[t];}
-        }
-        const bool uniform=longest_run==n-1;
-        std::vector<int32_t> residual;
-        if(uniform || (longest_run>=16 && run_credit::residual_rows(q,k,n,word,active,residual))) {
-            Features features(n,bits,v,g,h,e0,e1,base,0,seed,stats);
-            std::vector<Route> template_base;
-            if(!uniform) {
-                features.omit_rows(residual);
-                template_base.resize(n);
-                int length=0;
-                for(int t=1;t<n;++t) {
-                    length=k[t-1]==word?length+1:0;
-                    template_base[t]=template_base[t-1];
-                    if(length)template_base[t]=std::max(template_base[t],Route{length,t-1});
-                }
-            }
-            run_credit::evaluate(k,word,uniform?base:template_base,features.scores(),bits,cq,ck,stats);
-            if(!residual.empty()) {
-                Index index(q,k,n,randomized,seed,&base);
-                endpoint_credit::evaluate(index,bits,v,g,h,e0,e1,residual,[&](int t,auto emit){
-                    for(int r=0;r<t;++r) {
-                        const uint64_t diff=q[t]^k[r];
-                        if(!(diff&(diff-1)))emit(r);
-                    }
-                },cq,ck,stats);
-            }
-            stats.peak_workspace_bytes+=features.workspace_bytes()+(base.capacity()+template_base.capacity())*sizeof(Route)
-                +(active.capacity()+residual.capacity())*sizeof(int32_t);
-            if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
-            return 0;
-        }
-    }
-    auto try_bigrams=[&]() {
-        if(!bigram_eligible(n,bits,base))return false;
-        Features features(n,bits,v,g,h,e0,e1,base,0,seed,stats);
-        if(!bigram_credit(q,k,base,bits,features.scores(),cq,ck,stats))return false;
-        stats.peak_workspace_bytes+=features.workspace_bytes()+base.capacity()*sizeof(Route)
+    if(!approximation) {
+        suffix_frontier::evaluate(q,k,n,bits,base,v,g,h,e0,e1,cq,ck,stats);
+        stats.peak_workspace_bytes+=base.capacity()*sizeof(Route)
             +active.capacity()*sizeof(int32_t);
         if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
-        return true;
-    };
-    if(!approximation && bits>=5 && bits<=12 && (bits<12 || n>=2048) && try_bigrams())return 0;
-    if(!approximation && bits<=8) {
-        int longest=0;
-        for(Route r:base)longest=std::max(longest,r.length);
-        if(PackedContext::fits(bits,longest)) {
-            Features features(n,bits,v,g,h,e0,e1,base,0,seed,stats);
-            const uint64_t levels=1+uint64_t(std::log2(double(n)));
-            if(packed_credit(q,k,base,bits,longest,features.scores(),cq,ck,stats,
-                    uint64_t(n)*std::max<uint64_t>(32,2*levels*levels))) {
-                stats.peak_workspace_bytes+=features.workspace_bytes()+base.capacity()*sizeof(Route)
-                    +active.capacity()*sizeof(int32_t);
-                if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
-                return 0;
-            }
-        }
+        return 0;
     }
-    if(!approximation && bits>=12) {
-        endpoint_credit::Reports reports;
-        if(reports.build(q,k,n,bits)) {
-            if(!reports.ends.empty()) {
-                Index index(q,k,n,randomized,seed,&base);
-                endpoint_credit::evaluate(index,bits,v,g,h,e0,e1,active,[&](int t,auto emit){
-                    for(size_t i=reports.offsets[t];i<reports.offsets[t+1];++i)emit(reports.ends[i]);
-                },cq,ck,stats);
-            }
-            if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
-            stats.peak_workspace_bytes=std::max<uint64_t>(reports.peak_bytes,stats.peak_workspace_bytes
-                +reports.offsets.capacity()*sizeof(size_t)+reports.ends.capacity()*sizeof(int));
-            stats.peak_workspace_bytes+=base.capacity()*sizeof(Route)+active.capacity()*sizeof(int32_t);
-            return 0;
-        }
-    }
-    if(!approximation && bits>=12) {
-        // Bounded projection reports accelerate sparse wide words. This exact
-        // census also covers bad projections, narrower words and larger J.
-        const uint64_t limit=uint64_t(n)*12;
-        endpoint_credit::Occurrences occurrences(k,n,bits);
-        if(occurrences.admit(q,k,n,limit)) {
-            Index index(q,k,n,randomized,seed,&base);
-            endpoint_credit::evaluate(index,bits,v,g,h,e0,e1,active,[&](int t,auto emit){
-                occurrences.row(q[t],t,emit);
-            },cq,ck,stats);
-            stats.peak_workspace_bytes+=occurrences.bytes()+base.capacity()*sizeof(Route)
-                +active.capacity()*sizeof(int32_t);
-            if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
-            return 0;
-        }
-    }
-    // At wider alphabets a sparse one-word report often settles everything.
-    // On a crowded report switch to full two-word contexts.
-    if(!approximation && bits>=13 && bits<=16 && try_bigrams())return 0;
+    const uint64_t random_seed=seed^approximation->seed;
+    const int channels=approximation->sample_channels;
     const rosa_random::OnegramPlan plan(q,k,n,bits,seed);
-    if(!approximation) {
-        const uint64_t general=uint64_t(n)*std::max(1,int(std::pow(double(n),2./3)));
-        const uint64_t count=endpoint_credit::equal_pairs(plan,general);
-        const uint64_t limit=uint64_t(n)*std::max(1,int(std::pow(double(n),2./3)/128));
-        // Very sparse equality joins already have near-linear deterministic work.
-        // Charge a failed context search to the smaller applicable fallback bound.
-        // When 2^bits >= n, the expected number of equal pairs is at most
-        // n/2 under uniform keys. The existing equality bound already suffices.
-        const bool multiple_levels=bits<32 && (UINT32_C(1)<<bits)<uint32_t(n);
-        if(multiple_levels && count>std::min(limit,4*uint64_t(n))) {
-            int longest=0;
-            for(auto route:base)longest=std::max(longest,route.length);
-            if(longest<=random_context::max_length(n,bits)) {
-                Features features(n,bits,v,g,h,e0,e1,base,0,seed,stats);
-                const uint64_t budget=8*uint64_t(n)+std::min(count,general)/4;
-                if(random_context::credit(q,k,base,bits,longest,features.scores(),cq,ck,stats,budget)) {
-                    stats.peak_workspace_bytes+=plan.workspace_bytes()+features.workspace_bytes()
-                        +base.capacity()*sizeof(Route)+active.capacity()*sizeof(int32_t);
-                    if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
-                    return 0;
-                }
-            }
-        }
-        if(count<=limit) {
-            endpoint_credit::equal_sweep(plan,count,base,active,v,g,h,e0,e1,routes,randomized,seed,cq,ck,stats);
-            stats.peak_workspace_bytes+=plan.workspace_bytes()+base.capacity()*sizeof(Route)
-                +active.capacity()*sizeof(int32_t);
-            if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
-            return 0;
-        }
-    }
     std::vector<int32_t>repair_active;
     for(int t:active)if(plan.birth_prefix[t+1]!=plan.birth_prefix[t-lengths[t]])repair_active.push_back(t);
     uint64_t certificate[8]={};
