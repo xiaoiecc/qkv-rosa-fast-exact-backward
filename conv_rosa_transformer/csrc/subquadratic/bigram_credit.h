@@ -27,55 +27,81 @@ inline double difference(const Scores& score,const double* weight,int to,int fro
 // alias keys; the full packed pair is always compared on the report path.
 class PairDirectory {
     std::vector<int> heads,next;
+    std::vector<uint32_t> pairs;
     int shift=0;
     bool direct;
     int bucket(uint32_t code) const {
         return direct?int(code):int((code*UINT32_C(2654435761))>>shift);
     }
 public:
-    PairDirectory(int n,int bits):next(n,-1) {
+    PairDirectory(int n,int bits):next(n,-1),pairs(n) {
         const uint64_t alphabet=UINT64_C(1)<<(bits*2);
         int cap=1,log=0;
         while(log<24 && uint64_t(cap)<alphabet && uint64_t(cap)<uint64_t(n)*16){cap*=2;++log;}
         heads.assign(cap,-1);direct=uint64_t(cap)==alphabet;shift=32-log;
     }
-    void add(uint32_t code,int end) {
-        auto& head=heads[bucket(code)];next[end]=head;head=end;
-    }
-    template<class F>
-    bool visit(uint32_t code,const std::vector<uint32_t>& pairs,uint64_t& remaining,F&& emit) const {
-        for(int r=heads[bucket(code)];r>=0;r=next[r]) {
-            if(!remaining)return false;
-            --remaining;
-            if(direct || pairs[r]==code)emit(r);
+    // Count the very same bucket links visited by the reduction, aliases
+    // included. Each head stores frequency minus one until admission.
+    bool prepare(const uint64_t* q,const uint64_t* k,int bits,uint64_t limit) {
+        const int n=int(pairs.size());
+        const uint64_t alphabet=UINT64_C(1)<<bits;
+        int largest=0;
+        for(int i=0;i<n;++i) {
+            if((q[i]|k[i])>=alphabet)return false;
+            if(i>0 && i<n-1) {
+                pairs[i]=uint32_t((k[i-1]<<bits)|k[i]);
+                const int count=++heads[bucket(pairs[i])]+1;
+                largest=std::max(largest,count);
+            }
+        }
+        const uint64_t probes=uint64_t(n-2)*(1+2*bits);
+        if(!largest || probes<=limit/uint64_t(largest)) {
+            std::fill(heads.begin(),heads.end(),-1);
+            return true;
+        }
+        uint64_t visits=0;
+        // At t the frequencies cover precisely 1 <= r < t. Removing
+        // r=t-1 also restores all heads to -1 on an admitted stream.
+        for(int t=n-1;t>=2;--t) {
+            const uint32_t pair=uint32_t((q[t-1]<<bits)|q[t]);
+            uint64_t row=heads[bucket(pair)]+1;
+            for(int j=0;j<2*bits;++j)row+=heads[bucket(pair^(UINT32_C(1)<<j))]+1;
+            if(row>limit-visits)return false;
+            visits+=row;
+            --heads[bucket(pairs[t-1])];
         }
         return true;
     }
-    size_t bytes() const {return (heads.capacity()+next.capacity())*sizeof(int);}
+    void add(int end) {
+        auto& head=heads[bucket(pairs[end])];next[end]=head;head=end;
+    }
+    template<class F>
+    void visit(uint32_t code,uint64_t& visits,F&& emit) const {
+        for(int r=heads[bucket(code)];r>=0;r=next[r]) {
+            ++visits;
+            if(direct || pairs[r]==code)emit(r);
+        }
+    }
+    size_t bytes() const {return (heads.capacity()+next.capacity())*sizeof(int)+pairs.capacity()*sizeof(uint32_t);}
 };
 } // namespace bigram_detail
 
 inline bool bigram_credit(const uint64_t* q,const uint64_t* k,const std::vector<Route>& base,
-        int bits,const Scores& score,std::vector<double>& cq,std::vector<double>& ck,Stats& stats) {
+        int bits,const Scores& score,std::vector<double>& cq,std::vector<double>& ck,Stats& stats,
+        bigram_detail::PairDirectory& directory) {
     using bigram_detail::difference;
     using bigram_detail::single;
     const int n=score.n;
-    if(!bigram_eligible(n,bits,base))return false;
     const int sigma=1<<bits;
-    for(int i=0;i<n;++i)if((q[i]|k[i])>=uint64_t(sigma))return false;
     int longest=0;
     for(const Route r:base)longest=std::max(longest,r.length);
     const size_t nd=size_t(n)*bits;
     std::vector<double> qsum(nd),ksum(nd),deleted(n);
     std::vector<int> latest(sigma,-1),previous(n,-1);
-    std::vector<uint32_t> keypair(n);
-    for(int r=1;r<n;++r)keypair[r]=uint32_t((k[r-1]<<bits)|k[r]);
-    bigram_detail::PairDirectory directory(n,bits);
     std::vector<Route> qbest(size_t(longest+1)*bits),kbest(nd),survives(longest);
     std::vector<size_t> touched;
     std::vector<int> end_at_length(size_t(longest)+1);
-    uint64_t remaining=uint64_t(n)*64;
-    const uint64_t budget=remaining;
+    uint64_t visits=0;
     // LCS for a particular diagonal. Every inspected exact arm is bounded
     // by the certified longest original causal match.
     const auto lcs=[&](int t,int r){
@@ -84,7 +110,7 @@ inline bool bigram_credit(const uint64_t* q,const uint64_t* k,const std::vector<
     for(int t=1;t<n;++t) {
         const int last=t-1,word=int(q[t]);
         previous[last]=latest[k[last]];latest[k[last]]=last;
-        if(last)directory.add(keypair[last],last);
+        if(last)directory.add(last);
         const Route old=base[t];
         const int L=old.length,first=old.end-L+1;
         const int gram=latest[word];
@@ -115,7 +141,7 @@ inline bool bigram_credit(const uint64_t* q,const uint64_t* k,const std::vector<
         // r<t and r>=1 wherever a two-word occurrence is reported.
         const uint32_t pair=uint32_t((q[t-1]<<bits)|q[t]);
         bool valid=true;
-        if(!directory.visit(pair,keypair,remaining,[&](int r){
+        directory.visit(pair,visits,[&](int r){
             const int a=2+lcs(t-2,r-2);
             if(a>L){valid=false;return;}
             end_at_length[a]=std::max(end_at_length[a],r);
@@ -128,12 +154,13 @@ inline bool bigram_credit(const uint64_t* q,const uint64_t* k,const std::vector<
                 if(mask && !(mask&(mask-1)))
                     repair(r,a,rosa_random::row_bit(mask),a+1+lcs(t-a-1,r-a-1));
             }
-        }) || !valid)return false;
+        });
+        if(!valid)return false;
         for(int j=0;j<2*bits;++j) {
-            if(!directory.visit(pair^(uint32_t(1)<<j),keypair,remaining,[&](int r){
+            directory.visit(pair^(uint32_t(1)<<j),visits,[&](int r){
                 const int age=j/bits;
                 repair(r,age,j-age*bits,2+lcs(t-2,r-2));
-            }))return false;
+            });
         }
         const double* wt=score.row(t);
         for(int h=L-1;h>=1;--h)end_at_length[h]=std::max(end_at_length[h],end_at_length[h+1]);
@@ -191,12 +218,31 @@ inline bool bigram_credit(const uint64_t* q,const uint64_t* k,const std::vector<
             count[group]=0;
         }
     }
-    stats.suffix_queries+=budget-remaining;
+    stats.suffix_queries+=visits;
     stats.peak_workspace_bytes=std::max<uint64_t>(stats.peak_workspace_bytes,directory.bytes()
         +(latest.capacity()+previous.capacity()+end_at_length.capacity()+compact.capacity()+count.capacity())*sizeof(int)
-        +keypair.capacity()*sizeof(uint32_t)+(qbest.capacity()+kbest.capacity()+survives.capacity())*sizeof(Route)
+        +(qbest.capacity()+kbest.capacity()+survives.capacity())*sizeof(Route)
         +touched.capacity()*sizeof(size_t)+(qsum.capacity()+ksum.capacity()+deleted.capacity()+weights.capacity())*sizeof(double));
     cq.swap(qsum);ck.swap(ksum);
     return true;
+}
+// Build a work certificate before materializing any row weights or credits.
+// The fixed visit cap preserves near-linear work on all admitted streams.
+template<class Evaluate>
+inline bool with_bigram_plan(const uint64_t* q,const uint64_t* k,const std::vector<Route>& base,
+        int bits,Evaluate evaluate) {
+    const int n=int(base.size());
+    if(!bigram_eligible(n,bits,base))return false;
+    bigram_detail::PairDirectory directory(n,bits);
+    if(!directory.prepare(q,k,bits,uint64_t(n)*128))return false;
+    return evaluate(directory);
+}
+
+inline bool bigram_credit(const uint64_t* q,const uint64_t* k,const std::vector<Route>& base,
+        int bits,const Scores& score,std::vector<double>& cq,std::vector<double>& ck,Stats& stats) {
+    if(score.n!=int(base.size()))return false;
+    return with_bigram_plan(q,k,base,bits,[&](auto& directory) {
+        return bigram_credit(q,k,base,bits,score,cq,ck,stats,directory);
+    });
 }
 } // namespace rosa_subq

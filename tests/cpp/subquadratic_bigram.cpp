@@ -16,7 +16,36 @@ std::vector<Route> match(const std::vector<uint64_t>& q,const std::vector<uint64
     }
     return base;
 }
+// Exercise the exact admission boundary for direct and projected
+// directories. The latter counts bucket aliases before full-key filtering.
+void check_admission(int bits) {
+    const int n=197;
+    std::mt19937_64 random(91);
+    std::vector<uint64_t> q(n),k(n);
+    const uint64_t mask=(UINT64_C(1)<<bits)-1;
+    for(auto& v:k)v=random()&mask;
+    for(int t=0;t<n;++t)q[t]=k[(t+19)%n]^(t%3==0);
+    bigram_detail::PairDirectory reference(n,bits);
+    if(!reference.prepare(q.data(),k.data(),bits,UINT64_MAX))throw std::runtime_error("prepare");
+    uint64_t visits=0,hits=0,literal=0;
+    for(int t=2;t<n;++t) {
+        reference.add(t-1);
+        const uint32_t word=uint32_t((q[t-1]<<bits)|q[t]);
+        auto hit=[&](int){++hits;};
+        reference.visit(word,visits,hit);
+        for(int j=0;j<2*bits;++j)reference.visit(word^(UINT32_C(1)<<j),visits,hit);
+        for(int r=1;r<t;++r) {
+            uint32_t diff=word^uint32_t((k[r-1]<<bits)|k[r]);
+            literal+=!(diff&(diff-1));
+        }
+    }
+    bigram_detail::PairDirectory enough(n,bits),short_by_one(n,bits);
+    if(!hits || hits!=literal || (bits==16 && hits==visits) ||
+       !enough.prepare(q.data(),k.data(),bits,visits) ||
+       short_by_one.prepare(q.data(),k.data(),bits,visits-1))throw std::runtime_error("census boundary");
+}
 int main() {
+    check_admission(4);check_admission(16);
     std::mt19937_64 rng(865972);
     int checked=0;
     for(int b:{4,5,8,12,13,15,16})for(int rep=0;rep<100;++rep) {
@@ -49,6 +78,9 @@ int main() {
     std::vector<uint64_t> q(1024),k(1024);for(int i=0;i<1024;++i)k[i]=i%2;
     const auto base=match(q,k);std::vector<double>w(1024,1),v(1024,2),empty(1),cq(4096,3),ck(4096,5);
     Stats st;Scores score{1024,1,w.data(),v.data(),empty.data()};
+    bool started=false;
+    if(with_bigram_plan(q.data(),k.data(),base,4,[&](auto&){started=true;return true;}) || started)
+        throw std::runtime_error("reduction started on rejected input");
     if(bigram_credit(q.data(),k.data(),base,4,score,cq,ck,st) || cq!=std::vector<double>(4096,3)
        || ck!=std::vector<double>(4096,5))return 1;
     std::cout<<"{\"status\":\"PASS\",\"checked\":"<<checked<<"}\n";

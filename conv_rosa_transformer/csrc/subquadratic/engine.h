@@ -454,13 +454,14 @@ inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
         }
     }
     auto try_bigrams=[&]() {
-        if(!bigram_eligible(n,bits,base))return false;
-        Features features(n,bits,v,g,h,e0,e1,base,0,seed,stats);
-        if(!bigram_credit(q,k,base,bits,features.scores(),cq,ck,stats))return false;
-        stats.peak_workspace_bytes+=features.workspace_bytes()+base.capacity()*sizeof(Route)
-            +active.capacity()*sizeof(int32_t);
-        if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
-        return true;
+        return with_bigram_plan(q,k,base,bits,[&](auto& directory) {
+            Features features(n,bits,v,g,h,e0,e1,base,0,seed,stats);
+            if(!bigram_credit(q,k,base,bits,features.scores(),cq,ck,stats,directory))return false;
+            stats.peak_workspace_bytes+=features.workspace_bytes()+base.capacity()*sizeof(Route)
+                +active.capacity()*sizeof(int32_t);
+            if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
+            return true;
+        });
     };
     if(!approximation && bits>=5 && bits<=12 && (bits<12 || n>=2048) && try_bigrams())return 0;
     if(!approximation && bits<=8) {
