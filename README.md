@@ -1,5 +1,8 @@
 # QKV-ROSA: subquadratic counterfactual backpropagation
 
+**Research branch for PR #11.** The exact Q/K path here uses one packed suffix frontier for all inputs. It has expected near-linear time on independent uniform keys and quadratic worst-case reporting on constant inputs. The release description below documents the PR #10 baseline. [Research derivation](docs/single-suffix-frontier.md) · [Timings, limitations and raw samples](docs/single-frontier-results.md)
+
+
 QKV-ROSA is a hard retrieval mixer: each output takes the payload after one causal longest-suffix match. This repository trains it with the finite output change caused by each Q/K/V bit flip, projected on the incoming gradient. One C++17 engine computes these credits in $\widetilde O(T^{5/3})$ time and $\widetilde O(T^{4/3})$ space for fixed bit width, numerical dimension, and joint-pair budget.
 
 Let $E$ count causal pairs of equal last symbols. Complete backward takes $\widetilde O(\min(n+E,n^{5/3}))$ time at fixed dimensions and joint budget. A constant effective query with arbitrary keys admits $O(n\log^2(2n))$ time and $O(n)$ space. [Derivation and scope](docs/counterfactual-sweeps.md) · [Paired native and full-layer timings](docs/counterfactual-results.md)
