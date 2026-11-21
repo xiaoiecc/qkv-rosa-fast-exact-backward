@@ -226,10 +226,11 @@ int main() {
         BlockCorrelations::middle_product(signal.data(),available,d,kernel.data(),length,owners,actual.data(),st);
         compare("middle product",actual,expected);
     }
-    // Both repairs share their last 64 bits and break at the same edit.
+    // Both repairs share the largest suffix of whole symbols that fits in
+    // one 64-bit word and break at the same edit.
     // Only the earlier key copy extends farther in the preceding machine
     // word. Truncating to one word would choose the later endpoint.
-    for(int bits:{1,2,4,8}) {
+    for(int bits=1;bits<=8;++bits) {
         const int digits=64/bits,extra=std::max(2,digits/8);
         const int longer=digits+extra,shorter=digits+1,later=longer+5;
         const int n=3*longer+7,t=n-1,owner=t-digits/2;

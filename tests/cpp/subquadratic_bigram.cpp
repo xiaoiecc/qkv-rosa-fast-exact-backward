@@ -19,7 +19,7 @@ std::vector<Route> match(const std::vector<uint64_t>& q,const std::vector<uint64
 int main() {
     std::mt19937_64 rng(865972);
     int checked=0;
-    for(int b:{4,5,8,12})for(int rep=0;rep<100;++rep) {
+    for(int b:{4,5,8,12,13,15,16})for(int rep=0;rep<100;++rep) {
         const int n=3+rep%21,d=1+rep%5;
         std::vector<uint64_t> q(n),k(n);
         for(int t=0;t<n;++t) {

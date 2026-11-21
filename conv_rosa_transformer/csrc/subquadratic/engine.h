@@ -453,16 +453,17 @@ inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
             return 0;
         }
     }
-    if(!approximation && bits>=5 && (bits<12 || n>=2048) && bigram_eligible(n,bits,base)) {
+    auto try_bigrams=[&]() {
+        if(!bigram_eligible(n,bits,base))return false;
         Features features(n,bits,v,g,h,e0,e1,base,0,seed,stats);
-        if(bigram_credit(q,k,base,bits,features.scores(),cq,ck,stats)) {
-            stats.peak_workspace_bytes+=features.workspace_bytes()+base.capacity()*sizeof(Route)
-                +active.capacity()*sizeof(int32_t);
-            if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
-            return 0;
-        }
-    }
-    if(!approximation && bits<=4) {
+        if(!bigram_credit(q,k,base,bits,features.scores(),cq,ck,stats))return false;
+        stats.peak_workspace_bytes+=features.workspace_bytes()+base.capacity()*sizeof(Route)
+            +active.capacity()*sizeof(int32_t);
+        if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
+        return true;
+    };
+    if(!approximation && bits>=5 && bits<=12 && (bits<12 || n>=2048) && try_bigrams())return 0;
+    if(!approximation && bits<=8) {
         int longest=0;
         for(Route r:base)longest=std::max(longest,r.length);
         if(PackedContext::fits(bits,longest)) {
@@ -509,6 +510,9 @@ inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
             return 0;
         }
     }
+    // At wider alphabets a sparse one-word report often settles everything.
+    // On a crowded report switch to full two-word contexts.
+    if(!approximation && bits>=13 && bits<=16 && try_bigrams())return 0;
     const rosa_random::OnegramPlan plan(q,k,n,bits,seed);
     if(!approximation) {
         const uint64_t general=uint64_t(n)*std::max(1,int(std::pow(double(n),2./3)));
@@ -516,7 +520,10 @@ inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
         const uint64_t limit=uint64_t(n)*std::max(1,int(std::pow(double(n),2./3)/128));
         // Very sparse equality joins already have near-linear deterministic work.
         // Charge a failed context search to the smaller applicable fallback bound.
-        if(count>std::min(limit,4*uint64_t(n))) {
+        // When 2^bits >= n, the expected number of equal pairs is at most
+        // n/2 under uniform keys. The existing equality bound already suffices.
+        const bool multiple_levels=bits<32 && (UINT32_C(1)<<bits)<uint32_t(n);
+        if(multiple_levels && count>std::min(limit,4*uint64_t(n))) {
             int longest=0;
             for(auto route:base)longest=std::max(longest,route.length);
             if(longest<=random_context::max_length(n,bits)) {

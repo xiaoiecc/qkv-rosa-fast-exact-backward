@@ -7,7 +7,7 @@ namespace rosa_subq {
 // A complete two-symbol neighborhood suffices beyond the one-symbol
 // control. Bound the exact arms to keep exceptional enumerations cheap.
 inline bool bigram_eligible(int n,int bits,const std::vector<Route>& base) {
-    if(n<2 || bits<4 || bits>12)return false;
+    if(n<2 || bits<4 || bits>16)return false;
     return std::all_of(base.begin(),base.end(),[](Route r){return r.length<=12;});
 }
 
@@ -34,10 +34,10 @@ class PairDirectory {
     }
 public:
     PairDirectory(int n,int bits):next(n,-1) {
-        const int alphabet=1<<(bits*2);
+        const uint64_t alphabet=UINT64_C(1)<<(bits*2);
         int cap=1,log=0;
-        while(cap<alphabet && uint64_t(cap)<uint64_t(n)*16){cap*=2;++log;}
-        heads.assign(cap,-1);direct=cap==alphabet;shift=32-log;
+        while(log<24 && uint64_t(cap)<alphabet && uint64_t(cap)<uint64_t(n)*16){cap*=2;++log;}
+        heads.assign(cap,-1);direct=uint64_t(cap)==alphabet;shift=32-log;
     }
     void add(uint32_t code,int end) {
         auto& head=heads[bucket(code)];next[end]=head;head=end;
@@ -159,30 +159,41 @@ inline bool bigram_credit(const uint64_t* q,const uint64_t* k,const std::vector<
     // s and the next occurrence of x. Throughout this interval the previous
     // occurrence of x supplies the same baseline endpoint. Accumulate the
     // row weights in reverse until an occurrence of x resets the class.
-    std::vector<double> weights(size_t(sigma)*score.d);
-    std::vector<int> count(sigma);
+    // Allocate a row of numerical accumulation only for observed Q words
+    // once the nominal alphabet is larger than the input.
+    std::vector<int> compact;
+    int classes=sigma;
+    if(sigma>n) {
+        compact.assign(sigma,-1);classes=0;
+        for(int t=1;t<n;++t)if(compact[q[t]]<0)compact[q[t]]=classes++;
+    }
+    const auto id=[&](int word){return compact.empty()?word:compact[word];};
+    std::vector<double> weights(size_t(classes)*score.d);
+    std::vector<int> count(classes);
     for(int s=n-2;s>=0;--s) {
-        const int x=int(k[s]),t=s+1,query=int(q[t]);
+        const int x=int(k[s]),t=s+1,query=id(int(q[t]));
         if(base[t].length<=1) {
             double* dst=weights.data()+size_t(query)*score.d;
             for(int c=0;c<score.d;++c)dst[c]+=score.row(t)[c];
             ++count[query];
         }
         for(int j=0;j<bits;++j) {
-            const int target=x^(1<<j);
+            const int target=x^(1<<j),group=id(target);
             double delta=deleted[s];
-            if(count[target])delta+=difference(score,weights.data()+size_t(target)*score.d,s,latest[target]);
+            if(group>=0 && count[group])
+                delta+=difference(score,weights.data()+size_t(group)*score.d,s,latest[target]);
             ksum[size_t(s)*bits+j]+=delta;
         }
         latest[x]=previous[s];
-        if(count[x]) {
-            std::fill_n(weights.begin()+size_t(x)*score.d,score.d,0.);
-            count[x]=0;
+        const int group=id(x);
+        if(group>=0 && count[group]) {
+            std::fill_n(weights.begin()+size_t(group)*score.d,score.d,0.);
+            count[group]=0;
         }
     }
     stats.suffix_queries+=budget-remaining;
     stats.peak_workspace_bytes=std::max<uint64_t>(stats.peak_workspace_bytes,directory.bytes()
-        +(latest.capacity()+previous.capacity()+end_at_length.capacity()+count.capacity())*sizeof(int)
+        +(latest.capacity()+previous.capacity()+end_at_length.capacity()+compact.capacity()+count.capacity())*sizeof(int)
         +keypair.capacity()*sizeof(uint32_t)+(qbest.capacity()+kbest.capacity()+survives.capacity())*sizeof(Route)
         +touched.capacity()*sizeof(size_t)+(qsum.capacity()+ksum.capacity()+deleted.capacity()+weights.capacity())*sizeof(double));
     cq.swap(qsum);ck.swap(ksum);

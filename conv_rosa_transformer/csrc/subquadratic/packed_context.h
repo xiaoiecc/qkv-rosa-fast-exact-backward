@@ -13,7 +13,7 @@ class PackedContext {
     std::vector<int> latest_,first_,previous_;
 public:
     static bool fits(int bits,int longest) {
-        return (bits==1 || bits==2 || bits==4 || bits==8) && longest>=0 && longest<64/bits;
+        return bits>=1 && bits<=8 && longest>=0 && longest<64/bits;
     }
     PackedContext(int n,int bits,int longest):depth_(1),bits_(bits) {
         while(depth_<std::max(1,longest) && (depth_+1)*bits<29
@@ -74,6 +74,9 @@ inline bool sweep(const uint64_t* q,const uint64_t* k,const std::vector<Route>& 
     const int n=score.n;
     PackedContext table(n,Bits,longest);
     constexpr int digits=64/Bits;
+    // Packed words contain an integral number of symbols. The high spare
+    // bits in a 3/5/6/7-bit context belong to the previous word.
+    constexpr uint64_t word_mask=UINT64_MAX>>(64-digits*Bits);
     // Only a completely matching repaired first word can require the second.
     // Longest < digits bounds each separate arm, hence also bounds this tail.
     std::vector<uint64_t> key(n),older_query(2*longest+1>digits?n:0);
@@ -85,9 +88,9 @@ inline bool sweep(const uint64_t* q,const uint64_t* k,const std::vector<Route>& 
     uint64_t word=q[0],kw=0,work=0;
     if(!older_query.empty())older_query[0]=word;
     for(int t=1;t<n;++t) {
-        word=(word<<Bits)|q[t];
+        word=((word<<Bits)|q[t])&word_mask;
         if(!older_query.empty())older_query[t]=word;
-        kw=(kw<<Bits)|k[t-1];key[t-1]=kw;table.insert(kw,t-1);
+        kw=((kw<<Bits)|k[t-1])&word_mask;key[t-1]=kw;table.insert(kw,t-1);
         const double* w=score.row(t);
         if(std::none_of(w,w+score.d,[](double x){return x!=0.;}))continue;
         const Route original=base[t];
@@ -240,9 +243,12 @@ inline bool packed_credit(const uint64_t* q,const uint64_t* k,const std::vector<
         Stats& stats,uint64_t budget) {
     if(!score.n || !PackedContext::fits(bits,longest) || !budget)return false;
     for(int i=0;i<score.n;++i)if((q[i]|k[i])>>bits)return false;
-    if(bits==1)return packed_detail::sweep<1>(q,k,base,longest,score,cq,ck,stats,budget);
-    if(bits==2)return packed_detail::sweep<2>(q,k,base,longest,score,cq,ck,stats,budget);
-    if(bits==4)return packed_detail::sweep<4>(q,k,base,longest,score,cq,ck,stats,budget);
-    return packed_detail::sweep<8>(q,k,base,longest,score,cq,ck,stats,budget);
+    using Kernel=bool(*)(const uint64_t*,const uint64_t*,const std::vector<Route>&,int,
+                         const Scores&,std::vector<double>&,std::vector<double>&,Stats&,uint64_t);
+    static constexpr Kernel kernels[]={
+        packed_detail::sweep<1>,packed_detail::sweep<2>,packed_detail::sweep<3>,packed_detail::sweep<4>,
+        packed_detail::sweep<5>,packed_detail::sweep<6>,packed_detail::sweep<7>,packed_detail::sweep<8>
+    };
+    return kernels[bits-1](q,k,base,longest,score,cq,ck,stats,budget);
 }
 } // namespace rosa_subq
