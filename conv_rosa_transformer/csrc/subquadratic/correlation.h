@@ -137,6 +137,32 @@ class BlockCorrelations {
     };
 
 public:
+ // Correlate a changing age kernel with a contiguous set of owners.
+ // At coefficient L-1+i, cyclic wraparound cannot enter the requested
+ // middle product when the transform width is at least owners+L-1.
+ static void middle_product(const double* signal,int available,int d,const double* kernel,
+        int length,int owners,double* out,CorrelationStats& stats) {
+  const int needed=owners+length-1;
+  int width=1;
+  while(width<needed)width*=2;
+  Plan plan;plan.reset(width);
+  std::vector<Complex> x(width),y(width),spectrum(width);
+  for(int c=0;c<d;++c) {
+   std::fill(x.begin(),x.end(),Complex{});std::fill(y.begin(),y.end(),Complex{});
+   for(int h=0;h<length;++h)x[length-1-h].re=kernel[size_t(h)*d+c];
+   for(int t=0;t<std::min(available,needed);++t)y[t].re=signal[size_t(t)*d+c];
+   plan.forward(x);plan.forward(y);
+   for(int k=0;k<width;++k) {
+    const int at=plan.position(k);
+    spectrum[k]+=x[at]*y[at];
+   }
+  }
+  plan.inverse(spectrum);
+  for(int i=0;i<owners;++i)out[i]+=spectrum[plan.position(length-1+i)].re;
+  stats.transforms+=2*uint64_t(d)+1;
+  stats.workspace_bytes=std::max<uint64_t>(stats.workspace_bytes,
+      size_t(width)*(4*sizeof(Complex)+sizeof(int)));
+ }
  // Batch complete overlaps at all shifts with one convolution per channel
  // and one shared inverse. The at-most-four omitted rows use direct dots.
  // Callers may mix these requests with arbitrary intervals in a separate batch.

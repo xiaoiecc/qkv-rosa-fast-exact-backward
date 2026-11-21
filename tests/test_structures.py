@@ -33,6 +33,9 @@ class StructureTests(unittest.TestCase):
     def test_subquadratic_indexed_row_residual(self):
         self.check_oracle("subquadratic_indexed_row")
 
+    def test_subquadratic_counterfactual_sweeps(self):
+        self.check_oracle("subquadratic_counterfactual")
+
     def test_subquadratic_correlations(self):
         self.check_oracle("subquadratic_correlation")
 

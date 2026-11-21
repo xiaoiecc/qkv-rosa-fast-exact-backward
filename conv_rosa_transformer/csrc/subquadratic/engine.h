@@ -9,6 +9,9 @@
 #include "fingerprint_k.h"
 #include "q_frontier.h"
 #include "correlation.h"
+#include "run_credit.h"
+#include "endpoint_credit.h"
+#include "packed_context.h"
 #include "../training.h"
 #include "../forward.h"
 #include <memory>
@@ -88,6 +91,9 @@ public:
         stats.sampled_channels=sampled?selected.size():0;
         stats.peak_workspace_bytes=std::max(stats.peak_workspace_bytes,
             uint64_t(sizeof(double)*(raw.size()+weights_.size()+payload_.size()+extra.size())));
+    }
+    void omit_rows(const std::vector<int32_t>& rows) {
+        for(int t:rows)std::fill_n(weights_.begin()+size_t(t)*d_,d_,0.);
     }
     Scores scores()const {return {n_,d_,weights_.data(),payload_.data(),empty_.data()};}
     size_t workspace_bytes()const {
@@ -408,6 +414,90 @@ inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
     if(active.empty()){if(approx_stats)approx_stats[27]=1;return 0;}
     const uint64_t random_seed=seed^(approximation?approximation->seed:0);
     const int channels=approximation?approximation->sample_channels:0;
+    if(!approximation && n>1) {
+        int longest_run=1,run=1;uint64_t word=q[1];
+        for(int t=2;t<n;++t) {
+            run=q[t]==q[t-1]?run+1:1;
+            if(run>longest_run){longest_run=run;word=q[t];}
+        }
+        const bool uniform=longest_run==n-1;
+        std::vector<int32_t> residual;
+        if(uniform || (longest_run>=16 && run_credit::residual_rows(q,k,n,word,active,residual))) {
+            Features features(n,bits,v,g,h,e0,e1,base,0,seed,stats);
+            std::vector<Route> template_base;
+            if(!uniform) {
+                features.omit_rows(residual);
+                template_base.resize(n);
+                int length=0;
+                for(int t=1;t<n;++t) {
+                    length=k[t-1]==word?length+1:0;
+                    template_base[t]=template_base[t-1];
+                    if(length)template_base[t]=std::max(template_base[t],Route{length,t-1});
+                }
+            }
+            run_credit::evaluate(k,word,uniform?base:template_base,features.scores(),bits,cq,ck,stats);
+            if(!residual.empty()) {
+                Index index(q,k,n,randomized,seed,&base);
+                endpoint_credit::evaluate(index,bits,v,g,h,e0,e1,residual,[&](int t,auto emit){
+                    for(int r=0;r<t;++r) {
+                        const uint64_t diff=q[t]^k[r];
+                        if(!(diff&(diff-1)))emit(r);
+                    }
+                },cq,ck,stats);
+            }
+            stats.peak_workspace_bytes+=features.workspace_bytes()+(base.capacity()+template_base.capacity())*sizeof(Route)
+                +(active.capacity()+residual.capacity())*sizeof(int32_t);
+            if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
+            return 0;
+        }
+    }
+    if(!approximation && bits<=4) {
+        int longest=0;
+        for(Route r:base)longest=std::max(longest,r.length);
+        if(PackedContext::fits(bits,longest)) {
+            Features features(n,bits,v,g,h,e0,e1,base,0,seed,stats);
+            const uint64_t levels=1+uint64_t(std::log2(double(n)));
+            if(packed_credit(q,k,base,bits,longest,features.scores(),cq,ck,stats,
+                    uint64_t(n)*std::max<uint64_t>(32,2*levels*levels))) {
+                stats.peak_workspace_bytes+=features.workspace_bytes()+base.capacity()*sizeof(Route)
+                    +active.capacity()*sizeof(int32_t);
+                if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
+                return 0;
+            }
+        }
+    }
+    if(!approximation && bits>=12) {
+        endpoint_credit::Reports reports;
+        if(reports.build(q,k,n,bits)) {
+            if(!reports.ends.empty()) {
+                Index index(q,k,n,randomized,seed,&base);
+                endpoint_credit::evaluate(index,bits,v,g,h,e0,e1,active,[&](int t,auto emit){
+                    for(size_t i=reports.offsets[t];i<reports.offsets[t+1];++i)emit(reports.ends[i]);
+                },cq,ck,stats);
+            }
+            if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
+            stats.peak_workspace_bytes=std::max<uint64_t>(reports.peak_bytes,stats.peak_workspace_bytes
+                +reports.offsets.capacity()*sizeof(size_t)+reports.ends.capacity()*sizeof(int));
+            stats.peak_workspace_bytes+=base.capacity()*sizeof(Route)+active.capacity()*sizeof(int32_t);
+            return 0;
+        }
+    }
+    if(!approximation) {
+        // Bounded projection reports accelerate sparse wide words. This exact
+        // census also covers bad projections, narrower words and larger J.
+        const uint64_t limit=uint64_t(n)*std::max(12,int(std::pow(double(n),2./3)/32));
+        endpoint_credit::Occurrences occurrences(k,n,bits);
+        if(occurrences.admit(q,k,n,limit)) {
+            Index index(q,k,n,randomized,seed,&base);
+            endpoint_credit::evaluate(index,bits,v,g,h,e0,e1,active,[&](int t,auto emit){
+                occurrences.row(q[t],t,emit);
+            },cq,ck,stats);
+            stats.peak_workspace_bytes+=occurrences.bytes()+base.capacity()*sizeof(Route)
+                +active.capacity()*sizeof(int32_t);
+            if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
+            return 0;
+        }
+    }
     const rosa_random::OnegramPlan plan(q,k,n,bits,seed);
     std::vector<int32_t>repair_active;
     for(int t:active)if(plan.birth_prefix[t+1]!=plan.birth_prefix[t-lengths[t]])repair_active.push_back(t);
