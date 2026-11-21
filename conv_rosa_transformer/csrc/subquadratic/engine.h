@@ -482,10 +482,10 @@ inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
             return 0;
         }
     }
-    if(!approximation) {
+    if(!approximation && bits>=12) {
         // Bounded projection reports accelerate sparse wide words. This exact
         // census also covers bad projections, narrower words and larger J.
-        const uint64_t limit=uint64_t(n)*std::max(12,int(std::pow(double(n),2./3)/32));
+        const uint64_t limit=uint64_t(n)*12;
         endpoint_credit::Occurrences occurrences(k,n,bits);
         if(occurrences.admit(q,k,n,limit)) {
             Index index(q,k,n,randomized,seed,&base);
@@ -499,6 +499,17 @@ inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
         }
     }
     const rosa_random::OnegramPlan plan(q,k,n,bits,seed);
+    if(!approximation) {
+        const uint64_t limit=uint64_t(n)*std::max(1,int(std::pow(double(n),2./3)/128));
+        const uint64_t count=endpoint_credit::equal_pairs(plan,limit);
+        if(count<=limit) {
+            endpoint_credit::equal_sweep(plan,count,base,active,v,g,h,e0,e1,routes,randomized,seed,cq,ck,stats);
+            stats.peak_workspace_bytes+=plan.workspace_bytes()+base.capacity()*sizeof(Route)
+                +active.capacity()*sizeof(int32_t);
+            if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
+            return 0;
+        }
+    }
     std::vector<int32_t>repair_active;
     for(int t:active)if(plan.birth_prefix[t+1]!=plan.birth_prefix[t-lengths[t]])repair_active.push_back(t);
     uint64_t certificate[8]={};

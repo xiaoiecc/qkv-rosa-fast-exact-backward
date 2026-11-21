@@ -39,12 +39,39 @@ void check(Words q,Words k,int bits,bool test_residual=false) {
     for(auto* a:{&w,&v,&empty})for(auto& x:*a)x=double(int(rng()%19)-9)/8.;
     Scores score{n,d,w.data(),v.data(),empty.data()};
     Values eq(n*bits),ek(n*bits);
+    Values gradient(n*bits),diagonal(n*bits),empty_value(bits),scale(bits),equal_q(n*bits),equal_k(n*bits);
+    std::vector<uint8_t> value(n*bits);
+    std::vector<int32_t> rows(n),ends(n);
+    std::iota(rows.begin(),rows.end(),0);
+    for(int t=0;t<n;++t)ends[t]=base[t].end;
+    for(auto* a:{&gradient,&diagonal,&empty_value,&scale})for(auto& x:*a)x=double(int(rng()%7)-3)/4.;
+    for(auto& h:diagonal)h=std::abs(h);
+    for(auto& x:value)x=rng()%2;
+    const bool quadratic=cases%2==0;
+    auto payload=[&](int end,int j){return end<0?empty_value[j]:(2*int(value[(end+1)*bits+j])-1)*scale[j];};
     for(int side=0;side<2;++side)for(int owner=0;owner<n;++owner)for(int bit=0;bit<bits;++bit) {
         auto& word=side?k[owner]:q[owner]; word^=UINT64_C(1)<<bit;
         const auto flip=literal(q,k); word^=UINT64_C(1)<<bit;
         double sum=0;
         for(int t=0;t<n;++t)sum+=score.score(t,flip[t].end)-score.score(t,base[t].end);
+        double projected=0;
+        for(int t=0;t<n;++t)if(flip[t].end!=base[t].end)for(int j=0;j<bits;++j) {
+            const double dy=payload(flip[t].end,j)-payload(base[t].end,j);
+            projected+=gradient[t*bits+j]*dy+(quadratic?.5*diagonal[t*bits+j]*dy*dy:0.);
+        }
+        (side?equal_k:equal_q)[owner*bits+bit]=projected;
         (side?ek:eq)[owner*bits+bit]=sum;
+    }
+    {
+        rosa_random::OnegramPlan plan(q.data(),k.data(),n,bits);
+        const uint64_t exact=endpoint_credit::equal_pairs(plan,UINT64_MAX);
+        uint64_t expected_count=0;
+        for(int t=1;t<n;++t)for(int r=0;r<t;++r)expected_count+=q[t]==k[r];
+        if(exact!=expected_count)throw std::runtime_error("incorrect exact join size");
+        Values a(n*bits),b(n*bits);Stats st;
+        endpoint_credit::equal_sweep(plan,exact,base,rows,value.data(),gradient.data(),
+            quadratic?diagonal.data():nullptr,empty_value.data(),scale.data(),ends.data(),false,0,a,b,st);
+        compare("equality Q",a,equal_q);compare("equality K",b,equal_k);
     }
     auto sweep=[&](const std::vector<int32_t>& rows,Values& cq,Values& ck) {
         Stats st;
@@ -63,7 +90,6 @@ void check(Words q,Words k,int bits,bool test_residual=false) {
             for(int j=0;j<bits;++j){cq[i*bits+j]+=a;ck[i*bits+j]+=b;}
         }
     };
-    std::vector<int32_t> rows(n);std::iota(rows.begin(),rows.end(),0);
     Values cq(n*bits),ck(n*bits);
     sweep(rows,cq,ck);
     compare("endpoint Q",cq,eq);compare("endpoint K",ck,ek);

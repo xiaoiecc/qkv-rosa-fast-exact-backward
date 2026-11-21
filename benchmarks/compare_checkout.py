@@ -50,16 +50,17 @@ def load_reference(root):
 
 def endpoint_count(cache, bits):
     counts = {}
-    total = 0
+    total = exact = 0
     keys = cache.k.ravel()
     for t, word in enumerate(cache.q.ravel()):
         if t:
             key = int(keys[t - 1])
             counts[key] = counts.get(key, 0) + 1
         word = int(word)
+        exact += counts.get(word, 0)
         total += counts.get(word, 0)
         total += sum(counts.get(word ^ (1 << j), 0) for j in range(bits))
-    return total
+    return exact, total
 
 
 def main():
@@ -97,6 +98,7 @@ def main():
         cases = ([("lagged_copy", n, 64) for n in (512, 1024, 2048, 4096)]
                  + [("mixed_runs", n, 8) for n in (1024, 4096, 8192)]
                  + [("band_collision", n, 64) for n in (1024, 4096)]
+                 + [("near_fanout", n, 8) for n in (1024, 4096, 8192)]
                  + [("skyline", 48, 8), ("shadow", 16384, 8)])
     rows = []
     for case, (family, n, d) in enumerate(cases):
@@ -131,7 +133,8 @@ def main():
                        speedup=medians["reference"] / medians["current"],
                        errors=quality, numerical_close=numerical_close,
                        forward_bytewise_equal=forward_equal, pair_codes_equal=pair_codes_equal)
-            row.update(eligible_endpoints=endpoint_count(caches["current"], d),
+            exact, eligible = endpoint_count(caches["current"], d)
+            row.update(exact_endpoints=exact, eligible_endpoints=eligible,
                        sum_match_lengths=int(caches["current"].lengths.sum()),
                        max_match_length=int(caches["current"].lengths.max()),
                        workspace_estimate_bytes={name: out[-1]["workspace_estimate_bytes"]

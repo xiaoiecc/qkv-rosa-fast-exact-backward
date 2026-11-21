@@ -4,7 +4,7 @@
 
 The C++ engine changes the unit of work. It represents many counterfactual routes by intervals, arithmetic progressions, and a small set of winning matches, then sums their numerical contributions in batches. It also counts a complete set of possible contributors before deciding whether that set needs compression at all. For fixed bit width and numerical dimension, its worst-case bound is $\widetilde O(n^{5/3})$ time and $\widetilde O(n^{4/3})$ space. The tilde hides logarithmic factors.
 
-Let $J$ count causal last-symbol pairs at Hamming distance at most one. Complete backward takes $\widetilde O(\min(n+J,n^{5/3}))$ time at fixed dimensions and joint budget. A constant effective query with arbitrary keys admits $O(n\log^2(2n))$ time and $O(n)$ space. [Derivation and scope](docs/counterfactual-sweeps.md)
+Let $E$ count causal pairs of equal last symbols. Complete backward takes $\widetilde O(\min(n+E,n^{5/3}))$ time at fixed dimensions and joint budget. A constant effective query with arbitrary keys admits $O(n\log^2(2n))$ time and $O(n)$ space. [Derivation and scope](docs/counterfactual-sweeps.md)
 
 Those factors and the constants matter. A lower exponent does not promise a faster training step at a particular sequence length. This is the repository's single backward engine. Historical implementations appear only as measured baselines in the results, not as selectable backends.
 

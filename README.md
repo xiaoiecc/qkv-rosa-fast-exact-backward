@@ -2,7 +2,7 @@
 
 QKV-ROSA is a hard retrieval mixer: each output takes the payload after one causal longest-suffix match. This repository trains it with the finite output change caused by each Q/K/V bit flip, projected on the incoming gradient. One C++17 engine computes these credits in $\widetilde O(T^{5/3})$ time and $\widetilde O(T^{4/3})$ space for fixed bit width, numerical dimension, and joint-pair budget.
 
-Let $J$ count causal last-symbol pairs at Hamming distance at most one. Complete backward takes $\widetilde O(\min(n+J,n^{5/3}))$ time at fixed dimensions and joint budget. A constant effective query with arbitrary keys admits $O(n\log^2(2n))$ time and $O(n)$ space. [Derivation and scope](docs/counterfactual-sweeps.md)
+Let $E$ count causal pairs of equal last symbols. Complete backward takes $\widetilde O(\min(n+E,n^{5/3}))$ time at fixed dimensions and joint budget. A constant effective query with arbitrary keys admits $O(n\log^2(2n))$ time and $O(n)$ space. [Derivation and scope](docs/counterfactual-sweeps.md)
 
 The layer fits an ordinary PyTorch model and optimizer:
 

@@ -52,6 +52,10 @@ def make_case(family,n,d,seed):
     elif family=="mixed_runs":
         q=np.zeros(n,np.uint64); q[n//3]=1; q[2*n//3]=2
         k=rng.integers(0,4,n,dtype=np.uint64); k[::4]=3
+    elif family=="near_fanout":
+        q=rng.choice(np.array([0,3,5,6],np.uint64),n)
+        k=rng.choice(np.array([1,2,4,7],np.uint64),n)
+        k[1:4]=q[n//2:n//2+3]
     elif family=="band_collision":
         # All key and query words have the same upper 32 bits.
         q=rng.integers(0,1<<32,n,dtype=np.uint64); k=np.roll(q,-3)

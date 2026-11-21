@@ -1,6 +1,6 @@
 # A complete subquadratic algorithm for the mathematical QKV-ROSA counterfactual VJP
 
-Let $J$ count causal last-symbol pairs at Hamming distance at most one. Complete backward takes $\widetilde O(\min(n+J,n^{5/3}))$ time at fixed dimensions and joint budget. A constant effective query with arbitrary keys admits $O(n\log^2(2n))$ time and $O(n)$ space. [Derivation and scope](counterfactual-sweeps.md)
+Let $E$ count causal pairs of equal last symbols. Complete backward takes $\widetilde O(\min(n+E,n^{5/3}))$ time at fixed dimensions and joint budget. A constant effective query with arbitrary keys admits $O(n\log^2(2n))$ time and $O(n)$ space. [Derivation and scope](counterfactual-sweeps.md)
 
 Structural proof. The bound implemented by the native subquadratic engine is
 

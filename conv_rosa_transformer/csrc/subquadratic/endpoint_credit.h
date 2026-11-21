@@ -1,6 +1,7 @@
 #pragma once
 #include "index.h"
 #include "near_k.h"
+#include "../approx_onegram.h"
 #include <array>
 
 namespace rosa_subq {
@@ -75,7 +76,7 @@ class RowSweep {
             const auto edit=candidates[i++];Route best=edit.route;
             while(i<candidates.size() && candidates[i].owner==edit.owner && candidates[i].bit==edit.bit)
                 best=std::max(best,candidates[i++].route);
-            const Route other=removed(edit.owner);
+            const Route other=removed(edit.owner,edit.bit);
             if(best>other && best.end!=other.end)
                 out[size_t(edit.owner)*bits+edit.bit]+=cost(best.end)-cost(other.end);
         }
@@ -84,7 +85,7 @@ public:
     RowSweep(const Index& ix,int b,Stats& work):index(ix),bits(b),stats(work){}
     template<class Report,class Cost>
     void row(int t,Report&& report,Cost&& cost,std::vector<double>& qdiff,std::vector<double>& kdiff,
-             std::vector<double>& cq,std::vector<double>& ck) {
+             std::vector<double>& cq,std::vector<double>& ck,const std::array<int,64>* singleton=nullptr) {
         const Route base=index.baseline()[t];
         exact.clear();qr.clear();kr.clear();
         report([&](int r) {
@@ -112,8 +113,21 @@ public:
                 range(qdiff,t-std::min(step.high,base.length-1),t-step.low,step.end);
             k_ranges(base,[&](int lo,int hi,int end){range(kdiff,lo,hi,end);});
         }
-        repairs(qr,[&](int u){return q_deleted(t,u,base);},cost,cq);
-        repairs(kr,[&](int s){return k_deleted(s,base);},cost,ck);
+        // A batched one-symbol repair already supplies short rows. For
+        // longer rows only a Q edit at the last symbol needs that seed.
+        if(singleton && base.length>=2)for(int j=0;j<bits;++j) {
+            const int end=(*singleton)[j];
+            if(end>=0)cq[size_t(t)*bits+j]+=cost(end)-cost(-1);
+        }
+        repairs(qr,[&](int u,int bit){
+            if(singleton && u==t && (*singleton)[bit]>=0)return Route{1,(*singleton)[bit]};
+            return q_deleted(t,u,base);
+        },cost,cq);
+        repairs(kr,[&](int s,int bit){
+            if(singleton && base.length<=1 && s>base.end && (index.q[t]^index.k[s])==(UINT64_C(1)<<bit))
+                return Route{1,s};
+            return k_deleted(s,base);
+        },cost,ck);
     }
     size_t bytes() const {
         return (exact.capacity()+prefix.capacity())*sizeof(Route)+steps.capacity()*sizeof(Step)
@@ -231,7 +245,8 @@ public:
 template<class Report>
 inline void evaluate(const Index& index,int bits,const uint8_t* v,const double* g,const double* h,
         const double* e0,const double* e1,const std::vector<int32_t>& rows,Report&& report,
-        std::vector<double>& cq,std::vector<double>& ck,Stats& stats) {
+        std::vector<double>& cq,std::vector<double>& ck,Stats& stats,
+        const rosa_random::OnegramPlan* singleton=nullptr) {
     const int n=index.n;
     std::vector<double> qdiff(size_t(n)+1),kdiff(size_t(n)+1),costs(size_t(n)+1);
     std::vector<int> stamp(size_t(n)+1,-1);
@@ -253,7 +268,16 @@ inline void evaluate(const Index& index,int bits,const uint8_t* v,const double* 
             }
             return costs[end+1];
         };
-        sweep.row(t,[&](auto emit){report(t,emit);},cost,qdiff,kdiff,cq,ck);
+        std::array<int,64> latest;
+        if(singleton) {
+            latest.fill(-1);
+            for(const auto& edge:singleton->qneighbors[singleton->qclass[t]]) {
+                const auto first=singleton->krows.begin()+singleton->ko[edge.other];
+                const auto stop=std::lower_bound(first,singleton->krows.begin()+singleton->ko[edge.other+1],t);
+                if(stop!=first)latest[edge.bit]=stop[-1];
+            }
+        }
+        sweep.row(t,[&](auto emit){report(t,emit);},cost,qdiff,kdiff,cq,ck,singleton?&latest:nullptr);
     }
     double qsum=0,ksum=0;
     for(int s=0;s<n;++s) {
@@ -264,6 +288,52 @@ inline void evaluate(const Index& index,int bits,const uint8_t* v,const double* 
     stats.peak_workspace_bytes=std::max<uint64_t>(stats.peak_workspace_bytes,
         index.workspace_bytes()+sweep.bytes()+(qdiff.capacity()+kdiff.capacity()+costs.capacity())*sizeof(double)
         +stamp.capacity()*sizeof(int));
+}
+// Count equal last symbols only. Once the length-one repairs are summed
+// by symbol class, every remaining alignment has an exact pair at its last
+// or penultimate symbol. These two translated joins contain at most 2E rows.
+inline uint64_t equal_pairs(const rosa_random::OnegramPlan& plan,uint64_t limit) {
+    std::vector<int> seen(plan.nk);
+    uint64_t total=0;
+    for(int t=1;t<plan.n;++t) {
+        ++seen[plan.kclass[t-1]];
+        const int id=plan.qsame[plan.qclass[t]];
+        if(id>=0)total+=seen[id];
+        if(total>limit)break;
+    }
+    return total;
+}
+
+inline void equal_sweep(const rosa_random::OnegramPlan& plan,uint64_t count,const std::vector<Route>& base,
+        const std::vector<int32_t>& active,const uint8_t* v,const double* g,const double* h,
+        const double* e0,const double* e1,const int32_t* routes,bool randomized,uint64_t seed,
+        std::vector<double>& cq,std::vector<double>& ck,Stats& stats) {
+    const int n=plan.n;
+    std::vector<double> weight;
+    if(std::any_of(base.begin(),base.end(),[](Route r){return r.length>1;})) {
+        weight.resize(n);
+        for(int t=0;t<n;++t)weight[t]=base[t].length<=1;
+    }
+    uint64_t work[16]={};size_t workspace=0;
+    const double* selected=weight.empty()?nullptr:weight.data();
+    if(h)plan.apply<true>(v,g,h,e0,e1,routes,cq.data(),ck.data(),work,false,selected,&workspace,true);
+    else plan.apply<false>(v,g,h,e0,e1,routes,cq.data(),ck.data(),work,false,selected,&workspace,true);
+    stats.peak_workspace_bytes=std::max<uint64_t>(stats.peak_workspace_bytes,workspace);
+    if(count) {
+        Index index(plan.q,plan.k,n,randomized,seed,&base);
+        const auto exact=[&](int t,auto emit) {
+            const int id=plan.qsame[plan.qclass[t]];
+            if(id<0)return;
+            for(int i=plan.ko[id];i<plan.ko[id+1] && plan.krows[i]<t;++i)emit(plan.krows[i]);
+        };
+        evaluate(index,plan.d,v,g,h,e0,e1,active,[&](int t,auto emit){
+            exact(t,emit);
+            if(t>1)exact(t-1,[&](int r){
+                if(plan.q[t]!=plan.k[r+1])emit(r+1);
+            });
+        },cq,ck,stats,&plan);
+    }
+    stats.peak_workspace_bytes+=weight.capacity()*sizeof(double);
 }
 } // namespace endpoint_credit
 } // namespace rosa_subq
