@@ -1,0 +1,44 @@
+case 4096 160309
+kernel bigram done=1 elapsed_ms=4.1814
+kernel bigram done=1 elapsed_ms=5.6413
+kernel bigram done=1 elapsed_ms=3.9630
+kernel bigram done=1 elapsed_ms=3.8349
+case 4096 771317
+kernel bigram done=1 elapsed_ms=4.4852
+kernel bigram done=1 elapsed_ms=4.5109
+kernel bigram done=1 elapsed_ms=4.0909
+kernel bigram done=1 elapsed_ms=4.6684
+case 8192 160309
+kernel bigram done=0 elapsed_ms=9.9206
+kernel packed done=0 elapsed_ms=20.3337
+kernel trie done=0 elapsed_ms=12.9874
+kernel residual
+kernel bigram done=0 elapsed_ms=9.1775
+kernel packed done=0 elapsed_ms=19.5055
+kernel trie done=0 elapsed_ms=13.9341
+kernel residual
+kernel bigram done=0 elapsed_ms=9.6428
+kernel packed done=0 elapsed_ms=19.9611
+kernel trie done=0 elapsed_ms=10.9172
+kernel residual
+kernel bigram done=0 elapsed_ms=9.9092
+kernel packed done=0 elapsed_ms=20.8510
+kernel trie done=0 elapsed_ms=10.9918
+kernel residual
+case 8192 771317
+kernel bigram done=0 elapsed_ms=9.6453
+kernel packed done=0 elapsed_ms=19.1549
+kernel trie done=0 elapsed_ms=11.4374
+kernel residual
+kernel bigram done=0 elapsed_ms=9.2074
+kernel packed done=0 elapsed_ms=19.2051
+kernel trie done=0 elapsed_ms=10.8663
+kernel residual
+kernel bigram done=0 elapsed_ms=10.2998
+kernel packed done=0 elapsed_ms=19.9321
+kernel trie done=0 elapsed_ms=11.5440
+kernel residual
+kernel bigram done=0 elapsed_ms=9.5443
+kernel packed done=0 elapsed_ms=21.5830
+kernel trie done=0 elapsed_ms=11.5391
+kernel residual

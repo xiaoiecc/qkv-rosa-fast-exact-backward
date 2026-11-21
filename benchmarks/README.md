@@ -33,6 +33,8 @@ to the benchmark generator; the engine has no such dispatch.
 
 Use `random_qkv.py` for complete untimed-trace parity and interleaved trace-free backward timings. Inputs include independent Gaussian logits, independent random signs, and a biased Gaussian with bit probability 0.8. The default grid has eight widths, three seeds, both credit orders, and three Gaussian sequence lengths. Inputs are regenerated identically from each row's seed, shape and family. The [results and reproduction commands](../docs/random-qkv-results.md) cover widths 1 through 64, additional skewed seeds and ordinary PyTorch optimizer steps.
 
+The [two-symbol preflight comparison](../docs/bigram-preflight.md) includes independent random inputs, a cap-only ablation and the cost at lengths on both sides of the old cutoff.
+
 ## Paired comparison with a frozen checkout
 
 ```bash
