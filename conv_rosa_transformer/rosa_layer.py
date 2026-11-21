@@ -95,7 +95,7 @@ class NBitQKVRosa(nn.Module):
     remains one model forward and one loss.backward(), with no special optimizer.
 
     One structural engine handles every packed alphabet. Its fixed-width
-    bound is soft-O(T**(7/4)) time and soft-O(T**(4/3)) space. Complete credit
+    bound is soft-O(T**(5/3)) time and soft-O(T**(4/3)) space. Complete credit
     uses exact routes with FFT/reassociated numerical sums where profitable;
     it is not a bitwise reproduction of an older accumulation order.
 

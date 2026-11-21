@@ -1,14 +1,14 @@
 # A complete subquadratic algorithm for the mathematical QKV-ROSA counterfactual VJP
 
-Structural proof, 2026-11-06. The bound implemented by the native subquadratic engine is
+Structural proof. The bound implemented by the native subquadratic engine is
 
 $$
-\boxed{\widetilde O(n^{7/4})\text{ time and }\widetilde O(n^{4/3})\text{ space}}
+\boxed{\widetilde O(n^{5/3})\text{ time and }\widetilde O(n^{4/3})\text{ space}}
 $$
 
 for fixed packed-symbol bit width and fixed numerical dimension. Here $\widetilde O$ hides powers of $\log(2+n)$, **not** bit width, numerical dimension, or arbitrary-precision scalar costs. The theorem computes all single-bit credits without enumerating all owner-by-row routes. It is an exact combinatorial construction and an exact arithmetic reduction. The C++ implementation follows this reduction. Its floating arithmetic does not reproduce the legacy binary64 event order bit for bit; a complexity bound also does not predict which engine is faster at a finite input size.
 
-The heavy/light numerical split bounds the compressed Q phase by $\widetilde O(n^{5/3})$ for fixed widths. The compact short-repair dictionary and anchored long-repair balance give K the full $7/4$ exponent. Accepted complete endpoint reports share the overall $7/4$ budget. With a joint training budget J, retain the additional $\widetilde O(Jn(d+1))$ term from Section11; the complete training bound assumes J is fixed.
+The heavy/light numerical split bounds the compressed Q phase by $\widetilde O(n^{5/3})$ for fixed widths. The compact short-repair dictionary and anchored long-repair balance give K the same exponent through the short-period overlap bound in Section 9. Accepted complete endpoint reports share the overall $5/3$ budget. With a joint training budget J, retain the additional $\widetilde O(Jn(d+1))$ term from Section11; the complete training bound assumes J is fixed.
 
 ## 1. Problem and computational contract
 
@@ -103,7 +103,7 @@ Two exact support tests reduce the residual population. A repair at row $t$ has 
 For an uncertified row, a potentially useful endpoint has either $K_r=Q_t$ or $K_r\oplus Q_t$ equal to a requested single bit. A positive original LCS locates the first mismatch; a zero LCS can be repaired only in the second case. Thus these class occurrence lists contain every possible repair. Their causal sizes are counted before enumeration. Let $M$ be the total count over the selected complete residual rows and
 
 $$
-W_n=n\max(1,\lfloor n^{3/4}\rfloor).
+W_n=n\max(1,\lfloor n^{2/3}\rfloor).
 $$
 
 Enumeration is accepted only for $M\le W_n$. Prefix winners and an $R$ staircase built from each row's exact endpoints give its deletion comparisons; full owner/bit repair maxima are formed before numerical emission. The accepted computation costs $\widetilde O((d+1)M+nb(d+1))$. If the count exceeds $W_n$, the shared compressed construction in the following sections evaluates the complete sum. A rejected count has not materialized an owner-by-row route table.
@@ -218,6 +218,10 @@ O(nd+M).
 $$
 
 With W chosen to balance the middle terms, this is $\widetilde O(dn\sqrt M+n+M)$. Requests with no complete block are entirely direct. The native implementation is [correlation.h](../conv_rosa_transformer/csrc/subquadratic/correlation.h); its independent direct-sum oracle is [subquadratic_correlation.cpp](../tests/cpp/subquadratic_correlation.cpp). An affine route interval supplies exactly one such request, with shift β+1.
+
+For each active full-block shift $s$, only payload-block offsets $\lfloor s/W\rfloor$ and $\lceil s/W\rceil$ can contribute. The event sweep maintains their ordered union with reference counts, so a sparse plan visits precisely its requested block pairs. The planner's cost includes channel transforms, visited pairs, shift prefixes, and direct fringes. Its minimum over power-of-two widths is bounded by the cost at a width within a factor of two of the theoretical balance (or the all-direct choice for shorter requests).
+
+For a shift $s$ the full overlap is $[\max(0,-s),\min(n-1,n-1-s)]$. Reversing the weights gives every full-overlap sum at coefficient $n-1+s$ of one convolution summed across channels. A batch of $M'$ requests missing at most four rows apiece can thus be answered in $O(dn\log n+dM')$ work by subtracting the omitted row dots. The native path requires at least 32 included rows per request and sufficient total requested work to amortize the transforms. Other intervals retain the arbitrary-interval algorithm. As for the block FFT, cancellation and roundoff depend on the operands.
 
 ## 5. Q repairs: heavy rows directly, light tails by convolution
 
@@ -361,7 +365,13 @@ If the resulting survivor has length at least $h$, it is the global deletion win
 
 The native `include_deletion` schedule also sums shared deletion for every owner in the baseline occurrence, caching each row/owner answer for repair. This adds $L$ owner queries per row, already charged by the counted damage window: after causal clipping its width is at least $L$ because $r_0<t$. It does not introduce a new $n^2$ enumeration outside the accepted budget.
 
-Preflight costs near-linear index work plus $O(n\operatorname{polylog}n+nd)$. An accepted report set costs $\widetilde O((d+1)M+nb)$, including the survivor bucket sweeps, fallback deletion queries, and numeric work. Processing one row at a time retains $O(n+nb)$ non-index words rather than all $M$ reports. Thus the budget preserves the full $7/4$ time exponent and the memory theorem. This is an exact bounded evaluation of the same K deletion/repair terms.
+Preflight costs near-linear index work plus $O(n\operatorname{polylog}n+nd)$. An accepted report set costs $\widetilde O((d+1)M+nb)$, including the survivor bucket sweeps, fallback deletion queries, and numeric work. Processing one row at a time retains $O(n+nb)$ non-index words rather than all $M$ reports. Thus the budget preserves the full $5/3$ time exponent and the memory theorem. This is an exact bounded evaluation of the same K deletion/repair terms.
+
+### Sparse supported K flips
+
+A repaired match for K owner $s$ must align its toggled word with a Q word at $u>s$. For each Hamming-one class edge, the sorted K list up to the last Q occurrence gives all such owner/bit pairs. When their count is at most $\lfloor\sqrt n\rfloor$, compute common deletion once and replace only those coordinates with their complete edited-minus-baseline score. Replaying them sequentially costs $\widetilde O((d+1)n^{3/2})$ and near-linear additional storage at fixed width.
+
+For a replay, removing the last symbol of a causal length-$m$ match gives a legal length-$(m-1)$ match one row earlier. If the trailing equal-Q run covers the previous winning length plus one, the current winner lies entirely in that run. Track the longest causal K run for each Q symbol with latest-end ties. An absent symbol gives the empty route. An uncapped longest run that fits the Q run gives the exact winner under the length certificate. If either check fails, discard this partial score and use the ordinary matcher for the entire edit. Every coordinate reuses the original row coefficients, including in the diagonal lift.
 
 ### Verified full-window reports under a bounded baseline length
 
@@ -484,23 +494,19 @@ $$
 =\widetilde O(dn^2/B^{1/2}).
 $$
 
-The negative term is an arbitrary owner/time-interval deletion projection. Restrict the outer loop of the universal K-deletion kernel to a time block of H original rows, reusing its global index. With internal terminal threshold A, it creates O(HA+Hn/A) descriptors. All-period numeric contraction costs O(nAd+Ed), even though only H rows supplied its coefficients. Including the output scan gives
+Fix a terminal window width $A=\lceil\sqrt n\rceil$. A row's owner segments are disjoint. For a segment of length $m$ with period $p>A/4$, its endpoint is constant on plateaus of width $p$, clipped at both ends. Expand these into at most $2+m/p$ scalar range updates. Summing over a row costs $O(\text{segments}+n/A)$. The period sweep retains only $p\le A/4$.
+
+**Short periods in nearby rows coincide.** Let $W$ be the length-$A$ query suffix. An AP emitted by the scanner starts with two consecutive occurrences of $W$, distance $p\le A/4$ apart. Thus $p$ is a period of $W$. If $W$ had a smaller period $r$, Fine–Wilf gives period $g=\gcd(r,p)<p$. The union of the two copies is $g$-periodic since both copies consist of the same repeating pattern and their starts differ by a multiple of $g$. This would place another occurrence between the first two. Hence $p$ is the least period of $W$. Splitting an AP, clipping its extent, and merging compatible owner segments preserve the period of its originating AP.
+
+Now consider two such terminal windows whose ends are at distance at most $\lfloor A/2\rfloor$. Their overlap has length at least $A/2\ge p+q$, where $p,q\le A/4$ are the two periods. By Fine–Wilf the overlap has period $g=\gcd(p,q)$. It contains a full period block of each window. Since $g$ divides each block length, repeating either block extends the same $g$-periodicity to that whole window. Minimality forces $p=q=g$. Partitioning $H$ consecutive row indices into groups of at most $1+\lfloor A/2\rfloor$ proves that only $O(1+H/A)$ distinct short periods can enter their sweep. For $A<4$ the set is empty. [Fine–Wilf periodicity theorem](https://www.numdam.org/article/ITA_2009__43_2_209_0.pdf)
+
+The AP scans and bounded fringes for a block cost $\widetilde O((d+1)H(A+n/A))$. Each live period costs $O(nd)$ for its owner sweep and block rebuilds, plus $O(d)$ per event. The distinct-period bound makes this $\widetilde O((d+1)(H\sqrt n+n))$ per time block, including its $n$-owner prefix scan. Two snapshots answer the complete blocks of an interval. Its two fringes together use fewer than $2H$ indexed row queries. For $M>0$ requests, the total is
 
 $$
-\widetilde O((d+1)(HA+Hn/A+nA)).
+\widetilde O\!\left((d+1)(n^{3/2}+n^2/H+MH+M)\right).
 $$
 
-Taking A≈√H makes this $\widetilde O((d+1)n\sqrt H)$. Over n/H time blocks the cost is $\widetilde O((d+1)n^2/\sqrt H)$. Keep one running owner-prefix vector, not a block-by-owner table. Two events per requested interval retrieve its complete-block portion; at most 2H fringe rows are evaluated using indexed deletion. Thus M requests cost
-
-$$
-\widetilde O((d+1)(n^2/H^{1/2}+MH)).
-$$
-
-For M=O(n²/B), choose H≈B^{2/3}. Both terms become
-
-$$
-\boxed{\widetilde O((d+1)n^2/B^{1/3})}.
-$$
+Choose $H=\lceil n/\sqrt M\rceil$, clipped to $[1,n]$. At $M=O(n^2/B)$ and $1\le B\le n$, the projection costs $\widetilde O((d+1)n^2/\sqrt B)$, matching the exponent of the positive correlation term. The proof uses contiguity only for full time blocks. The public deletion kernel also accepts arbitrary selected rows and computes the same routes for those selections.
 
 The streaming period workspace is O(n log n+nd+Hd), plus O(M) query metadata. Since H≤n this is near-linear apart from the requests. No n²/H table is retained. [delete.h](../conv_rosa_transformer/csrc/subquadratic/delete.h) implements this scheduling; [its independent oracle](../tests/cpp/subquadratic_delete.cpp) checks arbitrary query boundaries.
 
@@ -521,7 +527,7 @@ The table exposes b and d. Polylogarithmic factors are suppressed only to keep t
 | K short repair, actual cutoff4B | nb(d+1)B | O(n)-word batches |
 | K exact anchors, trimming, envelope | n²/B | n²/B |
 | K long positive correlation | d n²/B^(1/2) | n²/B |
-| K long deletion subtraction | (d+1)n²/B^(1/3) | n²/B |
+| K long deletion subtraction | (d+1)n²/B^(1/2) | n²/B |
 | V credits and e0/e1 gradients | nd | nd |
 | Copy shared deletion to all bit outputs | nb | nb |
 | One-symbol control and class support | nb(d+1) | n+nb+nd |
@@ -537,13 +543,13 @@ k=\max(1,\lceil(n/b)^{1/3}\rceil),
 $$
 
 $$
-B=\min(\lfloor n/4\rfloor,\max(1,\lceil n^{3/4}\rceil)),
-\quad L=4B,\quad H\asymp B^{2/3}.
+B=\min(\lfloor n/4\rfloor,\max(1,\lceil n^{2/3}\rceil)),
+\quad L=4B,\quad H\asymp \sqrt B\text{ at }M\asymp n^2/B.
 $$
 
-This clips L≤n, handles small constant regimes, and has B=Θ(n^(3/4)) asymptotically. Q costs $\widetilde O((d+1)n^{5/3}b^{1/3}+bn^{3/2})$. K short costs $\widetilde O(nb(d+1)n^{3/4})$; K negative costs $\widetilde O((d+1)n^{7/4})$. Accepted complete report sets cost at most $\widetilde O((d+1)n^{7/4}+nb)$ by their explicit budget. This proves the full fixed-b,d $\widetilde O(n^{7/4})$ theorem.
+This clips L≤n, handles small constant regimes, and has B=Θ(n^(2/3)) asymptotically. Q costs $\widetilde O((d+1)n^{5/3}b^{1/3}+bn^{3/2})$. K short costs $\widetilde O(nb(d+1)n^{2/3})$; K negative costs $\widetilde O((d+1)n^{5/3})$. Accepted complete report sets cost at most $\widetilde O((d+1)n^{5/3}+nb)$ by their explicit budget. This proves the full fixed-b,d $\widetilde O(n^{5/3})$ theorem.
 
-An optional dimension-aware balance takes B≈(n/b)^(3/4), with the same clipping. For b≤n, the compressed construction has bound $\widetilde O((d+1)n^{7/4}b^{1/4}+bn^{3/2})$. The main Q heavy/light term is below the first term by a factor at most (b/n)^(1/12); the complete-leaf scan must be retained separately when width grows. The native verified full-window attempt additionally retains its displayed $C_KW_n$ comparison term when b varies independently of d. This is a mathematical parameter choice and does not erase the nb(d+1)B work of the compact kernel or establish a good finite-size constant. The simpler fixed-B accounting explicitly retains D² when b=d=D.
+The native anchor scales as $B\asymp(n/b)^{2/3}$ at growing lengths. Balancing $nb(d+1)B$ with $(d+1)n^2/\sqrt B$ gives $\widetilde O((d+1)n^{5/3}b^{1/3}+bn^{3/2})$ for the compressed construction. The verified full-window attempt separately retains its $C_K W_n$ comparison term if $b$ grows. At fixed width those extra factors are logarithmic.
 
 Process Q and K phases sequentially. The Q light list has O(nbk)=O(n^(4/3)b^(2/3)) records. The K corridor/query list has O(n²/B) records. Correlation uses O(nd+M) words, short-dominance batches use O(nd+n polylog n), and the deletion stream uses O(nd+n polylog n). Outputs occupy O(nb+nd). Thus a valid conservative total space bound is
 

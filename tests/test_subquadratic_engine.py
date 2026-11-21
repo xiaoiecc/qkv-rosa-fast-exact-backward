@@ -187,6 +187,18 @@ class SubquadraticEngineTests(unittest.TestCase):
                     self.assert_literal(args, gradient, credit_order=order, tau=.7,
                                         joint_rows=7, proposal_seed=53, repair_seed=71)
 
+    def test_sparse_key_flip_after_query_run_ends(self):
+        # Only the rare 01 key can become 00 or 11. A late query change
+        # invalidates the run certificate after it has already accrued credit.
+        n, d = 100, 2
+        args, gradient = make_case(n, d, 719, "unary")
+        args[0][:] = -.3
+        args[1][:] = -.3
+        args[1][:, :, 3, 0] = .3
+        args[1][:, :, 70:74, :] = .3
+        args[0][:, :, 82:85, :] = .3
+        self.assert_literal(args, gradient, credit_order="second", joint_pairs=0)
+
     def test_batch_groups_identity_and_zero_adjoint(self):
         args, gradient = make_case(11, 5, 7102, "periodic", batches=2, groups=2)
         gradient[0, 0] = 0

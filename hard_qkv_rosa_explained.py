@@ -81,7 +81,7 @@ as definitions and small-input test oracles.
 4. Complexity, training choices and numeric scope
 =================================================
 For fixed bit width, numeric dimension and selected joint-pair budget, the
-proved bounds are soft-O(T**(7/4)) time and soft-O(T**(4/3)) working space.
+proved bounds are soft-O(T**(5/3)) time and soft-O(T**(4/3)) working space.
 Width-dependent terms are given in the tutorial; finite-length timings also
 depend on the actual number of intervals and query fringes. A better worst-case
 bound does not guarantee faster execution on every input.

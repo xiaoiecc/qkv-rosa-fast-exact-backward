@@ -104,7 +104,7 @@ int rosa_training_backward_approx(
 
 /* Diagnostic alias of rosa_training_backward[_approx], not another engine.
  * For fixed packed width, numeric dimension and joint budget,
- * time is O~(T^(7/4)); workspace is O~(T^(4/3)). Route decisions are exact;
+ * time is O~(T^(5/3)); workspace is O~(T^(4/3)). Route decisions are exact;
  * batched floating reductions and FFT are numerically approximate, even with
  * approximation == NULL. randomized only changes fully verified query caching
  * and is bitwise answer-equivalent to this entry point with randomized == 0.
