@@ -1,0 +1,955 @@
+{
+  "status": "PASS",
+  "scope": "Interleaved CPU measurements of one PyTorch mixer update from identical state.",
+  "optimizer": "SGD(lr=.001)",
+  "batch": 1,
+  "dtype": "float32",
+  "repeats": 7,
+  "cpu": 7,
+  "threads": 1,
+  "torch": "2.15.0+cpu",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "source_unchanged": true,
+  "checkouts": {
+    "reference": "44f6e231afe891db3049eea32bac945b1e33a93b",
+    "current": "25f49a849a4d8eb6a7623f9980ca4694da023482"
+  },
+  "rows": [
+    {
+      "T": 2048,
+      "channels": 8,
+      "bits": 1,
+      "order": "first",
+      "seed": 2750,
+      "median_ms": {
+        "reference": 33.302134,
+        "current": 19.676706
+      },
+      "speedup": 1.6924648871614996,
+      "samples_ms": {
+        "reference": [
+          33.68323,
+          31.262212,
+          33.110912,
+          31.708938,
+          33.302134,
+          35.361594,
+          35.429856
+        ],
+        "current": [
+          26.875735,
+          19.474074,
+          17.499838,
+          18.542142,
+          19.676706,
+          20.274762,
+          20.17429
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 1.4901161193847656e-08,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "b3f70c0ad34224b22eacdadf3c07451c11ced98b0154b1236cf61924e6d1d6cb"
+    },
+    {
+      "T": 2048,
+      "channels": 8,
+      "bits": 1,
+      "order": "second",
+      "seed": 2750,
+      "median_ms": {
+        "reference": 40.160543,
+        "current": 22.811508
+      },
+      "speedup": 1.7605387158095815,
+      "samples_ms": {
+        "reference": [
+          41.083314,
+          49.839314,
+          39.236682,
+          36.710828,
+          40.160543,
+          39.734925,
+          41.111481
+        ],
+        "current": [
+          20.8012,
+          20.383473,
+          23.860887,
+          22.811508,
+          23.215884,
+          26.788524,
+          21.38661
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 3.725290298461914e-09,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "b3f70c0ad34224b22eacdadf3c07451c11ced98b0154b1236cf61924e6d1d6cb"
+    },
+    {
+      "T": 2048,
+      "channels": 8,
+      "bits": 1,
+      "order": "first",
+      "seed": 10669,
+      "median_ms": {
+        "reference": 35.163782,
+        "current": 16.465133
+      },
+      "speedup": 2.135651257721392,
+      "samples_ms": {
+        "reference": [
+          31.911372,
+          38.163374,
+          35.163782,
+          36.480641,
+          39.393618,
+          32.007235,
+          34.879982
+        ],
+        "current": [
+          16.818784,
+          16.465133,
+          19.019543,
+          15.496484,
+          16.006749,
+          15.868946,
+          16.747717
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 1.4901161193847656e-08,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "db4446033bc89cce9727fb1f9879e9f8bb31a94ffcc1e35ee6ab9fcaf7c8678f"
+    },
+    {
+      "T": 2048,
+      "channels": 8,
+      "bits": 1,
+      "order": "second",
+      "seed": 10669,
+      "median_ms": {
+        "reference": 36.399368,
+        "current": 21.555107
+      },
+      "speedup": 1.68866561413961,
+      "samples_ms": {
+        "reference": [
+          35.221263,
+          36.399368,
+          45.426427,
+          35.971,
+          35.709515,
+          36.528826,
+          43.063718
+        ],
+        "current": [
+          20.615987,
+          21.420807,
+          23.744761,
+          22.335139,
+          22.946299,
+          21.555107,
+          20.550968
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 1.862645149230957e-09,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "db4446033bc89cce9727fb1f9879e9f8bb31a94ffcc1e35ee6ab9fcaf7c8678f"
+    },
+    {
+      "T": 2048,
+      "channels": 8,
+      "bits": 1,
+      "order": "first",
+      "seed": 107479,
+      "median_ms": {
+        "reference": 31.650978,
+        "current": 17.686308
+      },
+      "speedup": 1.789575190028354,
+      "samples_ms": {
+        "reference": [
+          32.027266,
+          32.546471,
+          30.139005,
+          49.472596,
+          30.042351,
+          31.650978,
+          29.647076
+        ],
+        "current": [
+          16.279086,
+          17.423154,
+          18.241422,
+          22.665045,
+          16.780791,
+          18.025701,
+          17.686308
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 7.450580596923828e-09,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "df4633693785a95bbc6b95fe003cb7b6116b5f10f901eacbef0d368c0fab1cfc"
+    },
+    {
+      "T": 2048,
+      "channels": 8,
+      "bits": 1,
+      "order": "second",
+      "seed": 107479,
+      "median_ms": {
+        "reference": 36.733836,
+        "current": 20.902632
+      },
+      "speedup": 1.7573784966409969,
+      "samples_ms": {
+        "reference": [
+          35.39131,
+          38.449164,
+          36.733836,
+          44.354639,
+          37.470342,
+          35.626599,
+          36.203537
+        ],
+        "current": [
+          24.166878,
+          19.731841,
+          19.168283,
+          21.746817,
+          24.150188,
+          20.873742,
+          20.902632
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 3.725290298461914e-09,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "df4633693785a95bbc6b95fe003cb7b6116b5f10f901eacbef0d368c0fab1cfc"
+    },
+    {
+      "T": 4096,
+      "channels": 32,
+      "bits": 8,
+      "order": "first",
+      "seed": 4805,
+      "median_ms": {
+        "reference": 46.200056,
+        "current": 19.613596
+      },
+      "speedup": 2.35551175827217,
+      "samples_ms": {
+        "reference": [
+          47.895789,
+          46.200056,
+          43.074375,
+          43.617918,
+          88.884813,
+          46.297109,
+          45.589416
+        ],
+        "current": [
+          18.247577,
+          16.282188,
+          19.720067,
+          25.378897,
+          19.256772,
+          20.583573,
+          19.613596
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "ef09c1ba5469855d788948500a0700ec372038078ed93061b1acfba90d6290a1"
+    },
+    {
+      "T": 4096,
+      "channels": 32,
+      "bits": 8,
+      "order": "second",
+      "seed": 4805,
+      "median_ms": {
+        "reference": 59.916527,
+        "current": 24.684316
+      },
+      "speedup": 2.427311617627971,
+      "samples_ms": {
+        "reference": [
+          57.485373,
+          66.15079,
+          59.916527,
+          60.612508,
+          56.816028,
+          51.229966,
+          68.222865
+        ],
+        "current": [
+          20.808282,
+          22.220081,
+          24.684316,
+          23.689516,
+          29.554317,
+          24.963347,
+          26.583422
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "ef09c1ba5469855d788948500a0700ec372038078ed93061b1acfba90d6290a1"
+    },
+    {
+      "T": 4096,
+      "channels": 32,
+      "bits": 8,
+      "order": "first",
+      "seed": 12724,
+      "median_ms": {
+        "reference": 44.949226,
+        "current": 21.637905
+      },
+      "speedup": 2.0773372468360503,
+      "samples_ms": {
+        "reference": [
+          40.892202,
+          44.045639,
+          52.390001,
+          50.281146,
+          44.949226,
+          44.724751,
+          51.845143
+        ],
+        "current": [
+          22.118424,
+          21.637905,
+          18.452881,
+          29.778435,
+          22.297324,
+          19.271664,
+          21.081901
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "5e0a5b06ce3f662b22ba248dea853c8772dfea602af5b0e020605de3e28fa965"
+    },
+    {
+      "T": 4096,
+      "channels": 32,
+      "bits": 8,
+      "order": "second",
+      "seed": 12724,
+      "median_ms": {
+        "reference": 55.815029,
+        "current": 23.191827
+      },
+      "speedup": 2.406668047325465,
+      "samples_ms": {
+        "reference": [
+          51.680608,
+          55.413162,
+          55.815029,
+          56.334693,
+          62.452909,
+          63.054099,
+          53.514585
+        ],
+        "current": [
+          23.176302,
+          31.452278,
+          22.213392,
+          22.45592,
+          23.411727,
+          23.191827,
+          24.597468
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "5e0a5b06ce3f662b22ba248dea853c8772dfea602af5b0e020605de3e28fa965"
+    },
+    {
+      "T": 4096,
+      "channels": 32,
+      "bits": 8,
+      "order": "first",
+      "seed": 109534,
+      "median_ms": {
+        "reference": 46.009235,
+        "current": 20.816198
+      },
+      "speedup": 2.210261211005007,
+      "samples_ms": {
+        "reference": [
+          39.988616,
+          45.755206,
+          57.169724,
+          49.413341,
+          44.734087,
+          46.009235,
+          53.770111
+        ],
+        "current": [
+          21.59653,
+          18.602255,
+          25.717698,
+          19.914999,
+          20.933843,
+          20.45467,
+          20.816198
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "ddcce5179e55bf4ccbce383bf97b991a37394b35f68a4aee7e68325a8f5d7f6b"
+    },
+    {
+      "T": 4096,
+      "channels": 32,
+      "bits": 8,
+      "order": "second",
+      "seed": 109534,
+      "median_ms": {
+        "reference": 57.393565,
+        "current": 29.872933
+      },
+      "speedup": 1.9212564430817691,
+      "samples_ms": {
+        "reference": [
+          54.608456,
+          52.964039,
+          67.798974,
+          61.407659,
+          57.393565,
+          58.292957,
+          56.184838
+        ],
+        "current": [
+          31.703275,
+          30.175273,
+          23.802142,
+          28.738345,
+          20.907103,
+          36.806662,
+          29.872933
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "ddcce5179e55bf4ccbce383bf97b991a37394b35f68a4aee7e68325a8f5d7f6b"
+    },
+    {
+      "T": 4096,
+      "channels": 32,
+      "bits": 16,
+      "order": "first",
+      "seed": 4813,
+      "median_ms": {
+        "reference": 13.26341,
+        "current": 9.913697
+      },
+      "speedup": 1.3378873693638205,
+      "samples_ms": {
+        "reference": [
+          11.465639,
+          16.755516,
+          11.896745,
+          12.42748,
+          14.060459,
+          17.637069,
+          13.26341
+        ],
+        "current": [
+          11.169255,
+          9.151556,
+          10.176279,
+          9.913697,
+          7.683835,
+          9.267541,
+          11.493756
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "5a3c91c0a429e8bb2f0da0c34ecd32309800de7c203ae7ed160a236d36fc99e0"
+    },
+    {
+      "T": 4096,
+      "channels": 32,
+      "bits": 16,
+      "order": "second",
+      "seed": 4813,
+      "median_ms": {
+        "reference": 19.265387,
+        "current": 12.648031
+      },
+      "speedup": 1.5231925823078707,
+      "samples_ms": {
+        "reference": [
+          22.499369,
+          16.496075,
+          17.236469,
+          19.265387,
+          17.348001,
+          19.433457,
+          25.129348
+        ],
+        "current": [
+          12.854407,
+          12.122652,
+          12.648031,
+          12.29199,
+          11.75786,
+          14.356555,
+          13.784301
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "5a3c91c0a429e8bb2f0da0c34ecd32309800de7c203ae7ed160a236d36fc99e0"
+    },
+    {
+      "T": 4096,
+      "channels": 32,
+      "bits": 16,
+      "order": "first",
+      "seed": 12732,
+      "median_ms": {
+        "reference": 13.008093,
+        "current": 10.488141
+      },
+      "speedup": 1.2402667927519282,
+      "samples_ms": {
+        "reference": [
+          12.353332,
+          12.541065,
+          15.928811,
+          13.877937,
+          13.008093,
+          14.77897,
+          11.677079
+        ],
+        "current": [
+          9.682822,
+          9.355841,
+          29.359363,
+          9.081299,
+          11.348152,
+          11.742935,
+          10.488141
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "56f595321a1eb7a182b522648888af9e78bf24d2cd2533c657a85fea56e37f73"
+    },
+    {
+      "T": 4096,
+      "channels": 32,
+      "bits": 16,
+      "order": "second",
+      "seed": 12732,
+      "median_ms": {
+        "reference": 18.381223,
+        "current": 12.37625
+      },
+      "speedup": 1.4852013331986667,
+      "samples_ms": {
+        "reference": [
+          22.653493,
+          17.135854,
+          19.461569,
+          17.967768,
+          18.381223,
+          17.917176,
+          20.043008
+        ],
+        "current": [
+          11.344471,
+          12.37625,
+          12.028057,
+          15.321655,
+          13.04464,
+          16.148987,
+          12.358957
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "56f595321a1eb7a182b522648888af9e78bf24d2cd2533c657a85fea56e37f73"
+    },
+    {
+      "T": 4096,
+      "channels": 32,
+      "bits": 16,
+      "order": "first",
+      "seed": 109542,
+      "median_ms": {
+        "reference": 13.663526,
+        "current": 12.501825
+      },
+      "speedup": 1.0929225133130562,
+      "samples_ms": {
+        "reference": [
+          13.637911,
+          13.663526,
+          14.746859,
+          13.542906,
+          17.101613,
+          14.31077,
+          12.944758
+        ],
+        "current": [
+          9.83589,
+          12.56861,
+          10.068487,
+          12.501825,
+          11.863817,
+          14.951716,
+          12.66332
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "467dfd7c92be45507da235c94d35159c76d075eccce1938dd24a8ffa2f060f7c"
+    },
+    {
+      "T": 4096,
+      "channels": 32,
+      "bits": 16,
+      "order": "second",
+      "seed": 109542,
+      "median_ms": {
+        "reference": 19.211305,
+        "current": 12.332297
+      },
+      "speedup": 1.5578042760403839,
+      "samples_ms": {
+        "reference": [
+          19.204261,
+          17.743721,
+          16.563624,
+          19.725936,
+          22.408809,
+          19.211305,
+          19.599135
+        ],
+        "current": [
+          12.332297,
+          14.552648,
+          11.057858,
+          15.546614,
+          14.242293,
+          11.380573,
+          10.949505
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "467dfd7c92be45507da235c94d35159c76d075eccce1938dd24a8ffa2f060f7c"
+    },
+    {
+      "T": 2048,
+      "channels": 64,
+      "bits": 64,
+      "order": "first",
+      "seed": 2813,
+      "median_ms": {
+        "reference": 11.559373,
+        "current": 7.108517
+      },
+      "speedup": 1.626130035280214,
+      "samples_ms": {
+        "reference": [
+          10.222142,
+          10.213109,
+          16.584221,
+          11.559373,
+          10.097947,
+          12.027264,
+          12.062943
+        ],
+        "current": [
+          5.570438,
+          4.963705,
+          7.656801,
+          5.93809,
+          7.804943,
+          7.679387,
+          7.108517
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "69587850ffae6b2c7a187ad553b64b009ce23a9f67df85cbaa8ceb474e8f95ea"
+    },
+    {
+      "T": 2048,
+      "channels": 64,
+      "bits": 64,
+      "order": "second",
+      "seed": 2813,
+      "median_ms": {
+        "reference": 12.559508,
+        "current": 6.770154
+      },
+      "speedup": 1.8551288493585227,
+      "samples_ms": {
+        "reference": [
+          13.17306,
+          11.451898,
+          11.648208,
+          13.44314,
+          12.559508,
+          17.340731,
+          12.503221
+        ],
+        "current": [
+          8.063572,
+          6.222528,
+          8.063271,
+          7.42048,
+          6.770154,
+          6.384042,
+          5.229633
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "69587850ffae6b2c7a187ad553b64b009ce23a9f67df85cbaa8ceb474e8f95ea"
+    },
+    {
+      "T": 2048,
+      "channels": 64,
+      "bits": 64,
+      "order": "first",
+      "seed": 10732,
+      "median_ms": {
+        "reference": 12.999105,
+        "current": 7.276139
+      },
+      "speedup": 1.7865388497938262,
+      "samples_ms": {
+        "reference": [
+          16.156897,
+          11.733974,
+          10.806898,
+          12.999105,
+          13.332126,
+          13.321727,
+          9.634651
+        ],
+        "current": [
+          13.023359,
+          7.276139,
+          7.630569,
+          6.668694,
+          8.584358,
+          6.978525,
+          5.512249
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "2b70f8ab13229baf1d1f143f1902e9ed5dc26b4058dcb4d37dd46e1cc65da317"
+    },
+    {
+      "T": 2048,
+      "channels": 64,
+      "bits": 64,
+      "order": "second",
+      "seed": 10732,
+      "median_ms": {
+        "reference": 12.973004,
+        "current": 7.976139
+      },
+      "speedup": 1.6264766699777924,
+      "samples_ms": {
+        "reference": [
+          16.421339,
+          12.553903,
+          12.849327,
+          12.973004,
+          16.598119,
+          11.298912,
+          15.82671
+        ],
+        "current": [
+          8.717868,
+          9.237724,
+          7.933247,
+          6.986035,
+          8.580118,
+          7.976139,
+          7.419455
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "2b70f8ab13229baf1d1f143f1902e9ed5dc26b4058dcb4d37dd46e1cc65da317"
+    },
+    {
+      "T": 2048,
+      "channels": 64,
+      "bits": 64,
+      "order": "first",
+      "seed": 107542,
+      "median_ms": {
+        "reference": 11.366315,
+        "current": 9.044143
+      },
+      "speedup": 1.2567597615384896,
+      "samples_ms": {
+        "reference": [
+          10.496794,
+          12.116987,
+          9.147302,
+          10.512253,
+          16.547259,
+          16.404809,
+          11.366315
+        ],
+        "current": [
+          8.21419,
+          9.044143,
+          10.005318,
+          10.250139,
+          5.727908,
+          11.628029,
+          6.462145
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "1a34827b78c3df7173a8ed5cfd0c95c877f877f4e36df4869d3ce2b81fabf5d4"
+    },
+    {
+      "T": 2048,
+      "channels": 64,
+      "bits": 64,
+      "order": "second",
+      "seed": 107542,
+      "median_ms": {
+        "reference": 12.14137,
+        "current": 6.504547
+      },
+      "speedup": 1.8665973203053188,
+      "samples_ms": {
+        "reference": [
+          11.621169,
+          13.346566,
+          12.234379,
+          12.14137,
+          11.174462,
+          11.467722,
+          17.228765
+        ],
+        "current": [
+          6.003595,
+          6.456158,
+          7.631604,
+          6.731773,
+          5.309679,
+          6.504547,
+          6.582889
+        ]
+      },
+      "numerical_close": true,
+      "max_abs": {
+        "output": 0.0,
+        "gradient": 0.0,
+        "updated_parameter": 0.0
+      },
+      "input_sha256": "1a34827b78c3df7173a8ed5cfd0c95c877f877f4e36df4869d3ce2b81fabf5d4"
+    }
+  ]
+}

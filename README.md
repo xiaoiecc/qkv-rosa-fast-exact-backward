@@ -4,6 +4,8 @@ QKV-ROSA is a hard retrieval mixer: each output takes the payload after one caus
 
 Let $E$ count causal pairs of equal last symbols. Complete backward takes $\widetilde O(\min(n+E,n^{5/3}))$ time at fixed dimensions and joint budget. A constant effective query with arbitrary keys admits $O(n\log^2(2n))$ time and $O(n)$ space. [Derivation and scope](docs/counterfactual-sweeps.md) · [Paired native and full-layer timings](docs/counterfactual-results.md)
 
+With independent uniform keys and a query stream independent of them, complete exact backward takes $\widetilde O(n)$ expected time at fixed dimensions and joint budget. Values and row weights may be arbitrary. [Proof and implementation](docs/random-qkv.md) · [Random QKV measurements](docs/random-qkv-results.md)
+
 The layer fits an ordinary PyTorch model and optimizer:
 
 ```python

@@ -29,6 +29,10 @@ The cases include random symbols, repeated symbols, periodic strings, a long
 single-boundary match and an irregular skyline of runs. These labels belong
 to the benchmark generator; the engine has no such dispatch.
 
+## Independent random Q, K and V
+
+Use `random_qkv.py` for complete untimed-trace parity and interleaved trace-free backward timings. Inputs include independent Gaussian logits, independent random signs, and a biased Gaussian with bit probability 0.8. The default grid has eight widths, three seeds, both credit orders, and three Gaussian sequence lengths. Inputs are regenerated identically from each row's seed, shape and family. The [results and reproduction commands](../docs/random-qkv-results.md) cover widths 1 through 64, additional skewed seeds and ordinary PyTorch optimizer steps.
+
 ## Paired comparison with a frozen checkout
 
 ```bash

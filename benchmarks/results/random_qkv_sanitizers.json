@@ -1,0 +1,181 @@
+{
+  "status": "PASS",
+  "compiler": "c++ (Debian 14.2.0-19) 14.2.0",
+  "scope": "Independent literal native oracles; address and undefined-behavior sanitizers",
+  "leak_detection": false,
+  "tests": [
+    {
+      "test": "subquadratic_counterfactual",
+      "status": "PASS",
+      "compile_command": [
+        "c++",
+        "-O1",
+        "-g",
+        "-std=c++17",
+        "-ffp-contract=off",
+        "-fsanitize=address,undefined",
+        "-fno-sanitize-recover=all",
+        "-fno-omit-frame-pointer",
+        "/workspace/scratch/9f229d4a9754/rosa-random/tests/cpp/subquadratic_counterfactual.cpp",
+        "-o",
+        "/workspace/scratch/9f229d4a9754/rosa-random/build/sanitizers/subquadratic_counterfactual"
+      ],
+      "compile_seconds": 29.869151374000467,
+      "run_seconds": 1.0989426650003224,
+      "compile_returncode": 0,
+      "compile_stderr": "",
+      "returncode": 0,
+      "stdout": "{\"context_accepted\":2350,\"context_deep\":421,\"context_budget_stops\":2292,\"context_length_stops\":63,\"status\":\"PASS\",\"stream_pairs\":2413,\"compared_scalars\":526751}\n",
+      "stderr": "",
+      "source_sha256": {
+        "conv_rosa_transformer/csrc/approx_onegram.h": "e5dbca14aa4c892b9bed87b0186d6f4317b029e75cd0097cbac5c1c804c964d7",
+        "conv_rosa_transformer/csrc/approx_route_helpers.h": "c246fd1ce1c10466d050a89b5b46ee1baa962194158c363a38005ba40d03b86b",
+        "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+        "conv_rosa_transformer/csrc/exact_hamming_join.h": "804b3a3c207333a6d0bec513a4201651014130e10afa979358e52c5b3aa3b73a",
+        "conv_rosa_transformer/csrc/full_word_map.h": "786f657d0dabdf0b429be86449099a10029133b69d8bcec8b181ef7b394c64cd",
+        "conv_rosa_transformer/csrc/subquadratic/correlation.h": "cfb974a4230a0113e671bcf1dcf37f6fcfe0ed232efef0ce3656557b6860fdf0",
+        "conv_rosa_transformer/csrc/subquadratic/endpoint_credit.h": "6dcd0f22e709526a3ea0bda867b990c4fab93389b97a82f3e5c191cff8470cbb",
+        "conv_rosa_transformer/csrc/subquadratic/index.h": "e459842ca8c7487c59da734c0a395bdfd4aed438615a343f42a2588d791d02ce",
+        "conv_rosa_transformer/csrc/subquadratic/near_k.h": "35748df7989446d6c800b0f684806538cf70cfc93a97537312083737ea41c458",
+        "conv_rosa_transformer/csrc/subquadratic/packed_context.h": "bdcd15620b17e97b5ee01a72dffdb1756346ec1e8e4de7ae8bb5cc294537b5c5",
+        "conv_rosa_transformer/csrc/subquadratic/random_context.h": "6b591a82280b8a97b4b8c19cb2076d8329543f21b28e709930576759b44f3ed1",
+        "conv_rosa_transformer/csrc/subquadratic/run_credit.h": "d6e2c7f8b2a7db0c9e532bb6669df70f1a0260603ef564c3d77f3db9fa702e2e",
+        "conv_rosa_transformer/csrc/subquadratic/short_endpoint.h": "7975d914a5b744566cb8fd425c4cef3cf57c2af8ea3f9d0596d52219b67fef4f",
+        "conv_rosa_transformer/csrc/subquadratic/types.h": "faea870269abd39fd778ae6a0c9e677cb12980c7cae3b64e63be9ddad908da8e",
+        "tests/cpp/subquadratic_counterfactual.cpp": "50480bf512843426f1aaf575c04e96c27f7c83bb0553ca2fe53245168f73e2e3"
+      },
+      "source_unchanged": true,
+      "sanitizer_environment": {
+        "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1",
+        "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+      },
+      "oracle": {
+        "context_accepted": 2350,
+        "context_deep": 421,
+        "context_budget_stops": 2292,
+        "context_length_stops": 63,
+        "status": "PASS",
+        "stream_pairs": 2413,
+        "compared_scalars": 526751
+      },
+      "source_matches_final": true
+    },
+    {
+      "test": "subquadratic_bigram",
+      "status": "PASS",
+      "compile_command": [
+        "c++",
+        "-O1",
+        "-g",
+        "-std=c++17",
+        "-ffp-contract=off",
+        "-fsanitize=address,undefined",
+        "-fno-sanitize-recover=all",
+        "-fno-omit-frame-pointer",
+        "/workspace/scratch/9f229d4a9754/rosa-random/tests/cpp/subquadratic_bigram.cpp",
+        "-o",
+        "/workspace/scratch/9f229d4a9754/rosa-random/build/sanitizers/subquadratic_bigram"
+      ],
+      "compile_seconds": 4.82966923999993,
+      "run_seconds": 1.1242917729996407,
+      "compile_returncode": 0,
+      "compile_stderr": "",
+      "returncode": 0,
+      "stdout": "{\"status\":\"PASS\",\"checked\":154760}\n",
+      "stderr": "",
+      "source_sha256": {
+        "conv_rosa_transformer/csrc/approx_route_helpers.h": "c246fd1ce1c10466d050a89b5b46ee1baa962194158c363a38005ba40d03b86b",
+        "conv_rosa_transformer/csrc/subquadratic/bigram_credit.h": "13ed39bb82afefd64de306cab5840d0cab48f5c8863e47b59fcd476cb9578a8a",
+        "conv_rosa_transformer/csrc/subquadratic/types.h": "faea870269abd39fd778ae6a0c9e677cb12980c7cae3b64e63be9ddad908da8e",
+        "tests/cpp/subquadratic_bigram.cpp": "aac1796b3b3d905df988c454415a005d9a32dcaf3ade7d54a28705f4031bc283"
+      },
+      "source_unchanged": true,
+      "sanitizer_environment": {
+        "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1",
+        "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+      },
+      "oracle": {
+        "status": "PASS",
+        "checked": 154760
+      },
+      "source_matches_final": true
+    },
+    {
+      "test": "subquadratic_training",
+      "status": "PASS",
+      "compile_command": [
+        "c++",
+        "-O1",
+        "-g",
+        "-std=c++17",
+        "-ffp-contract=off",
+        "-fsanitize=address,undefined",
+        "-fno-sanitize-recover=all",
+        "-fno-omit-frame-pointer",
+        "/workspace/scratch/9f229d4a9754/rosa-random/tests/cpp/subquadratic_training.cpp",
+        "-o",
+        "/workspace/scratch/9f229d4a9754/rosa-random/build/sanitizers/subquadratic_training"
+      ],
+      "compile_seconds": 103.92114526500063,
+      "run_seconds": 1.390659073000279,
+      "compile_returncode": 0,
+      "compile_stderr": "",
+      "returncode": 0,
+      "stdout": "{\"status\":\"PASS\",\"cases\":19,\"abi_calls\":635,\"compared_gradient_values\":2166640,\"compared_joint_costs\":2016,\"literal_fixtures\":52,\"literal_route_rows\":206568,\"row_sampled_streams\":132,\"channel_sampled_streams\":78,\"max_absolute_error\":4.9738e-14,\"seconds\":1.36608}\n",
+      "stderr": "",
+      "source_sha256": {
+        "conv_rosa_transformer/csrc/approx_channel_pivotal.h": "a72e48d625622e51c1d9fdcc9480e9b7e884b3ef70cbaf2639c6eb06365be960",
+        "conv_rosa_transformer/csrc/approx_indexed_row.h": "397583252f8d15fc330646ebb68cf356b0084027fb9a26ff557977d6b4e1469f",
+        "conv_rosa_transformer/csrc/approx_onegram.h": "e5dbca14aa4c892b9bed87b0186d6f4317b029e75cd0097cbac5c1c804c964d7",
+        "conv_rosa_transformer/csrc/approx_route_helpers.h": "c246fd1ce1c10466d050a89b5b46ee1baa962194158c363a38005ba40d03b86b",
+        "conv_rosa_transformer/csrc/approx_row_certificate.h": "8f088bcb65dc005ff0ae6631f9f9d5149cd05f3ba39519c2356af22f18ccf1e6",
+        "conv_rosa_transformer/csrc/approx_sampling.h": "8d1bcfdbd6138281f28b1a83ac3ad0bdd39c5a02109fce20f566426883b91b3e",
+        "conv_rosa_transformer/csrc/exact_expansion.h": "f40222b4cf27035e9dab980788c8345f40b4a7e844ddce78e05bdc652763f4c3",
+        "conv_rosa_transformer/csrc/exact_hamming_join.h": "804b3a3c207333a6d0bec513a4201651014130e10afa979358e52c5b3aa3b73a",
+        "conv_rosa_transformer/csrc/forward.h": "c18eeb09ea81396eee60c08cb4f26dc1f5eb410179eae238a42a6261f916ca48",
+        "conv_rosa_transformer/csrc/full_word_map.h": "786f657d0dabdf0b429be86449099a10029133b69d8bcec8b181ef7b394c64cd",
+        "conv_rosa_transformer/csrc/pair_candidates.h": "3bf5032c79af1228ddcb4ba6839e82fbec1ad1f56df629d0613c75126708cc6a",
+        "conv_rosa_transformer/csrc/subquadratic/bigram_credit.h": "13ed39bb82afefd64de306cab5840d0cab48f5c8863e47b59fcd476cb9578a8a",
+        "conv_rosa_transformer/csrc/subquadratic/correlation.h": "cfb974a4230a0113e671bcf1dcf37f6fcfe0ed232efef0ce3656557b6860fdf0",
+        "conv_rosa_transformer/csrc/subquadratic/delete.h": "753e099124e36a4a147f3204a85beeb3c126f9d931f7fa3d9b192ded65573533",
+        "conv_rosa_transformer/csrc/subquadratic/endpoint_credit.h": "6dcd0f22e709526a3ea0bda867b990c4fab93389b97a82f3e5c191cff8470cbb",
+        "conv_rosa_transformer/csrc/subquadratic/engine.h": "16f7dae3300c797acc65e48a382ac40105b6260cea5b61b68f12495a4139a8af",
+        "conv_rosa_transformer/csrc/subquadratic/fingerprint_k.h": "4a964af845b41354b7104edf53b1ccaf33abe1f708e1d25d36ed5036ff14446f",
+        "conv_rosa_transformer/csrc/subquadratic/index.h": "e459842ca8c7487c59da734c0a395bdfd4aed438615a343f42a2588d791d02ce",
+        "conv_rosa_transformer/csrc/subquadratic/near_k.h": "35748df7989446d6c800b0f684806538cf70cfc93a97537312083737ea41c458",
+        "conv_rosa_transformer/csrc/subquadratic/packed_context.h": "bdcd15620b17e97b5ee01a72dffdb1756346ec1e8e4de7ae8bb5cc294537b5c5",
+        "conv_rosa_transformer/csrc/subquadratic/q_frontier.h": "7777de2c9d238e1d4d133c4d02ecc5836f7e015e3a482ecc42c372f658dc98bc",
+        "conv_rosa_transformer/csrc/subquadratic/random_context.h": "6b591a82280b8a97b4b8c19cb2076d8329543f21b28e709930576759b44f3ed1",
+        "conv_rosa_transformer/csrc/subquadratic/repair.h": "500c7900500798539fa71fd5f57de6faf7ad4181c2e3d3740d6c2e91476aeb53",
+        "conv_rosa_transformer/csrc/subquadratic/run_credit.h": "d6e2c7f8b2a7db0c9e532bb6669df70f1a0260603ef564c3d77f3db9fa702e2e",
+        "conv_rosa_transformer/csrc/subquadratic/short_endpoint.h": "7975d914a5b744566cb8fd425c4cef3cf57c2af8ea3f9d0596d52219b67fef4f",
+        "conv_rosa_transformer/csrc/subquadratic/short_k.h": "ba2eb2775a16bc6ef540c1f4724bbd1ee8ccc84816c652539ff2f60e62023a73",
+        "conv_rosa_transformer/csrc/subquadratic/types.h": "faea870269abd39fd778ae6a0c9e677cb12980c7cae3b64e63be9ddad908da8e",
+        "conv_rosa_transformer/csrc/training.h": "e68ec95e6a2a131b854299a79ab2db45fcdd14b54b9c84f57a39fe3de9bceff2",
+        "conv_rosa_transformer/csrc/training_impl.h": "490adead6830f4bfaccf3e590cce782ec369c2f5d09403fe4a8990753939dc48",
+        "conv_rosa_transformer/csrc/unified_core.cpp": "6ba2322c98ec91699426942017e3f4b74e69d803a5dfce1da442e6a167a9d9be",
+        "conv_rosa_transformer/csrc/window_forward.h": "c1479d61bad06fa3730ad7472abf87eb5f4ddb928cabede7645eb823154bdd6b",
+        "tests/cpp/subquadratic_training.cpp": "e9259177fdf8e5140de249ede6a5b25c6f7b1e1d1e4149c6221d2566bc40e50b"
+      },
+      "source_unchanged": true,
+      "sanitizer_environment": {
+        "ASAN_OPTIONS": "detect_leaks=0:halt_on_error=1",
+        "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1"
+      },
+      "oracle": {
+        "status": "PASS",
+        "cases": 19,
+        "abi_calls": 635,
+        "compared_gradient_values": 2166640,
+        "compared_joint_costs": 2016,
+        "literal_fixtures": 52,
+        "literal_route_rows": 206568,
+        "row_sampled_streams": 132,
+        "channel_sampled_streams": 78,
+        "max_absolute_error": 4.9738e-14,
+        "seconds": 1.36608
+      },
+      "source_matches_final": true
+    }
+  ]
+}
