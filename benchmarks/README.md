@@ -1,6 +1,6 @@
 # Measuring the current C++ engine
 
-[Results](../docs/subquadratic-results.md) · [中文结果](../docs/subquadratic-results.zh-CN.md)
+[Results](../docs/subquadratic-results.md) · [中文结果](../docs/subquadratic-results.zh-CN.md) · [Counterfactual sweeps vs merged PR #8](../docs/counterfactual-results.md)
 
 The repository contains one production backward engine. Its runtime choices
 are first/second credit, verified-cache on/off, and explicit statistical
