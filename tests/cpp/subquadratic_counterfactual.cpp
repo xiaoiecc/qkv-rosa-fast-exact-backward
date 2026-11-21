@@ -3,13 +3,14 @@
 #include "../../conv_rosa_transformer/csrc/subquadratic/endpoint_credit.h"
 #include "../../conv_rosa_transformer/csrc/subquadratic/packed_context.h"
 #include "../../conv_rosa_transformer/csrc/subquadratic/run_credit.h"
+#include "../../conv_rosa_transformer/csrc/subquadratic/random_context.h"
 #include <iostream>
 #include <random>
 
 using namespace rosa_subq;
 using Words=std::vector<uint64_t>;
 using Values=std::vector<double>;
-int cases=0;
+int cases=0,context_accepted=0,context_deep=0,context_budget_stops=0,context_length_stops=0;
 uint64_t components=0;
 std::mt19937_64 rng(2026112204);
 
@@ -94,6 +95,40 @@ void check(Words q,Words k,int bits,bool test_residual=false) {
     sweep(rows,cq,ck);
     compare("endpoint Q",cq,eq);compare("endpoint K",ck,ek);
     int longest=0;for(auto r:base)longest=std::max(longest,r.length);
+    {
+        // Start with nonzero output buffers to detect partial commits on
+        // rejection. A successful call returns the complete credit.
+        Values a(n*bits,123.),b(n*bits,-45.);
+        Stats st;
+        const bool accepted=random_context::credit(q.data(),k.data(),base,bits,longest,score,
+                                                   a,b,st,UINT64_MAX);
+        if(accepted!=(longest<=random_context::max_length(n,bits)))
+            throw std::runtime_error("unexpected context admission");
+        if(accepted) {
+            ++context_accepted;
+            if(longest>int(std::ceil(std::log2(double(n))/bits)))++context_deep;
+            compare("causal trie Q",a,eq);compare("causal trie K",b,ek);
+        } else {
+            compare("length guard Q",a,Values(n*bits,123.));
+            compare("length guard K",b,Values(n*bits,-45.));
+            if(st.suffix_queries || st.peak_workspace_bytes)throw std::runtime_error("length guard statistics");
+            ++context_length_stops;
+        }
+        // Fail on the final charged report, after previous rows have
+        // accumulated their contributions in the private working arrays.
+        if(accepted && st.suffix_queries) {
+            a.assign(n*bits,123.);b.assign(n*bits,-45.);
+            const uint64_t cap=st.suffix_queries-1;
+            Stats stopped;stopped.suffix_queries=11;stopped.peak_workspace_bytes=29;
+            if(random_context::credit(q.data(),k.data(),base,bits,longest,score,a,b,stopped,cap))
+                throw std::runtime_error("exceeded trie report budget");
+            if(stopped.suffix_queries!=11 || stopped.peak_workspace_bytes!=29)
+                throw std::runtime_error("trie budget guard statistics");
+            compare("trie budget Q",a,Values(n*bits,123.));
+            compare("trie budget K",b,Values(n*bits,-45.));
+            ++context_budget_stops;
+        }
+    }
     if(PackedContext::fits(bits,longest) && std::all_of(q.begin(),q.end(),[&](auto x){return !(x>>bits);})
             && std::all_of(k.begin(),k.end(),[&](auto x){return !(x>>bits);})) {
         Stats st;
@@ -129,11 +164,36 @@ int main() {
         for(int i=0;i<n;++i)k[i]=(b>>i)&1;
         check(q,k,2);
     }
-    for(int bits:{1,2,4,8,16,64})for(int rep=0;rep<10;++rep) {
+    for(int bits:{1,2,3,4,5,7,8,9,12,16,31,32,63,64})for(int rep=0;rep<10;++rep) {
         const int n=9+rep;Words q(n),k(n);const uint64_t mask=bits==64?UINT64_MAX:(UINT64_C(1)<<bits)-1;
         for(auto& x:q)x=rng()&mask;
         for(int i=0;i<n;++i)k[i]=(rep%2?q[(i+3)%n]:rng())&mask;
         k[3]^=UINT64_C(1)<<(bits-1);check(q,k,bits);
+    }
+    // Three exact symbols cross the one-level directory on width 9.
+    // The competing copy has the same terminal symbol but a distinct
+    // prefix, and extending a one-bit repair can change the winner.
+    {
+        Words q(48),k(48);
+        for(int i=0;i<48;++i){q[i]=200+i;k[i]=300+i;}
+        q[22]=k[3]=k[9]=11;q[23]=k[4]=k[10]=26;q[24]=k[5]=k[11]=33;
+        q[25]=39;k[6]=38;k[12]=37;
+        check(q,k,9);
+    }
+    // Forbidding a K owner erases several overlapping occurrences.
+    // The stored list must reach the best earlier surviving endpoint.
+    {
+        Words q(32),k(32);
+        for(int i=0;i<32;++i){q[i]=(i%3)+1;k[i]=(i%5)+1;}
+        for(int i=0;i<7;++i)q[17+i]=k[7+i]=0;
+        check(q,k,3);
+    }
+    // Bit 63 appears in both data and edits. Keep the baseline short
+    // enough for the width-64 path to execute, including latest-end ties.
+    {
+        const uint64_t top=UINT64_C(1)<<63;
+        check({13,top,13,top+3,5,top,7,top+5},
+              {0,9,top+3,4,top+1,7,6,top},64);
     }
     Words q(96),k(96);q[28]=1;q[75]=2;
     for(int i=0;i<96;++i)k[i]=i%3?rng()%4:3;
@@ -166,5 +226,30 @@ int main() {
         BlockCorrelations::middle_product(signal.data(),available,d,kernel.data(),length,owners,actual.data(),st);
         compare("middle product",actual,expected);
     }
-    std::cout<<"{\"status\":\"PASS\",\"stream_pairs\":"<<cases<<",\"compared_scalars\":"<<components<<"}\n";
+    // Both repairs share their last 64 bits and break at the same edit.
+    // Only the earlier key copy extends farther in the preceding machine
+    // word. Truncating to one word would choose the later endpoint.
+    for(int bits:{1,2,4,8}) {
+        const int digits=64/bits,extra=std::max(2,digits/8);
+        const int longer=digits+extra,shorter=digits+1,later=longer+5;
+        const int n=3*longer+7,t=n-1,owner=t-digits/2;
+        const uint64_t mask=(UINT64_C(1)<<bits)-1;
+        Words q(n),k(n);
+        for(auto& w:q)w=rng()&mask;
+        for(auto& w:k)w=rng()&mask;
+        std::copy_n(q.end()-longer,longer,k.begin());
+        std::copy_n(q.end()-shorter,shorter,k.begin()+later);
+        k[later-1]=q[t-shorter]^1;
+        if(literal(q,k)[t]!=Route{longer,longer-1})throw std::runtime_error("packed boundary fixture");
+        q[owner]^=1;
+        auto before=literal(q,k);
+        int longest=0;for(Route route:before)longest=std::max(longest,route.length);
+        if(!PackedContext::fits(bits,longest))throw std::runtime_error("packed boundary rejected");
+        check(q,k,bits);
+    }
+    if(!context_deep || !context_length_stops || !context_budget_stops)
+        throw std::runtime_error("uncovered trie path");
+    std::cout<<"{\"context_accepted\":"<<context_accepted<<",\"context_deep\":"<<context_deep
+             <<",\"context_budget_stops\":"<<context_budget_stops
+             <<",\"context_length_stops\":"<<context_length_stops<<",\"status\":\"PASS\",\"stream_pairs\":"<<cases<<",\"compared_scalars\":"<<components<<"}\n";
 }

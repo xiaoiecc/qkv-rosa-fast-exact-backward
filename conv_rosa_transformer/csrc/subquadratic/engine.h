@@ -12,6 +12,8 @@
 #include "run_credit.h"
 #include "endpoint_credit.h"
 #include "packed_context.h"
+#include "random_context.h"
+#include "bigram_credit.h"
 #include "../training.h"
 #include "../forward.h"
 #include <memory>
@@ -451,6 +453,15 @@ inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
             return 0;
         }
     }
+    if(!approximation && bits>=5 && (bits<12 || n>=2048) && bigram_eligible(n,bits,base)) {
+        Features features(n,bits,v,g,h,e0,e1,base,0,seed,stats);
+        if(bigram_credit(q,k,base,bits,features.scores(),cq,ck,stats)) {
+            stats.peak_workspace_bytes+=features.workspace_bytes()+base.capacity()*sizeof(Route)
+                +active.capacity()*sizeof(int32_t);
+            if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
+            return 0;
+        }
+    }
     if(!approximation && bits<=4) {
         int longest=0;
         for(Route r:base)longest=std::max(longest,r.length);
@@ -500,8 +511,25 @@ inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
     }
     const rosa_random::OnegramPlan plan(q,k,n,bits,seed);
     if(!approximation) {
+        const uint64_t general=uint64_t(n)*std::max(1,int(std::pow(double(n),2./3)));
+        const uint64_t count=endpoint_credit::equal_pairs(plan,general);
         const uint64_t limit=uint64_t(n)*std::max(1,int(std::pow(double(n),2./3)/128));
-        const uint64_t count=endpoint_credit::equal_pairs(plan,limit);
+        // Very sparse equality joins already have near-linear deterministic work.
+        // Charge a failed context search to the smaller applicable fallback bound.
+        if(count>std::min(limit,4*uint64_t(n))) {
+            int longest=0;
+            for(auto route:base)longest=std::max(longest,route.length);
+            if(longest<=random_context::max_length(n,bits)) {
+                Features features(n,bits,v,g,h,e0,e1,base,0,seed,stats);
+                const uint64_t budget=8*uint64_t(n)+std::min(count,general)/4;
+                if(random_context::credit(q,k,base,bits,longest,features.scores(),cq,ck,stats,budget)) {
+                    stats.peak_workspace_bytes+=plan.workspace_bytes()+features.workspace_bytes()
+                        +base.capacity()*sizeof(Route)+active.capacity()*sizeof(int32_t);
+                    if(approx_stats){approx_stats[16]=active.size();approx_stats[27]=1;}
+                    return 0;
+                }
+            }
+        }
         if(count<=limit) {
             endpoint_credit::equal_sweep(plan,count,base,active,v,g,h,e0,e1,routes,randomized,seed,cq,ck,stats);
             stats.peak_workspace_bytes+=plan.workspace_bytes()+base.capacity()*sizeof(Route)

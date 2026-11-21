@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import importlib
+import itertools
 import json
 import os
 from pathlib import Path
@@ -21,6 +22,8 @@ def main():
     parser.add_argument("--cpu", required=True, type=int)
     parser.add_argument("--repeats", default=11, type=int)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--seed-offsets", type=int, nargs="+", default=[0],
+                        help="repeat each shape with independently seeded weights and data")
     args = parser.parse_args()
     if args.repeats < 3:
         parser.error("at least three interleaved measurements are required")
@@ -36,9 +39,10 @@ def main():
                for name, package in (("reference", "rosa_benchmark_reference"),
                                      ("current", "conv_rosa_transformer"))}
     rows = []
-    for n, channels, bits in ((2048, 8, 1), (4096, 32, 8), (4096, 32, 16), (2048, 64, 64)):
+    shapes = ((2048, 8, 1), (4096, 32, 8), (4096, 32, 16), (2048, 64, 64))
+    for (n, channels, bits), offset in itertools.product(shapes, args.seed_offsets):
         for order in ("first", "second"):
-            seed = 701 + n + bits
+            seed = 701 + n + bits + offset
             torch.manual_seed(seed)
             x = torch.randn(1, n, channels)
             target = torch.randn_like(x)

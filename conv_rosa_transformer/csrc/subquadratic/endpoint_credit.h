@@ -1,6 +1,7 @@
 #pragma once
 #include "index.h"
 #include "near_k.h"
+#include "short_endpoint.h"
 #include "../approx_onegram.h"
 #include <array>
 
@@ -251,6 +252,8 @@ inline void evaluate(const Index& index,int bits,const uint8_t* v,const double* 
     std::vector<double> qdiff(size_t(n)+1),kdiff(size_t(n)+1),costs(size_t(n)+1);
     std::vector<int> stamp(size_t(n)+1,-1);
     RowSweep sweep(index,bits,stats);
+    const bool short_rows=!singleton && ShortEndpointSweep::applicable(index.baseline());
+    ShortEndpointSweep small(index,bits,short_rows);
     for(int t:rows) {
         const int before=index.baseline()[t].end;
         auto cost=[&](int end) {
@@ -268,6 +271,10 @@ inline void evaluate(const Index& index,int bits,const uint8_t* v,const double* 
             }
             return costs[end+1];
         };
+        if(short_rows) {
+            small.row(t,[&](auto emit){report(t,emit);},cost,qdiff,kdiff,cq,ck,stats);
+            continue;
+        }
         std::array<int,64> latest;
         if(singleton) {
             latest.fill(-1);
@@ -281,12 +288,13 @@ inline void evaluate(const Index& index,int bits,const uint8_t* v,const double* 
     }
     double qsum=0,ksum=0;
     for(int s=0;s<n;++s) {
-        qsum+=qdiff[s];ksum+=kdiff[s];
+        if(short_rows){qsum=qdiff[s];ksum=kdiff[s];}
+        else {qsum+=qdiff[s];ksum+=kdiff[s];}
         for(int j=0;j<bits;++j){cq[size_t(s)*bits+j]+=qsum;ck[size_t(s)*bits+j]+=ksum;}
     }
     std::fill_n(cq.begin(),bits,0.);std::fill_n(ck.end()-bits,bits,0.);
     stats.peak_workspace_bytes=std::max<uint64_t>(stats.peak_workspace_bytes,
-        index.workspace_bytes()+sweep.bytes()+(qdiff.capacity()+kdiff.capacity()+costs.capacity())*sizeof(double)
+        index.workspace_bytes()+sweep.bytes()+small.bytes()+(qdiff.capacity()+kdiff.capacity()+costs.capacity())*sizeof(double)
         +stamp.capacity()*sizeof(int));
 }
 // Count equal last symbols only. Once the length-one repairs are summed

@@ -97,7 +97,7 @@ def _library():
     return _LIB
 
 
-def _array(value, dtype=None):
+def _array(value, dtype=None, *, copy=False):
     if hasattr(value, "detach"):
         if value.device.type != "cpu":
             raise ValueError("The stream core accepts CPU tensors; move inputs explicitly.")
@@ -109,6 +109,8 @@ def _array(value, dtype=None):
     raw = np.asarray(value)
     if dtype is not None and np.issubdtype(np.dtype(dtype), np.floating) and np.iscomplexobj(raw):
         raise ValueError("Gradients and embeddings must be real-valued")
+    if copy:
+        return np.array(raw, dtype=dtype, order="C", copy=True)
     return np.ascontiguousarray(raw, dtype=dtype)
 
 

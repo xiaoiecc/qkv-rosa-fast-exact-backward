@@ -1,194 +1,248 @@
 #pragma once
-#include "types.h"
 #include "near_k.h"
+#include "types.h"
+#include <array>
 
 namespace rosa_subq {
 
-// All exact arms are at most L, so even a singly edited match has at most
-// 2L+1 symbols. If these fit, the least differing bit gives an exact LCS.
+// Index short reversed contexts at all radix depths in one append-only pass.
+// A prefix class contains two disjoint matches of length h exactly when its
+// oldest and latest occurrences end at least h apart.
 class PackedContext {
-    struct Level {
-        uint64_t mask=0;
-        std::vector<int> offsets,ends,active;
-        int group(uint64_t code) const {return int(code&mask);}
-    };
-    int n,bits,log_bits,depth;
-    int cutoff_=0;
-    std::vector<uint64_t> query_,key_;
-    std::vector<Level> levels_;
-    uint64_t work_=0,budget_;
-    bool charge(int count) {work_+=uint64_t(count);return work_<=budget_;}
+    int depth_,bits_;
+    std::vector<int> latest_,first_,previous_;
 public:
     static bool fits(int bits,int longest) {
-        return (bits==1 || bits==2 || bits==4 || bits==8) && 2LL*longest+1<=64/bits;
+        return (bits==1 || bits==2 || bits==4 || bits==8) && longest>=0 && longest<64/bits;
     }
-    PackedContext(const uint64_t* q,const uint64_t* k,int count,int width,int longest,uint64_t budget)
-        :n(count),bits(width),log_bits(near_detail::one_bit_index(uint64_t(width))),depth(1),
-         query_(n),key_(n),budget_(budget) {
-        // Keep the top directory linear in T even for a small alphabet.
-        while(depth<std::max(1,2*longest+1) && (depth+1)*bits<29
-              && (UINT64_C(1)<<((depth+1)*bits))<=uint64_t(n)*2)++depth;
-        uint64_t a=0,b=0;
-        for(int t=0;t<n;++t){a=(a<<bits)|q[t];b=(b<<bits)|k[t];query_[t]=a;key_[t]=b;}
-        levels_.resize(depth+1);
-        for(int h=1;h<=depth;++h) {
-            auto& level=levels_[h];
-            const int groups=1<<(bits*h);
-            level.mask=groups-1;
-            level.offsets.assign(size_t(groups)+1,0);
-            for(int r=h-1;r<n-1;++r)++level.offsets[level.group(key_[r])+1];
-            for(int c=0;c<groups;++c)level.offsets[c+1]+=level.offsets[c];
-            level.active=level.offsets;
-            level.ends.resize(level.offsets.back());
-            for(int r=h-1;r<n-1;++r)level.ends[level.active[level.group(key_[r])]++]=r;
-            level.active=level.offsets;
+    PackedContext(int n,int bits,int longest):depth_(1),bits_(bits) {
+        while(depth_<std::max(1,longest) && (depth_+1)*bits<29
+              && (UINT64_C(1)<<((depth_+1)*bits))<=uint64_t(n)*4)++depth_;
+        latest_.assign(size_t(2)<<(depth_*bits),-1);
+        first_.assign(latest_.size(),n);
+        previous_.resize(size_t(n)*depth_);
+    }
+    int slot(uint64_t word,int h) const {
+        const int size=1<<(h*bits_);
+        return size+(int(word)&(size-1));
+    }
+    void insert(uint64_t word,int end) {
+        int* chain=previous_.data()+size_t(end)*depth_;
+        const int levels=std::min(depth_,end+1);
+        for(int h=1;h<=levels;++h) {
+            const int c=slot(word,h);
+            chain[h-1]=latest_[c];
+            if(latest_[c]<0)first_[c]=end;
+            latest_[c]=end;
         }
     }
-    void advance(int t) {
-        for(;cutoff_<t;++cutoff_)
-            for(int h=1;h<=std::min(depth,cutoff_+1);++h)
-                ++levels_[h].active[levels_[h].group(key_[cutoff_])];
-    }
-    uint64_t query(int t) const {return query_[t];}
-    int match(uint64_t word,int r) const {
-        const uint64_t diff=word^key_[r];
-        const int length=diff?(near_detail::one_bit_index(diff&(-diff))>>log_bits):64/bits;
-        return std::min(length,r+1);
-    }
-    int lcs(int t,int r) const {return r<0?0:match(query_[t],r);}
-    bool best(uint64_t word,int cutoff,Route& out) {
-        out={};
-        for(int h=std::min(depth,cutoff);h>=1;--h) {
-            const auto& level=levels_[h];const int c=level.group(word);
-            const int first=level.offsets[c],end=level.active[c];
-            if(first==end)continue;
-            const int stop=cutoff==cutoff_?end:int(std::lower_bound(level.ends.begin()+first,
-                level.ends.begin()+end,cutoff)-level.ends.begin());
-            if(stop==first)continue;
-            if(h<depth){out={h,level.ends[stop-1]};return true;}
-            if(!charge(stop-first))return false;
-            for(int i=first;i<stop;++i) {
-                const int r=level.ends[i];out=std::max(out,Route{match(word,r),r});
-            }
-            return true;
+    int disjoint(uint64_t word,int longest) const {
+        for(int h=std::min(longest,depth_);h>0;--h) {
+            const int c=slot(word,h);
+            if(latest_[c]-first_[c]>=h)return h;
         }
-        return true;
+        return 0;
     }
-    int latest(uint64_t word,int h) {
-        const auto& level=levels_[std::min(h,depth)];
-        const int c=level.group(word),first=level.offsets[c],stop=level.active[c];
-        if(h<=depth)return stop==first?-1:level.ends[stop-1];
-        for(int i=stop;i>first;) {
-            if(!charge(1))return -2;
-            const int r=level.ends[--i];
-            if(match(word,r)>=h)return r;
+    int depth() const {return depth_;}
+    int head(int slot) const {return latest_[slot];}
+    int previous(int end,int h) const {return previous_[size_t(end)*depth_+h-1];}
+    int best_short(uint64_t word,int maximum) const {
+        for(int h=maximum;h>0;--h) {
+            const int r=latest_[slot(word,h)];
+            if(r>=0)return r;
         }
         return -1;
     }
-    template<class Emit>
-    bool neighbors(uint64_t word,int h,Emit emit) {
-        h=std::min(h,depth);
-        const auto& level=levels_[h];
-        const int original=level.group(word);
-        for(int j=-1;j<h*bits;++j) {
-            const int c=j<0?original:original^(1<<j);
-            const int first=level.offsets[c],stop=level.active[c];
-            if(!charge(stop-first+1))return false;
-            for(int i=first;i<stop;++i)emit(level.ends[i]);
-        }
-        return true;
-    }
     size_t bytes() const {
-        size_t size=(query_.capacity()+key_.capacity())*sizeof(uint64_t);
-        for(const auto& l:levels_)size+=(l.ends.capacity()+l.offsets.capacity()+l.active.capacity())*sizeof(int);
-        return size;
+        return (latest_.capacity()+first_.capacity()+previous_.capacity())*sizeof(int);
     }
-    uint64_t probes() const {return work_;}
 };
 
-// Use the directory for both directions. For K repairs beating an intact
-// winner, a prefix of the baseline-length suffix contains at most one bit
-// mismatch. Shorter repairs can win only near the damaged winning occurrence.
-inline bool packed_credit(const uint64_t* q,const uint64_t* k,const std::vector<Route>& base,
-        int bits,int longest,const Scores& score,std::vector<double>& cq,std::vector<double>& ck,
+namespace packed_detail {
+inline int low_bit(uint64_t mask) {
+#if defined(__GNUC__) || defined(__clang__)
+    return __builtin_ctzll(mask);
+#else
+    return near_detail::one_bit_index(mask&(-mask));
+#endif
+}
+
+template<int Bits>
+inline bool sweep(const uint64_t* q,const uint64_t* k,const std::vector<Route>& base,
+        int longest,const Scores& score,std::vector<double>& cq,std::vector<double>& ck,
         Stats& stats,uint64_t budget) {
     const int n=score.n;
-    if(!PackedContext::fits(bits,longest))return false;
-    for(int i=0;i<n;++i)if((q[i]|k[i])>>bits)return false;
-    PackedContext table(q,k,n,bits,longest,budget);
-    std::vector<int> latest(size_t(longest)+1),seen(n,-1);
-    std::vector<Route> removed(longest),winners(size_t(n)*bits);
-    std::vector<size_t> touched;
+    PackedContext table(n,Bits,longest);
+    constexpr int digits=64/Bits;
+    // Only a completely matching repaired first word can require the second.
+    // Longest < digits bounds each separate arm, hence also bounds this tail.
+    std::vector<uint64_t> key(n),older_query(2*longest+1>digits?n:0);
     std::vector<double> qsum(cq.size()),ksum(ck.size()),deleted(n);
+    std::vector<Route> krepaired(ck.size()),overlap;
+    std::vector<size_t> touched;
+    std::array<Route,65> qrepaired,removed;
+    std::array<int,65> latest;
+    uint64_t word=q[0],kw=0,work=0;
+    if(!older_query.empty())older_query[0]=word;
     for(int t=1;t<n;++t) {
-        table.advance(t);
+        word=(word<<Bits)|q[t];
+        if(!older_query.empty())older_query[t]=word;
+        kw=(kw<<Bits)|k[t-1];key[t-1]=kw;table.insert(kw,t-1);
         const double* w=score.row(t);
         if(std::none_of(w,w+score.d,[](double x){return x!=0.;}))continue;
-        const Route original=base[t];const int L=original.length,first=original.end-L+1;
-        const uint64_t word=table.query(t);
+        const Route original=base[t];
+        const int L=original.length,first=original.end-L+1;
+        const int depth=table.disjoint(word,L);
+        const int nd=std::min(t,L+1)*Bits;
+        std::fill_n(qrepaired.begin(),nd,Route{});
+        touched.clear();overlap.clear();
+        Route intact;
+        int high=0;
+        auto exact=[&](Route target) {
+            // Newest-first reports imply that the first endpoint covering a
+            // given age is the latest one; each age is written once per row.
+            for(;high<target.length;++high)latest[high+1]=target.end;
+            if(target.end<first || target.end-target.length>=original.end)
+                intact=std::max(intact,target);
+            else if(target.end!=original.end)overlap.push_back(target);
+        };
+        auto repaired_length=[&](uint64_t edited,int end) {
+            if(edited)return std::min(low_bit(edited)/Bits,end+1);
+            if(end<digits || older_query.empty())return std::min(digits,end+1);
+            const uint64_t tail=older_query[t-digits]^key[end-digits];
+            return digits+std::min(tail?low_bit(tail)/Bits:digits,end+1-digits);
+        };
+        auto repair=[&](int r,int age,int bit,int length) {
+            const Route target{length,r};
+            const int s=r-age;
+            qrepaired[age*Bits+bit]=std::max(qrepaired[age*Bits+bit],target);
+            if((s<first || s>original.end) && !(target>original))return;
+            const size_t at=size_t(s)*Bits+bit;
+            if(!krepaired[at].length)touched.push_back(at);
+            krepaired[at]=std::max(krepaired[at],target);
+        };
+        const int pivot=std::min(table.depth(),L+1);
+        const int group=depth?table.slot(word,depth):0;
+        const int near_group=table.slot(word,pivot);
+        // The exact disjoint-depth bucket supplies all survivors and every
+        // Q repair whose mismatch is older than that prefix.
+        for(int r=depth?table.head(group):t-1;r>=0;r=depth?table.previous(r,depth):r-1) {
+            ++work;
+            const uint64_t diff=word^key[r];
+            const int pos=diff?low_bit(diff):64;
+            const int a=std::min(pos/Bits,r+1);
+            if(a>L)return false;
+            if(a)exact({a,r});
+            if(a>r)continue;
+            const uint64_t mask=(diff>>(a*Bits))&((1U<<Bits)-1);
+            if(mask&(mask-1))continue;
+            const uint64_t edited=diff&(diff-1);
+            repair(r,a,pos%Bits,repaired_length(edited,r));
+        }
+        // Younger mismatches can be numerous at disjoint depth. Ask for the
+        // longer pivot context instead; each nonempty bucket has a known
+        // edited age and bit and one visit supplies both Q and K.
+        for(int j=0;j<depth*Bits;++j) {
+            for(int r=table.head(near_group^(1<<j));r>=0;r=table.previous(r,pivot)) {
+                ++work;
+                const uint64_t edited=(word^key[r])^(UINT64_C(1)<<j);
+                repair(r,j/Bits,j%Bits,repaired_length(edited,r));
+            }
+        }
+        // A length-L repair outside the damaged window can only win at
+        // a later endpoint. Q ties for absent long repairs are recovered by
+        // the longest-short lookup below.
+        if(pivot>L && L>0) {
+            const int tie_group=table.slot(word,L);
+            for(int j=0;j<depth*Bits;++j) {
+                for(int r=table.head(tie_group^(1<<j));r>original.end;r=table.previous(r,L)) {
+                    ++work;
+                    const uint64_t diff=(word^key[r])^(UINT64_C(1)<<j);
+                    if(!((diff>>(L*Bits))&((1U<<Bits)-1)) && r>=L)continue;
+                    repair(r,j/Bits,j%Bits,L);
+                }
+            }
+        }
+        if(high!=L)return false;
+        if((work+=nd+1)>budget)return false;
         auto delta=[&](int end,int before) {
             const double* a=score.value(end);const double* b=score.value(before);
+            if(score.d==Bits+1) {
+                double fixed=0;
+                for(int c=0;c<=Bits;++c)fixed+=w[c]*(a[c]-b[c]);
+                return fixed;
+            }
             double sum=0;for(int c=0;c<score.d;++c)sum+=w[c]*(a[c]-b[c]);
             return sum;
         };
-        for(int age=0;age<=L && age<t;++age)for(int bit=0;bit<bits;++bit) {
-            Route winner;
-            if(!table.best(word^(UINT64_C(1)<<(age*bits+bit)),t,winner))return false;
-            if(winner.end!=original.end)qsum[size_t(t-age)*bits+bit]+=delta(winner.end,original.end);
-        }
-        if(L) {
-            for(int h=1;h<=L;) {
-                const int end=table.latest(word,h);
-                if(end<0)return false;
-                const int high=end==original.end?L:table.lcs(t,end);
-                if(high<h || high>L)return false;
-                std::fill(latest.begin()+h,latest.begin()+high+1,end);h=high+1;
+        for(int age=0;age<nd/Bits;++age)for(int j=0;j<Bits;++j) {
+            const int keybit=age*Bits+j;
+            int end=qrepaired[keybit].end;
+            if(end<0) {
+                if(age<depth)end=table.best_short(word^(UINT64_C(1)<<keybit),pivot-1);
+                else end=age>=L?original.end:(age?latest[age]:-1);
             }
-            Route prefix;
-            if(!table.best(word,first,prefix))return false;
-            int h=L;
-            for(int s=first;s<=original.end;++s) {
-                if(s>first) {
-                    const int len=table.lcs(t,s-1);
-                    if(len)prefix=std::max(prefix,Route{len,s-1});
-                }
-                while(h && latest[h]-h<s)--h;
-                removed[s-first]=std::max(prefix,h?Route{h,latest[h]}:Route{});
-                if(removed[s-first].end!=original.end)deleted[s]+=delta(removed[s-first].end,original.end);
-            }
+            if(end!=original.end)qsum[size_t(t-age)*Bits+j]+=delta(end,original.end);
         }
-        touched.clear();
-        auto consider=[&](int end) {
-            if(seen[end]==t)return;
-            seen[end]=t;
-            const int a=table.lcs(t,end),s=end-a,u=t-a;
-            if(s<0)return;
-            const auto mask=q[u]^k[s];
-            if(!mask || (mask&(mask-1)))return;
-            const int bit=near_detail::one_bit_index(mask);
-            if(bit>=bits)return;
-            const Route candidate{a+1+table.lcs(u-1,s-1),end};
-            const Route other=s>=first && s<=original.end?removed[s-first]:original;
-            if(!(candidate>other))return;
-            const size_t at=size_t(s)*bits+bit;
-            if(!winners[at].length)touched.push_back(at);
-            winners[at]=std::max(winners[at],candidate);
-        };
-        if(!table.neighbors(word,std::max(1,L),consider))return false;
-        if(L)for(int r=first;r<std::min(t,original.end+L);++r)consider(r);
+        // At least one certified original occurrence survives every K edit.
+        // Disjoint candidates win throughout the window. Intersecting ones
+        // are clipped to the suffix strictly to the right of the edited key.
+        for(int s=first;s<=original.end;++s) {
+            const int h=original.end-s;
+            removed[s-first]=h?std::max(intact,Route{h,original.end}):intact;
+        }
+        for(Route target:overlap)for(int s=first;s<=original.end;++s) {
+            int length=target.length;
+            if(s<=target.end)length=std::min(length,target.end-s);
+            if(length)removed[s-first]=std::max(removed[s-first],Route{length,target.end});
+        }
+        for(int s=first;s<=original.end;++s)if(removed[s-first].end!=original.end)
+            deleted[s]+=delta(removed[s-first].end,original.end);
+        // A shorter unreported repair can win only inside the damaged
+        // winning interval and for a mismatch age < depth. This bounds its
+        // endpoint inside one contiguous window, independent of n.
+        const uint64_t low_mask=(UINT64_C(1)<<(depth*Bits))-1;
+        if(pivot>depth && depth)for(int r=first;r<std::min(t,original.end+depth);++r) {
+            const uint64_t diff=word^key[r],low=diff&low_mask;
+            // The disjoint witness survives. A new, younger repair must
+            // therefore have exactly one differing bit in these low bits.
+            if(!low || (low&(low-1)))continue;
+            const int pos=low_bit(low),age=pos/Bits;
+            const int owner=r-age;
+            if(owner<first || owner>original.end)continue;
+            const uint64_t edited=diff&(diff-1);
+            const int length=repaired_length(edited,r);
+            if(!(Route{length,r}>removed[owner-first]))continue;
+            const size_t at=size_t(owner)*Bits+pos%Bits;
+            if(!krepaired[at].length)touched.push_back(at);
+            krepaired[at]=std::max(krepaired[at],Route{length,r});
+        }
         for(size_t at:touched) {
-            const int s=int(at/bits);
+            const int s=int(at/Bits);
             const Route other=s>=first && s<=original.end?removed[s-first]:original;
-            if(winners[at].end!=other.end)ksum[at]+=delta(winners[at].end,other.end);
-            winners[at]={};
+            if(krepaired[at]>other && krepaired[at].end!=other.end)
+                ksum[at]+=delta(krepaired[at].end,other.end);
+            krepaired[at]={};
         }
     }
-    for(int s=0;s<n;++s)for(int bit=0;bit<bits;++bit)ksum[size_t(s)*bits+bit]+=deleted[s];
+    for(int s=0;s<n;++s)for(int j=0;j<Bits;++j)ksum[size_t(s)*Bits+j]+=deleted[s];
     cq.swap(qsum);ck.swap(ksum);
-    stats.suffix_queries+=table.probes();
+    stats.suffix_queries+=work;
     stats.peak_workspace_bytes=std::max<uint64_t>(stats.peak_workspace_bytes,table.bytes()
-        +(latest.capacity()+seen.capacity())*sizeof(int)+(removed.capacity()+winners.capacity())*sizeof(Route)
+        +(key.capacity()+older_query.capacity())*sizeof(uint64_t)+(overlap.capacity()+krepaired.capacity())*sizeof(Route)
         +touched.capacity()*sizeof(size_t)+(qsum.capacity()+ksum.capacity()+deleted.capacity())*sizeof(double));
     return true;
+}
+} // namespace packed_detail
+
+inline bool packed_credit(const uint64_t* q,const uint64_t* k,const std::vector<Route>& base,
+        int bits,int longest,const Scores& score,std::vector<double>& cq,std::vector<double>& ck,
+        Stats& stats,uint64_t budget) {
+    if(!score.n || !PackedContext::fits(bits,longest) || !budget)return false;
+    for(int i=0;i<score.n;++i)if((q[i]|k[i])>>bits)return false;
+    if(bits==1)return packed_detail::sweep<1>(q,k,base,longest,score,cq,ck,stats,budget);
+    if(bits==2)return packed_detail::sweep<2>(q,k,base,longest,score,cq,ck,stats,budget);
+    if(bits==4)return packed_detail::sweep<4>(q,k,base,longest,score,cq,ck,stats,budget);
+    return packed_detail::sweep<8>(q,k,base,longest,score,cq,ck,stats,budget);
 }
 } // namespace rosa_subq

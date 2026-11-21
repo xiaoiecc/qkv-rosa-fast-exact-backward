@@ -18,6 +18,12 @@ Every empty match is `(0,-1)`; empty input returns two empty lists. For
 The layer subsequently reads `V[r+1]` or the empty embedding, outside this routing API.
 The full-K index serves batch/prefill matching; it has no incremental decoding interface.
 
+## Training forward and edited joint trajectories
+
+The training entry knows the symbol width. For short suffixes it inserts each newly causal key endpoint into a radix directory at each affordable depth. Directories store the latest endpoint, and the deepest one chains all occurrences. To match a new query row, start at the smaller of the deepest indexed length and the preceding row's winner length plus one. A missing bucket rules out that length and all larger lengths. If the deepest bucket holds candidates and a longer match is possible, check their original symbols in newest-first order. Stop at the preceding-row upper bound. Wide symbols use full-word equality inside hashed occurrence chains. Every tie resolves to the latest legal endpoint.
+
+The direct directories occupy a geometric sum of sizes bounded by a constant times T, and their depth is capped at 20. After a linear budget of candidate visits and comparisons, the matcher restarts with the full suffix automaton. The complete training trajectory therefore retains the $O(T\log(2T))$ worst-case time and $O(T)$ auxiliary space bound. Training forward counters count query dictionary lookups, hash probes and endpoint-chain resolutions, including any subsequent SAM work. The standalone packed-word API uses the SAM described below. [Training implementation](../conv_rosa_transformer/csrc/window_forward.h)
+
 ## Why one scan needs no binary lifting
 
 A suffix automaton (SAM) groups substrings with the same occurrence-endpoint set,

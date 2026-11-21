@@ -15,7 +15,7 @@ from tests._support import BUILD, COVERAGE, CSRC, EXHAUSTIVE
 def build_forward_probe():
     BUILD.mkdir(parents=True, exist_ok=True)
     source = BUILD / "forward_probe.cpp"
-    source.write_text('''#include "forward.h"
+    source.write_text('''#include "window_forward.h"
 extern "C" int forward_probe(int n,const uint64_t*q,const uint64_t*k,
  int32_t*l,int32_t*r,uint64_t seed,uint64_t*c) {
  try {rosa_exact::SamForward f(q,k,n,seed);f.run(l,r);
@@ -25,6 +25,11 @@ extern "C" int forward_probe(int n,const uint64_t*q,const uint64_t*k,
  c[6]=f.state_count();c[7]=f.edge_count();c[8]=f.hash_slots();
  c[9]=f.endpoint_index_materialized();return 0;
  }catch(...){return 1;}}
+extern "C" int window_forward_probe(int n,int bits,const uint64_t*q,const uint64_t*k,
+ int32_t*l,int32_t*r,uint64_t seed) {
+ try {rosa_exact::training_routes(q,k,n,bits,l,r,seed);return 0;}
+ catch(...){return 1;}
+}
 ''')
     library = BUILD / "forward_probe.so"
     subprocess.run(shlex.split(os.environ.get("CXX", "c++")) +
@@ -57,6 +62,10 @@ class LeanForwardTests(unittest.TestCase):
     def setUpClass(cls):
         cls.library, function = build_forward_probe()
         cls.function = staticmethod(function)
+        window = cls.library.window_forward_probe
+        window.argtypes = [ctypes.c_int, ctypes.c_int] + [ctypes.c_void_p] * 4 + [ctypes.c_uint64]
+        window.restype = ctypes.c_int
+        cls.window = staticmethod(window)
 
     def check_one(self, q, k, seed=17):
         q = np.ascontiguousarray(q, dtype=np.uint64)
@@ -69,8 +78,12 @@ class LeanForwardTests(unittest.TestCase):
         code = self.function(n, *(a.ctypes.data_as(ctypes.c_void_p) for a in arrays),
                              seed, counts.ctypes.data_as(ctypes.c_void_p))
         self.assertEqual(code, 0)
-        self.assertEqual(list(zip(lengths.tolist(), routes.tolist())),
-                         independent_forward(q, k))
+        expected = independent_forward(q, k)
+        self.assertEqual(list(zip(lengths.tolist(), routes.tolist())), expected)
+        bits = max(1, int(max(q.max(initial=0), k.max(initial=0))).bit_length())
+        code = self.window(n, bits, *(a.ctypes.data_as(ctypes.c_void_p) for a in arrays), seed)
+        self.assertEqual(code, 0)
+        self.assertEqual(list(zip(lengths.tolist(), routes.tolist())), expected)
         self.assertLessEqual(int(counts[0]), 2*n)
         self.assertLessEqual(int(counts[1]), n)
         return counts
@@ -101,6 +114,35 @@ class LeanForwardTests(unittest.TestCase):
                 self.check_one(q, k, seed)
         COVERAGE["lean_forward_hash_seeds"] = 4
         COVERAGE["lean_forward_seed_cases"] = len(cases)*4
+
+    def test_window_forward_budget_and_width(self):
+        # Long periodic matches exhaust the window budget and force a full
+        # SAM restart. Out-of-width packed inputs remain opaque symbols.
+        n = 4096
+        for bits in (1, 4, 8, 16, 32, 64):
+            for pattern in ("periodic", "sparse", "dense"):
+                rng = np.random.default_rng(n + bits)
+                q = rng.bit_generator.random_raw(n)
+                if bits < 64:
+                    q &= np.uint64((1 << bits) - 1)
+                k = np.roll(q, -3)
+                if pattern == "periodic":
+                    q[:] = np.arange(n) % 2
+                    k[:] = q
+                elif pattern == "sparse":
+                    q[7] = np.uint64(1 << 63)
+                    k[1] = q[7]
+                lengths, routes, whole_lengths, whole_routes = (
+                    np.empty(n, dtype=np.int32) for _ in range(4))
+                args = [q, k, lengths, routes]
+                pointers = [a.ctypes.data_as(ctypes.c_void_p) for a in args]
+                self.assertEqual(self.window(n, bits, *pointers, 19), 0)
+                counters = np.empty(10, dtype=np.uint64)
+                full = [q, k, whole_lengths, whole_routes]
+                self.assertEqual(self.function(n, *(a.ctypes.data_as(ctypes.c_void_p) for a in full),
+                                               19, counters.ctypes.data_as(ctypes.c_void_p)), 0)
+                np.testing.assert_array_equal(lengths, whole_lengths)
+                np.testing.assert_array_equal(routes, whole_routes)
 
     def test_exact_certificates_avoid_endpoint_tree(self):
         counts = self.check_one([0]*257, [0]*257)
