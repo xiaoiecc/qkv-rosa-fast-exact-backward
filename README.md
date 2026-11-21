@@ -1,6 +1,6 @@
 # QKV-ROSA: subquadratic counterfactual backpropagation
 
-QKV-ROSA is a hard retrieval mixer: each output takes the payload after one causal longest-suffix match. This repository trains it with the finite output change caused by each Q/K/V bit flip, projected on the incoming gradient. One C++17 engine computes these credits in $\widetilde O(T^{7/4})$ time and $\widetilde O(T^{4/3})$ space for fixed bit width, numerical dimension, and joint-pair budget.
+QKV-ROSA is a hard retrieval mixer: each output takes the payload after one causal longest-suffix match. This repository trains it with the finite output change caused by each Q/K/V bit flip, projected on the incoming gradient. One C++17 engine computes these credits in $\widetilde O(T^{5/3})$ time and $\widetilde O(T^{4/3})$ space for fixed bit width, numerical dimension, and joint-pair budget.
 
 The layer fits an ordinary PyTorch model and optimizer:
 
@@ -52,6 +52,8 @@ Both credit orders use the same structural algorithm: shared periodic deletion, 
 **Complete evaluation includes every term, but does not prescribe the old floating-point reduction order.** String comparisons, causality, and longest/latest ties are exact. Binary64 grouping and FFT introduce rounding. Switching the verified cache on and off within this engine leaves numerical outputs bitwise identical; explicitly approximate mode adds sampling error. The [numerical contract](docs/algorithm-reference.md) distinguishes these cases.
 
 ## Backward speed, memory, and error
+
+The [paired comparison against the previous release](benchmarks/results/period_overlap_comparison.json) measures the new algorithm. The table below records the earlier `bb5b1ab` baseline.
 
 Complete component backward, verified cache enabled, B=G=1, CPU binary64, one thread pinned to CPU 4, `trace=True`. Each figure is the median of nine alternating calls. Timing includes validation, allocations, indexes, trust/joint work and all gradients; forward, loss and optimizer are outside the timer. Rows/s describes this backward component, not whole-model throughput.
 

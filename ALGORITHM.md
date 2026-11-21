@@ -2,7 +2,7 @@
 
 [中文](ALGORITHM.zh-CN.md) · [Full proof](docs/subquadratic-proof.md) · [Deletion proof](docs/subquadratic-deletion-proof.md) · [Training interface](docs/native-training.md)
 
-The C++ engine changes the unit of work. It represents many counterfactual routes by intervals, arithmetic progressions, and a small set of winning matches, then sums their numerical contributions in batches. It also counts a complete set of possible contributors before deciding whether that set needs compression at all. For fixed bit width and numerical dimension, its worst-case bound is $\widetilde O(n^{7/4})$ time and $\widetilde O(n^{4/3})$ space. The tilde hides logarithmic factors.
+The C++ engine changes the unit of work. It represents many counterfactual routes by intervals, arithmetic progressions, and a small set of winning matches, then sums their numerical contributions in batches. It also counts a complete set of possible contributors before deciding whether that set needs compression at all. For fixed bit width and numerical dimension, its worst-case bound is $\widetilde O(n^{5/3})$ time and $\widetilde O(n^{4/3})$ space. The tilde hides logarithmic factors.
 
 Those factors and the constants matter. A lower exponent does not promise a faster training step at a particular sequence length. This is the repository's single backward engine. Historical implementations appear only as measured baselines in the results, not as selectable backends.
 
@@ -63,7 +63,7 @@ C=D+R_1+\sum_t\bigl(R_t-R_{1,t}\bigr).
 
 This identity gives a useful stopping test. If no causal K adjacent pair is within total bit distance one of `Q[t-1], Q[t]`, no original or singly edited route ending at $t$ can have length two. That row's residual is exactly zero, for every payload. A second certificate removes rows whose possible mismatch-owner window contains no causal one-bit center. Neither test guesses whether a gradient is small.
 
-For each remaining row, only two kinds of K endpoint can matter: its last word equals $Q_t$, or differs from $Q_t$ in one bit. In the first case an LCS query locates the first mismatch; in the second the mismatch is already at the endpoint. All other last words are impossible. The engine counts these endpoints before reporting them. If their total $M$ fits the work budget $n\max(1,\lfloor n^{3/4}\rfloor)$, it evaluates the complete residual directly. Otherwise the interval construction below handles the same sum. The budget is what keeps this simple enumeration from turning into a quadratic algorithm.
+For each remaining row, only two kinds of K endpoint can matter: its last word equals $Q_t$, or differs from $Q_t$ in one bit. In the first case an LCS query locates the first mismatch; in the second the mismatch is already at the endpoint. All other last words are impossible. The engine counts these endpoints before reporting them. If their total $M$ fits the work budget $n\max(1,\lfloor n^{2/3}\rfloor)$, it evaluates the complete residual directly. Otherwise the interval construction below handles the same sum. The budget is what keeps this simple enumeration from turning into a quadratic algorithm.
 
 Adjacent residual rows can reuse $F_t(r)=1+F_{t-1}(r-1)$ when the final words match. Only 32 rows are retained: $32n$ integers, not an $n\times n$ table. Missing history uses the shared exact suffix index. If deletion itself never sees a match longer than one, its one-symbol value is already complete too.
 
@@ -162,7 +162,7 @@ What about a winning repair shorter than $L$? It can win only if its owner $s$ d
 
 ![Two exact half witnesses cover long challengers; the baseline damage window covers shorter winners](docs/images/near-k-witnesses.svg)
 
-Count both occurrence intervals and the entire window first, including duplicates and noncausal reports. With $W_n=n\max(1,\lfloor n^{3/4}\rfloor)$ and short cutoff $L_{\mathrm{cut}}$, this K evaluation allows at most $\min(4W_n,8nbL_{\mathrm{cut}})$ reports. The second cap also limits its work relative to the short catalogue it can replace. If the conservative count fits, enumerate all reports and retain the best repair for each owner and bit. If it does not, the short/long construction below supplies the compressed sum. No candidate is dropped to make the budget fit.
+Count both occurrence intervals and the entire window first, including duplicates and noncausal reports. With $W_n=n\max(1,\lfloor n^{2/3}\rfloor)$ and short cutoff $L_{\mathrm{cut}}$, this K evaluation allows at most $\min(4W_n,8nbL_{\mathrm{cut}})$ reports. The second cap also limits its work relative to the short catalogue it can replace. If the conservative count fits, enumerate all reports and retain the best repair for each owner and bit. If it does not, the short/long construction below supplies the compressed sum. No candidate is dropped to make the budget fit.
 
 The same reports often settle deletion as well. They contain every original exact route at least as long as the recent half. Only owners in the baseline occurrence can change deletion, and these owners form a contiguous interval of length $L$. Bucket each reported route by its start and end on that interval. A forward maximum gives routes wholly before the owner, a backward maximum gives routes wholly after it, and a running maximum endpoint gives crossing routes shortened to end-minus-owner. The two sweeps cost the report count plus $L$, with constant-time lookup afterward. If this surviving winner reaches the half-length threshold, an unreported shorter route cannot beat it. Otherwise query the exact index. Deletion and repair reuse that answer for the row. The extra $L$ owners are already charged: their count is no larger than the counted window.
 
@@ -212,7 +212,7 @@ A Q deletion plateau at row $t$ adds one scalar to an interval of owners. That i
 
 There are $O(n^{3/2})$ plateau updates and two snapshots per request, giving $\widetilde O((d+1)n^{3/2}+M)$ time and $O(n+M)$ auxiliary scalar storage. The same plateau stream also feeds an ordinary difference array for the full Q deletion credit. Generating it twice would buy nothing. Requests of at most four rows are evaluated directly; this bounded base case costs only $O(M(d+1))$ and avoids event setup for tiny intervals.
 
-K deletion still needs its periodic endpoint contraction. Its kernel accepts selected original rows: using blocks of $H$ rows and internal threshold $A\asymp\sqrt H$ costs $\widetilde O((d+1)(n^2/\sqrt H+MH))$ for $M$ requests. The engine chooses $H\asymp(n^2/M)^{2/3}$, clipped to the input length, from the **actual** request count. At worst-case $M=O(n^2/B)$ this is $H\asymp B^{2/3}$; sparse envelopes permit larger blocks. One owner-prefix vector and two snapshots per request replace a quadratic table.
+For K, take terminal windows of length $A\asymp\sqrt n$. A period $p>A/4$ gives at most $O(n/A)$ plateau boundaries per row in addition to its segment boundaries. Shorter periods of windows ending within $A/2$ rows of each other coincide by the overlap lemma in Section 9 of the [proof](docs/subquadratic-proof.md). A block of $H$ consecutive rows therefore opens only $O(1+H/A)$ period sweeps. Across time blocks the work is $\widetilde O((d+1)(n^{3/2}+n^2/H+MH))$ for $M$ requests. Choose $H\asymp n/\sqrt M$, clipped to $[1,n]$. At $M=O(n^2/B)$ this gives $\widetilde O((d+1)n^2/\sqrt B)$ since $B\le n$.
 
 ## 8. Put the costs together
 
@@ -229,11 +229,11 @@ The following table suppresses logarithms, but keeps bit width and numerical dim
 | Short K repair | $nb(d+1)B$ |
 | Long K anchors and envelopes | $n^2/B$ |
 | Long K positive sums | $d n^2/\sqrt B$ |
-| Long K deletion subtraction | $(d+1)n^2/B^{1/3}$ |
+| Long K deletion subtraction | $(d+1)n^2/B^{1/2}$ |
 
-For fixed $b,d$, take $\kappa\asymp n^{1/3}$ and $B\asymp n^{3/4}$, with the appropriate clipping for short sequences. The compressed Q construction costs $\widetilde O(n^{5/3})$ and K determines the full $\widetilde O(n^{7/4})$ bound. Dimension-aware choices use $\kappa\asymp(n/b)^{1/3}$ and $B\asymp(n/b)^{3/4}$ when $b\le n$; the additional $nb\sqrt n$ leaf term must remain visible if width grows with length.
+For fixed $b,d$, take $\kappa\asymp n^{1/3}$ and $B\asymp n^{2/3}$, with the appropriate clipping for short sequences. The compressed Q construction costs $\widetilde O(n^{5/3})$ and the short and long K terms balance at the same $\widetilde O(n^{5/3})$ bound. Dimension-aware choices use $\kappa\asymp(n/b)^{1/3}$ and $B\asymp(n/b)^{2/3}$ when $b\le n$; the additional $nb\sqrt n$ leaf term must remain visible if width grows with length.
 
-The one-symbol control costs $\widetilde O(nb(d+1))$. Either counted endpoint evaluation costs $\widetilde O((d+1)M+nb)$: complete residual rows allow $M\le W_n$, and the two-half K evaluation allows $M\le\min(4W_n,8nbL_{\mathrm{cut}})$. Both report budgets are $O(n^{7/4})$. A rejected preflight stores interval descriptors rather than its candidate set. These choices therefore preserve the same worst-case exponent. The two-half K evaluator processes one row's reports at a time; the 32-row residual cache adds only $O(n)$ storage.
+The one-symbol control costs $\widetilde O(nb(d+1))$. Either counted endpoint evaluation costs $\widetilde O((d+1)M+nb)$: complete residual rows allow $M\le W_n$, and the two-half K evaluation allows $M\le\min(4W_n,8nbL_{\mathrm{cut}})$. Both report budgets are $O(n^{5/3})$. A rejected preflight stores interval descriptors rather than its candidate set. These choices therefore preserve the same worst-case exponent. The two-half K evaluator processes one row's reports at a time; the 32-row residual cache adds only $O(n)$ storage.
 
 Retained records occupy $\widetilde O(n+nd+nb+nb\kappa+n^2/B)$, or $\widetilde O(n^{4/3})$ for fixed dimensions. The complete engine is not linear-space. Its deletion and correlation workspaces are near-linear apart from their requested outputs. The [full proof](docs/subquadratic-proof.md) gives the parameter accounting and coverage arguments.
 

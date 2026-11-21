@@ -151,49 +151,127 @@ inline void correlations(const Scores&score,int bits,const std::vector<Segment>&
                          std::vector<double>&credit,Stats&stats) {
     if(segments.empty())return;
     std::vector<CorrelationQuery> query;query.reserve(segments.size());
-    for(const auto&s:segments)query.push_back({s.lo,s.hi,s.beta+1});
-    CorrelationStats cs;
-    const auto value=BlockCorrelations::solve(score.n,score.d,score.weights,score.payload,
-        query,correlation_block(score.n,score.d,query),cs);
-    for(size_t i=0;i<segments.size();++i) {
-        const auto&s=segments[i];credit[size_t(s.owner)*bits+s.bit]+=value[i];
+    // A shift has n-|shift| legal row pairs. Count how much work is shared
+    // before allocating an FFT of the entire stream.
+    const auto almost_full=[&](const Segment& s) {
+        const int length=s.hi-s.lo+1;
+        return length>=32 && score.n-std::abs(s.beta+1)-length<=4;
+    };
+    uint64_t products=0;
+    for(const auto& s:segments)if(almost_full(s))products+=s.hi-s.lo+1;
+    const bool use_full=products>16.*score.n*std::log2(2.*score.n);
+    for(int pass=0;pass<=(use_full?1:0);++pass) {
+        const bool full=use_full && pass==0;
+        query.clear();
+        for(const auto& s:segments)if(!use_full || almost_full(s)==full)
+            query.push_back({s.lo,s.hi,s.beta+1});
+        if(query.empty())continue;
+        CorrelationStats cs;
+        const auto value=full
+            ?BlockCorrelations::almost_full(score.n,score.d,score.weights,score.payload,query,cs)
+            :BlockCorrelations::solve(score.n,score.d,score.weights,score.payload,query,
+                                     correlation_block(score.n,score.d,query),cs);
+        size_t at=0;
+        for(const auto& s:segments)if(!use_full || almost_full(s)==full)
+            credit[size_t(s.owner)*bits+s.bit]+=value[at++];
+        stats.correlation_queries+=query.size();stats.correlation_direct+=cs.tail_products;
+        stats.fft_transforms+=cs.transforms;
+        stats.peak_workspace_bytes=std::max<uint64_t>(stats.peak_workspace_bytes,
+            cs.workspace_bytes+query.capacity()*sizeof(CorrelationQuery));
     }
-    stats.correlation_queries+=query.size();stats.correlation_direct+=cs.tail_products;
-    stats.fft_transforms+=cs.transforms;
-    stats.peak_workspace_bytes=std::max(stats.peak_workspace_bytes,cs.workspace_bytes);
 }
 
-inline bool repair_supported(const Index&index,int bits) {
-    // A repair must contain a causal one-bit center. Deduplicate symbols
-    // before checking this necessary condition; full uint64 keys are compared.
-    std::vector<std::pair<uint64_t,int>> query,key;
-    query.reserve(index.n);key.reserve(index.n);
-    for(int t=0;t<index.n;++t){query.emplace_back(index.q[t],t);key.emplace_back(index.k[t],t);}
-    std::sort(query.begin(),query.end());std::sort(key.begin(),key.end());
-    for(size_t at=0;at<query.size();) {
-        size_t after=at+1;while(after<query.size()&&query[after].first==query[at].first)++after;
-        const int latest=query[after-1].second;
-        for(int j=0;j<bits;++j) {
-            const uint64_t symbol=query[at].first^(uint64_t(1)<<j);
-            const auto found=std::lower_bound(key.begin(),key.end(),std::make_pair(symbol,-1));
-            if(found!=key.end()&&found->first==symbol&&found->second<latest)return true;
-        }
-        at=after;
+// Removing the final symbol of a causal match gives a causal match one row
+// earlier. If the last Q run covers that upper bound, an uncapped longest K
+// run of the same word is the exact winner, including the latest-end tie.
+template<class Add>
+inline bool run_replay(const rosa_random::OnegramPlan& plan,int owner,int changed_class,
+                       std::vector<Route>& best,Add&& add) {
+    std::fill(best.begin(),best.end(),Route{});
+    int previous_class=-1,key_run=0,query_run=0,previous_length=0;
+    for(int t=1;t<plan.n;++t) {
+        const int r=t-1;
+        const int key_class=r==owner?changed_class:plan.ksame[plan.kclass[r]];
+        key_run=key_class==previous_class?key_run+1:1;
+        previous_class=key_class;
+        if(key_class>=0)best[key_class]=std::max(best[key_class],Route{key_run,r});
+        const int query_class=plan.qclass[t];
+        query_run=t>1 && plan.qclass[t-1]==query_class?query_run+1:1;
+        const Route winner=best[query_class];
+        if(winner.length && (query_run<previous_length+1 || winner.length>query_run))return false;
+        previous_length=winner.length;
+        if(t>owner)add(t,winner.end);
     }
-    return false;
+    return true;
+}
+
+// A changed K word can participate in a repaired suffix only if that word
+// occurs later in Q. Count those physical (owner,bit) pairs from the shared
+// class lists before replaying any. All other flips equal their deletion.
+inline bool sparse_key_flips(Index& index,const Scores& scores,int bits,
+        const rosa_random::OnegramPlan& plan,int deletion_width,std::vector<double>& credit,
+        Stats& stats,uint64_t seed) {
+    const int n=index.n;
+    const size_t limit=std::max(1,int(std::sqrt(double(n))));
+    std::vector<std::pair<int,int>> edits;
+    for(int id=0;id<plan.nk;++id)for(const auto& edge:plan.kneighbors[id]) {
+        const int last_query=plan.qrows[plan.qo[edge.other+1]-1];
+        const auto first=plan.krows.begin()+plan.ko[id];
+        const auto stop=std::lower_bound(first,plan.krows.begin()+plan.ko[id+1],last_query);
+        if(size_t(stop-first)>limit-edits.size())return false;
+        for(auto at=first;at!=stop;++at)edits.emplace_back(*at,edge.bit);
+    }
+    const auto deleted=k_deletion(index,scores,deletion_width,stats);
+    for(int s=0;s<n;++s)std::fill_n(credit.begin()+size_t(s)*bits,bits,deleted[s]);
+    std::vector<uint64_t> key=index.k;
+    std::vector<Route> best(plan.nq);
+    const size_t workspace=index.workspace_bytes()+deleted.capacity()*sizeof(double)
+        +key.capacity()*sizeof(uint64_t)+edits.capacity()*sizeof(edits[0])+best.capacity()*sizeof(Route);
+    stats.peak_workspace_bytes=std::max<uint64_t>(stats.peak_workspace_bytes,workspace);
+    for(const auto& edit:edits) {
+        const int owner=edit.first,bit=edit.second;
+        key[owner]^=UINT64_C(1)<<bit;
+        double value=0;
+        auto add=[&](int t,int end) {
+            const int before=index.baseline()[t].end;
+            if(end==before)return;
+            const double* from=scores.value(before);
+            const double* to=scores.value(end);
+            const double* weight=scores.row(t);
+            double delta=0;
+            for(int c=0;c<scores.d;++c)delta+=weight[c]*(to[c]-from[c]);
+            value+=delta;
+        };
+        if(!run_replay(plan,owner,plan.qmap.find(key[owner]),best,add)) {
+            value=0;
+            rosa_exact::SamForward matcher(index.q.data(),key.data(),n,seed);
+            rosa_exact::SamForward::Cursor cursor;
+            for(int t=0;t<n;++t) {
+                matcher.step(t,index.q[t],cursor);
+                if(t>owner)add(t,cursor.end);
+            }
+            stats.suffix_queries+=matcher.counters.endpoint_queries;
+            stats.peak_workspace_bytes=std::max<uint64_t>(stats.peak_workspace_bytes,
+                workspace+matcher.retained_capacity_bytes());
+        }
+        credit[size_t(owner)*bits+bit]=value;
+        key[owner]^=UINT64_C(1)<<bit;
+    }
+    return true;
 }
 
 inline void complete(Index&index,const Scores&score,int bits,
-                     std::vector<double>&cq,std::vector<double>&ck,Stats&stats,uint64_t seed=0) {
+                     const rosa_random::OnegramPlan&plan,std::vector<double>&cq,
+                     std::vector<double>&ck,Stats&stats,uint64_t seed=0) {
     const int n=index.n;
     const int deletion_width=std::max(1,int(std::sqrt(double(n))));
-    if(!repair_supported(index,bits)) {
+    if(!plan.births) {
         deletion(index,score,bits,cq,ck,stats);
         return;
     }
     const double ratio=std::max(1.,double(n)/bits);
     const int threshold=std::max(1,int(std::cbrt(ratio)));
-    const int anchor=std::max(1,int(std::pow(ratio,.75)/4));
+    const int anchor=std::max(1,int(std::pow(ratio,2./3)/4));
     // Each side of a one-mismatch match is an ordinary causal exact
     // match somewhere in the stream. Their global maximum is a valid cap.
     int longest=0;for(const auto&r:index.baseline())longest=std::max(longest,r.length);
@@ -201,10 +279,11 @@ inline void complete(Index&index,const Scores&score,int bits,
     // The same near-winner occurrence summary supplies K deletion and K
     // repair when its complete report fits the bounded work budget. Compare
     // that budget with the structural short catalogue before doing the sum.
-    const uint64_t near_budget=std::min(uint64_t(4)*n*std::max(1,int(std::pow(double(n),.75))),
+    const uint64_t near_budget=std::min(uint64_t(4)*n*std::max(1,int(std::pow(double(n),2./3))),
                                        uint64_t(8)*n*bits*cutoff);
-    const uint64_t window_budget=uint64_t(n)*std::max(1,int(std::pow(double(n),.75)));
+    const uint64_t window_budget=uint64_t(n)*std::max(1,int(std::pow(double(n),2./3)));
     const bool finished_k=fingerprint_k(index,score,bits,ck,stats,window_budget,true,seed)
+        ||sparse_key_flips(index,score,bits,plan,deletion_width,ck,stats,seed)
         ||near_k(index,score,bits,ck,stats,near_budget,true);
     if(!finished_k) {
         const auto kd=k_deletion(index,score,deletion_width,stats);
@@ -255,9 +334,9 @@ inline void complete(Index&index,const Scores&score,int bits,
         std::vector<OwnerRange> ranges;ranges.reserve(united.size());
         for(const auto&r:united)ranges.push_back({r.owner,r.lo,r.hi});
         // Balance against the ACTUAL number of owner/time projections.
-        // At the worst-case M=O(n^2/B) this is B^(2/3); sparse envelopes
-        // use larger blocks instead of paying that pessimistic global bound.
-        const double balanced=std::pow(double(n)*double(n)/ranges.size(),2./3);
+        // Short periods are shared by overlapping terminal windows. Blocks
+        // cost O~(n^1.5 + n^2/H) in total, plus O~(M H) for the fringes.
+        const double balanced=double(n)/std::sqrt(double(ranges.size()));
         const int block=std::max(1,int(std::ceil(std::min(double(n),balanced))));
         const auto negative=k_delete_ranges(index,score,ranges,block,stats);
         retained_peak=std::max(retained_peak,uint64_t(heavy.capacity()*sizeof(double)
@@ -275,10 +354,10 @@ inline int external_lcs(const void*context,int t,int r) {
 // Count only endpoints a complete residual-row evaluator can visit. Stop at
 // the algebraic work budget before any expensive row calculation. Choosing a
 // sparse evaluation of the same repair correction is independent of inputs'
-// labels and keeps its cost within the engine's O~(n^(7/4) (d + 1)) bound.
+// labels and keeps its cost within the engine's O~(n^(5/3) (d + 1)) bound.
 inline bool sparse_residual(const rosa_random::OnegramPlan&plan,
                             const std::vector<int32_t>&rows) {
-    const uint64_t budget=uint64_t(plan.n)*std::max(1,int(std::pow(double(plan.n),.75)));
+    const uint64_t budget=uint64_t(plan.n)*std::max(1,int(std::pow(double(plan.n),2./3)));
     uint64_t work=0;
     for(int t:rows) {
         const int id=plan.qclass[t],same=plan.qsame[id];
@@ -354,7 +433,7 @@ inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
     if(dense) {
         const Scores score=features->scores();
         if(std::any_of(score.weights,score.weights+size_t(n)*score.d,[](double x){return x!=0.;}))
-            complete(*index,score,bits,cq,ck,stats,seed);
+            complete(*index,score,bits,plan,cq,ck,stats,seed);
         if(approx_stats) {
             approx_stats[27]=!features->sampled;
             approx_stats[33]=features->sampled;

@@ -2,6 +2,23 @@
 
 [中文](subquadratic-results.zh-CN.md) · [Algorithm](../ALGORITHM.md) · [Reproduce](../benchmarks/README.md)
 
+## Period overlap compared with bb5b1ab
+
+On one Intel Xeon Platinum 8573C, 34 of 44 paired complete-backward medians improved and 10 regressed. The median of the 44 baseline/current ratios was 1.048×. Runs alternated 15 times per case on CPU 7 with NumPy 2.3.5, one thread, B=G=1, identical inputs, seeds and joint budget. Timing includes index construction and all component gradients. Model forward and optimizer time are outside the timer.
+
+| Input | T | D | First, old → new (ms) | Diagonal + joint, old → new (ms) |
+|---|---:|---:|---:|---:|
+| random | 2,048 | 8 | 4.396 → 4.191 | 5.757 → 5.752 |
+| periodic | 4,096 | 4 | 21.791 → 21.559 | 22.886 → 22.189 |
+| shadow | 4,096 | 8 | 21.235 → 10.818 | 21.695 → 11.742 |
+| shadow | 8,192 | 8 | 51.301 → 24.248 | 55.661 → 23.794 |
+| skyline | 6,336 | 8 | 85.043 → 77.733 | 87.108 → 74.770 |
+| unary | 1,024 | 8 | 0.593 → 0.681 | 0.670 → 0.686 |
+
+The largest latency regression was 14.9% on unary T=1024, first order. All 44 cases matched forward output, V/embedding gradient bytes and selected joint-pair codes. The largest relative L2 difference in Q/K gradients was below 3.86e−16. [All samples, input and source hashes, and numerical comparisons](../benchmarks/results/period_overlap_comparison.json).
+
+## Historical measurements through bb5b1ab
+
 The repository ships one subquadratic backward engine. The final measurements show a substantial improvement over this round's starting implementation: **all 20 paired cases improve, by 2.23–14.31×**. Against the older historical engine, **28 of 42 cases with T≥1024 improve and 14 regress**. The worst measured regression is 1.34× the old latency. This is progress toward broad superiority, not a result that establishes it.
 
 For fixed packed width, numerical dimension and joint budget, the structural bound remains $\widetilde O(T^{7/4})$ time and $\widetilde O(T^{4/3})$ space. Certified sparse work, short-context fingerprint reports and deletion summaries reduce finite-size overhead; bounded rejection returns to the same complete structural calculation. Input-family labels below are benchmark descriptions, never runtime dispatch keys. Route selection is exact in complete mode; binary64 reduction and FFT still round.

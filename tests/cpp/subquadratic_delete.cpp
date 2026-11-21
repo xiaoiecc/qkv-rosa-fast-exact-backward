@@ -74,6 +74,48 @@ struct Oracle {
     }
 };
 
+// Exercise both sides of the A/4 split, with changes of period across
+// a contiguous time block. Compute every reference by endpoint enumeration.
+void check_period_blocks() {
+    const int n=192,A=16;
+    std::vector<std::uint64_t> q(n),k(n);
+    for(int t=0;t<n;++t) {
+        const int period=t<64?3:(t<128?4:5);
+        q[t]=k[t]=std::uint64_t(t%period);
+    }
+    Index index(q.data(),k.data(),n);
+    Oracle oracle(q,k);
+    std::vector<double> weights(n,1),values(n);
+    for(int i=0;i<n;++i)values[i]=i+1;
+    double empty=-1;
+    Scores scores{n,1,weights.data(),values.data(),&empty};
+    bool seen[6]={};
+    for(int begin=0;begin<n;begin+=A/2) {
+        std::vector<int> rows;
+        int short_period=0;
+        Stats stats;
+        for(int t=begin;t<std::min(n,begin+A/2);++t) {
+            rows.push_back(t);
+            if(t<A)continue;
+            delete_detail::APScanner scanner(index,t,A,0,t,stats);
+            delete_detail::APPiece piece;
+            while(scanner.next(piece))if(piece.period) {
+                if(piece.period<=5)seen[piece.period]=true;
+                if(piece.period>A/4)continue;
+                if(short_period && short_period!=piece.period)fail("overlapping windows have distinct short periods");
+                short_period=piece.period;
+            }
+        }
+        const auto actual=k_deletion(index,scores,A,stats,&rows);
+        for(int owner=0;owner<n;++owner) {
+            double expected=0;
+            for(int t:rows)expected+=scores.score(t,oracle.kdeleted[t*n+owner].end)-scores.score(t,oracle.base[t].end);
+            if(actual[owner]!=expected)fail("period-split block credit differs from literal deletion");
+        }
+    }
+    if(!seen[3] || !seen[4] || !seen[5])fail("period cutoff fixture missed a boundary");
+}
+
 void close(double actual,double expected,const char* operation,int n,int width,int item,bool integral) {
     const double tolerance=integral?0.0:2e-10*(1.0+std::abs(expected));
     if(!std::isfinite(actual) || std::abs(actual-expected)>tolerance) {
@@ -192,6 +234,7 @@ int main(int argc,char** argv) {
         const bool quick=argc>1 && std::string(argv[1])=="--quick";
         std::mt19937_64 random(73534493);
         check_flat_crossings();
+        check_period_blocks();
         for(int n=1;n<=(quick?4:6);++n)for(std::uint64_t mask=0;mask<(UINT64_C(1)<<(2*n));++mask) {
             std::vector<std::uint64_t> q(n),k(n);
             for(int i=0;i<n;++i){q[i]=(mask>>i)&1;k[i]=(mask>>(n+i))&1;}

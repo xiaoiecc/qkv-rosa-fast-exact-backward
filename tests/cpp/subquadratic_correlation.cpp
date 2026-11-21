@@ -15,7 +15,8 @@ double maximum_absolute=0,maximum_normalized=0,cancellation_error=0;
 void check(int n,int d,const std::vector<double>&a,const std::vector<double>&b,
            const std::vector<CorrelationQuery>&queries,int block,bool adversarial=false) {
     CorrelationStats stats;
-    const auto actual=BlockCorrelations::solve(n,d,a.data(),b.data(),queries,block,stats);
+    const auto actual=block?BlockCorrelations::solve(n,d,a.data(),b.data(),queries,block,stats)
+                           :BlockCorrelations::almost_full(n,d,a.data(),b.data(),queries,stats);
     for(std::size_t i=0;i<queries.size();++i) {
         const auto&q=queries[i];long double expected=0,magnitude=0;
         for(int t=q.lo;t<=q.hi;++t)for(int c=0;c<d;++c) {
@@ -54,6 +55,13 @@ int main() {
             queries.push_back({lo,mid,shift});queries.push_back({mid,hi,shift});
             queries.push_back({mid,mid,shift});
         }
+        std::vector<CorrelationQuery> nearly_full;
+        for(int shift=1-n;shift<n;++shift) {
+            const int lo=std::max(0,-shift),hi=std::min(n-1,n-1-shift);
+            const int left=int(rng()%3),right=int(rng()%3);
+            if(lo+left<=hi-right)nearly_full.push_back({lo+left,hi-right,shift});
+        }
+        check(n,d,a,b,nearly_full,0);
         for(int i=0;i<200;++i) {
             const int shift=int(rng()%std::uint64_t(2*n-1))-n+1;
             const int lo=std::max(0,-shift),hi=std::min(n-1,n-1-shift);

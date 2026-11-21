@@ -459,6 +459,18 @@ inline std::vector<double> k_deletion(const Index& index,const Scores& scores,in
         while(stream.next(segment)) {
             if(segment.lo<owner_floor)throw std::logic_error("deletion event regressed");
             if(!segment.period){fixed(differences,scores,segment.lo,segment.hi,t,segment.end);continue;}
+            // A long period has few constant endpoint plateaus on this row.
+            // Only short periods enter the all-owner numerical sweep.
+            if(segment.period>A/4) {
+                int lo=segment.lo;
+                while(lo<=segment.hi) {
+                    const int offset=(lo-segment.residue+segment.period)%segment.period;
+                    const int hi=std::min(segment.hi,lo+segment.period-1-offset);
+                    fixed(differences,scores,lo,hi,t,lo-offset-1);
+                    lo=hi+1;
+                }
+                continue;
+            }
             events.push({segment.lo,1,t,id,segment.period,segment.residue,segment.hi});return;
         }
     };
@@ -539,7 +551,7 @@ inline std::vector<double> k_range_projections(const Index& index,const Scores& 
         return std::tie(a.block,a.id,a.sign)<std::tie(b.block,b.id,b.sign);
     });
     std::vector<double> prefix(n,0.0);std::vector<int> rows(H);std::size_t at=0;
-    const int A=std::max(1,square_root(H,true));int active=0;
+    const int A=std::max(1,square_root(n,true));int active=0;
     const std::size_t outer_workspace=(base.capacity()+prefix.capacity()+answer.capacity())*sizeof(double)
         +events.capacity()*sizeof(Snapshot)+rows.capacity()*sizeof(int);
     for(int block=events.front().block;block<=events.back().block;++block) {

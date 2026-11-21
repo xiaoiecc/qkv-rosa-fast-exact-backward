@@ -37,7 +37,7 @@ All numerical arrays are row-major. Owner/time intervals are inclusive; suffix-r
 
 ## Parameters and costs
 
-Let $b$ be packed bit width and $d$ the numerical dimension. The complete algorithm uses terminal length $A$, Q source threshold $\kappa$, long K anchor width $B$ with short cutoff $L_{\mathrm{cut}}=4B$, correlation width $W$, and deletion time-block width $H$. The cursor cap is $C=2\max(32,2b+2\lceil\log_2(n+1)\rceil)$, and the endpoint-report budget is based on $W_n=n\max(1,\lfloor n^{3/4}\rfloor)$.
+Let $b$ be packed bit width and $d$ the numerical dimension. The complete algorithm uses terminal length $A$, Q source threshold $\kappa$, long K anchor width $B$ with short cutoff $L_{\mathrm{cut}}=4B$, correlation width $W$, and deletion time-block width $H$. The cursor cap is $C=2\max(32,2b+2\lceil\log_2(n+1)\rceil)$, and the endpoint-report budget is based on $W_n=n\max(1,\lfloor n^{2/3}\rfloor)$.
 
 | Phase | Time up to logarithms |
 |---|---:|
@@ -51,12 +51,12 @@ Let $b$ be packed bit width and $d$ the numerical dimension. The complete algori
 | Shared Q deletion with $M_Q\le nb$ negative requests | $(d+1)n^{3/2}+M_Q$; direct short requests add $M_0d$ |
 | Short K | $nb(d+1)B$ |
 | Long K positive sums | $d n^2/B^{1/2}$ |
-| Long K deletion projections | $(d+1)n^2/B^{1/3}$ |
+| Long K deletion projections | $(d+1)n^2/B^{1/2}$ |
 | Fixed-budget joint replay | $Jn(d+1)$ |
 
 These rows include alternative evaluations of the same terms. Complete residual reports require $M\le W_n$; two-half K reports require $M\le\min(4W_n,8nbL_{\mathrm{cut}})$. Both count their complete sets before materializing reports. The full-Q frontier publishes only on success; it then replaces both Q deletion and repair. Its internal `include_deletion=false` option returns just repair-minus-deletion. If it rejects, the shared plateau sweep and compressed repair complete the calculation. Shared Q deletion and its negative requests use one sweep, not two. Requests of at most four rows may be evaluated directly; $M_0$ counts those requests and keeps their dimension cost explicit.
 
-With fixed $b,d,J$ and $B\asymp n^{3/4}$, time is $\widetilde O(n^{7/4})$. Retained records use $\widetilde O(n+nd+nb+nb\kappa+n^2/B)$ space, hence $\widetilde O(n^{4/3})$ for fixed dimensions. The fixed 32-row residual history, owner buckets and lazy bounded caches add only $O(n)$ words at fixed widths. These are complete-algorithm bounds, not measured speedups. The tilde hides logarithms, not $b,d,J$ or scalar precision. In particular, the short kernel has a $D^2$ coefficient when $b=d=D$.
+With fixed $b,d,J$ and $B\asymp n^{2/3}$, time is $\widetilde O(n^{5/3})$. Retained records use $\widetilde O(n+nd+nb+nb\kappa+n^2/B)$ space, hence $\widetilde O(n^{4/3})$ for fixed dimensions. The fixed 32-row residual history, owner buckets and lazy bounded caches add only $O(n)$ words at fixed widths. These are complete-algorithm bounds, not measured speedups. The tilde hides logarithms, not $b,d,J$ or scalar precision. In particular, the short kernel has a $D^2$ coefficient when $b=d=D$.
 
 Native workspace counters report a **buffer capacity estimate** of tracked storage, not process RSS or a guaranteed allocator/runtime peak. This measurement convention is separate from the asymptotic space proof.
 

@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <limits>
+#include <set>
 #include <vector>
 #include "../exact_expansion.h"
 namespace rosa_subq {
@@ -136,6 +137,43 @@ class BlockCorrelations {
     };
 
 public:
+ // Batch complete overlaps at all shifts with one convolution per channel
+ // and one shared inverse. The at-most-four omitted rows use direct dots.
+ // Callers may mix these requests with arbitrary intervals in a separate batch.
+ static std::vector<double> almost_full(int n,int d,const double* a,const double* b,
+         const std::vector<CorrelationQuery>& queries,CorrelationStats& stats) {
+  int width=1;
+  while(width<2*n-1)width*=2;
+  Plan plan;plan.reset(width);
+  std::vector<Complex> x(width),y(width),spectrum(width);
+  for(int c=0;c<d;++c) {
+   std::fill(x.begin(),x.end(),Complex{});std::fill(y.begin(),y.end(),Complex{});
+   for(int t=0;t<n;++t){x[n-1-t].re=a[size_t(t)*d+c];y[t].re=b[size_t(t)*d+c];}
+   plan.forward(x);plan.forward(y);
+   for(int k=0;k<width;++k) {
+    const int at=plan.position(k);
+    spectrum[k]+=x[at]*y[at];
+   }
+  }
+  plan.inverse(spectrum);
+  stats.transforms=2*uint64_t(d)+1;
+  stats.pointwise_products=uint64_t(width)*d;
+  std::vector<double> result;result.reserve(queries.size());
+  for(const auto& q:queries) {
+   rosa_exact::ExactExpansion sum;
+   sum.add(spectrum[plan.position(n-1+q.shift)].re);
+   auto omit=[&](int t) {
+    double row=0;
+    for(int c=0;c<d;++c)row+=a[size_t(t)*d+c]*b[size_t(t+q.shift)*d+c];
+    sum.add(-row);stats.tail_products+=d;
+   };
+   for(int t=std::max(0,-q.shift);t<q.lo;++t)omit(t);
+   for(int t=q.hi+1;t<std::min(n,n-q.shift);++t)omit(t);
+   result.push_back(sum.to_double());
+  }
+  stats.workspace_bytes=width*(4*sizeof(Complex)+sizeof(int))+result.capacity()*sizeof(double);
+  return result;
+ }
  static std::vector<double> solve(int n,int d,const double* a,const double* b,
   const std::vector<CorrelationQuery>& queries,int block,CorrelationStats& stats) {
   if(n<0||d<1||block<1||(block&(block-1)))throw std::invalid_argument("invalid dimensions or non-power-of-two block");
@@ -202,12 +240,28 @@ public:
     for(int k=0;k<width;++k)payload[(size_t(j)*d+c)*width+k]=scratch[plan.position(k)];
    }
   };
+  // A full gradient block shifted by s meets payload blocks at the floor
+  // and ceiling of s/block relative to it. Maintain their union as requests
+  // open/close, so sparse contractions pay only for requested block pairs.
+  std::vector<int> diagonal_counts(2*groups-1,0);
+  std::set<int> diagonals;
+  std::size_t peak_diagonals=0;
+  auto update_diagonal=[&](int delta,int change) {
+   int& count=diagonal_counts[delta+groups-1];
+   count+=change;
+   if(count==0)diagonals.erase(delta);
+   else if(count==1 && change>0)diagonals.insert(delta);
+  };
   for(int i=0;i<=last_group;++i) {
    const int start=i*block;
    for(const auto&e:events[i]) {
     const int shift=queries[e.id].shift;
     if(e.sign>0)answer[e.id].add(prefix[shift+offset]);else answer[e.id].subtract(prefix[shift+offset]);
     active[shift+offset]-=e.sign;active_queries-=e.sign;
+    const int lower=shift/block-int(shift%block<0);
+    update_diagonal(lower,-e.sign);
+    if(shift%block)update_diagonal(lower+1,-e.sign);
+    peak_diagonals=std::max(peak_diagonals,diagonals.size());
    }
    if(i==last_group)break;
    // A prefix contribution outside every open interval cancels from every
@@ -220,14 +274,8 @@ public:
     plan.forward(scratch);++stats.transforms;
     for(int k=0;k<width;++k)gradient[size_t(c)*width+k]=scratch[plan.position(k)];
    }
-   for(int j=0;j<groups;++j) {
-    const int first_shift=(j-i)*block-block+1;
-    bool useful=false;
-    for(int u=0;u<2*block-1;++u) {
-     const int ix=first_shift+u+offset;
-     if(ix>=0&&ix<2*n-1&&active[ix]>0){useful=true;break;}
-    }
-    if(!useful)continue;
+   for(int delta:diagonals) {
+    const int j=i+delta,first_shift=delta*block-block+1;
     prepare_payload(j);
     std::fill(spectrum.begin(),spectrum.end(),Complex{});
     for(int c=0;c<d;++c) {
@@ -246,7 +294,7 @@ public:
   std::vector<double> result(queries.size());
   for(size_t i=0;i<queries.size();++i)result[i]=answer[i].to_double();
   stats.workspace_bytes=sizeof(Complex)*(payload.size()+gradient.size()+scratch.size()+spectrum.size()+plan.roots.size())
-    +sizeof(int)*(active.size()+plan.order.size())+sizeof(rosa_exact::ExactExpansion)*(prefix.size()+answer.size())
+    +sizeof(int)*(active.size()+plan.order.size()+diagonal_counts.size()+peak_diagonals)+sizeof(rosa_exact::ExactExpansion)*(prefix.size()+answer.size())
     +2*queries.size()*sizeof(Event)+sizeof(double)*result.size()+payload_ready.size();
   return result;
  }
