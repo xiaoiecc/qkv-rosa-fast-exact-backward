@@ -55,16 +55,11 @@ inline double change(const Scores& score,const double* w,int to,int from) {
 
 // A row's cost telescopes through its surviving exact suffix, its one-word
 // repairs, then its longer repairs. All three terms have disjoint ownership.
-inline void evaluate(const EditAlphabet& plan,const std::vector<Route>& base,
+template<int Width>
+inline void sweep(const EditAlphabet& plan,int rank_width,int horizon,const std::vector<Route>& base,
         const Scores& score,std::vector<double>& cq,std::vector<double>& ck,Stats& stats) {
-    const int n=plan.n,bits=plan.d;
-    if(n<2)return;
+    const int n=plan.n,bits=Width?Width:plan.d,digit=Width?Width:rank_width;
     const auto* q=plan.q;const auto* k=plan.k;
-    // Compact the *observed* alphabet. Hamming adjacency still comes from
-    // full original words, so class numbering cannot create spurious edits.
-    const bool missing=std::find(plan.qsame.begin(),plan.qsame.end(),-1)!=plan.qsame.end();
-    int digit=1;
-    while((UINT64_C(1)<<digit)<uint64_t(plan.nk+int(missing)))++digit;
     const int digits=64/digit;
     const uint64_t digit_mask=(UINT64_C(1)<<digit)-1;
     double collision=0.;
@@ -73,7 +68,7 @@ inline void evaluate(const EditAlphabet& plan,const std::vector<Route>& base,
         collision+=double(plan.qcount[id])*plan.kcount[key];
     }
     collision/=double(n)*n;
-    const int uniform_depth=int(std::ceil(std::log2(double(n))/bits));
+    const int uniform_depth=int(std::ceil(std::log2(double(horizon))/bits));
     const int collision_depth=int(std::ceil(std::log(double(n))/
                                     -std::log(std::clamp(collision,1./(double(n)*n),.75))));
     const int depth=std::min(digits,std::max({2,uniform_depth,collision_depth}));
@@ -91,17 +86,18 @@ inline void evaluate(const EditAlphabet& plan,const std::vector<Route>& base,
         if(!suffix)suffix=std::make_unique<Index>(q,k,n,false,0,&base);
         return *suffix;
     };
-    auto lcs=[&](int t,int r) {
+    auto packed_arm=[&](uint64_t word,int t,int r) {
         if(r<0)return 0;
-        uint64_t delta=qw[t]^kw[r];
+        uint64_t delta=word^kw[r];
         if(digits*digit<64)delta&=(UINT64_C(1)<<(digits*digit))-1;
         if(delta)return std::min(rosa_random::row_bit(delta)/digit,r+1);
         if(r<digits)return r+1;
         if(q[t-digits]!=k[r-digits])return digits;
         return digits+index().lcs(t-digits,r-digits);
     };
+    auto lcs=[&](int t,int r){return r<0?0:packed_arm(qw[t],t,r);};
     std::vector<int> latest(plan.nk,-1),previous(n,-1),count(plan.nk);
-    const int local_limit=std::max({depth,48,int(std::ceil(3*std::log2(double(n))))});
+    const int local_limit=std::max({depth,48,int(std::ceil(3*std::log2(double(horizon))))});
     std::vector<int> key_run(n),long_rows,ends(local_limit+1),seen(n,-1);
     int longest=0;for(Route route:base)longest=std::max(longest,route.length);
     const bool has_pairs=plan.births && longest;
@@ -123,7 +119,7 @@ inline void evaluate(const EditAlphabet& plan,const std::vector<Route>& base,
         const bool one_run=L>1 && qrun>=L && old.end==latest[same]
             && key_run[old.end]==count[same];
         const int start=one_run?old.end-key_run[old.end]+1:0;
-        const bool indexed=L>1 && !one_run && (L>local_limit || levels.empty());
+        const bool indexed=L>1 && !one_run && L>local_limit;
         if(L) {
             if(one_run) {
                 qdel[t]+=change(score,w,-1,old.end);
@@ -135,6 +131,14 @@ inline void evaluate(const EditAlphabet& plan,const std::vector<Route>& base,
                 const double val=score.score(t,old.end);
                 offset[lo]-=val;offset[hi]+=val;
             } else if(indexed)long_rows.push_back(t);
+            else if(L>1 && levels.empty()) {
+                // A nonempty baseline can survive even with no possible
+                // repairs. Query bounded barriers directly for these rows.
+                for(int a=0;a<L;++a)
+                    qdel[t-a]+=change(score,w,a?index().R(t,a):-1,old.end);
+                for(int s=first;s<=old.end;++s)
+                    kdel[s]+=change(score,w,index().deleted(t,s).end,old.end);
+            }
             else {
                 ends[1]=latest[same];
                 const int local_depth=std::min(L,depth);
@@ -147,6 +151,7 @@ inline void evaluate(const EditAlphabet& plan,const std::vector<Route>& base,
                     auto& top=levels[depth-2];
                     for(int end=ends[depth];end>=0;end=top.previous(end)) {
                         const int len=lcs(t,end);
+                        if(len>L)throw std::invalid_argument("inconsistent saved match length");
                         ends[len]=std::max(ends[len],end);
                         for(int s=first;s<=old.end;++s) {
                             int left=s<=end?std::min(len,end-s):len;
@@ -191,6 +196,7 @@ inline void evaluate(const EditAlphabet& plan,const std::vector<Route>& base,
             best[i]=std::max(best[i],route);
         };
         auto report=[&](int a,int bit,int len,int end,bool qside,bool kside) {
+            if(a>L)throw std::invalid_argument("inconsistent saved match length");
             const Route route{len,end};const int s=end-a;
             if(qside && (a<L || route>old))note(qbest,qtouched,size_t(a)*bits+bit,route);
             if(kside && ((s>=first && s<=old.end)||route>old))note(kbest,ktouched,size_t(s)*bits+bit,route);
@@ -219,9 +225,21 @@ inline void evaluate(const EditAlphabet& plan,const std::vector<Route>& base,
             for(auto edge:plan.qneighbors[plan.qclass[t-a]]) {
                 const uint64_t word=cleared|(uint64_t(edge.other)<<shift);
                 const int last=pivot.last(word);
-                if(last>=0)for(int end=last;end>=0;end=pivot.previous(end))inspect(end,false);
+                if(last>=0)for(int end=last;end>=0;end=pivot.previous(end)) {
+                    // The posting key already proves this exact edit. Only
+                    // the part older than the pivot can extend its length.
+                    seen[end]=t;++stats.suffix_queries;
+                    report(a,edge.bit,packed_arm(word,t,end),end,true,true);
+                }
                 else if(p>2 && a+1<p) {
-                    int lo=std::max(2,a+1),hi=p-1,best=-1,len=0;
+                    const int minimum=std::max(2,a+1);
+                    int lo=minimum,hi=p-1,best=-1,len=0,stride=1;
+                    while(hi>=minimum) {
+                        int probe=std::max(minimum,p-stride);
+                        int end=levels[probe-2].last(word);
+                        if(end>=0){best=end;len=probe;lo=probe+1;break;}
+                        hi=probe-1;stride*=2;
+                    }
                     while(lo<=hi) {
                         const int mid=(lo+hi)/2,end=levels[mid-2].last(word);
                         if(end<0)hi=mid-1;
@@ -310,6 +328,19 @@ inline void evaluate(const EditAlphabet& plan,const std::vector<Route>& base,
         +(qdel.capacity()+kdel.capacity()+affine.capacity()+offset.capacity()+weights.capacity())*sizeof(double);
     for(const auto& level:levels)bytes+=level.bytes();
     stats.peak_workspace_bytes+=bytes+(suffix?suffix->workspace_bytes():0);
+}
+inline void evaluate(const EditAlphabet& plan,const std::vector<Route>& base,
+        const Scores& score,std::vector<double>& cq,std::vector<double>& ck,Stats& stats,int horizon=0) {
+    if(plan.n<2)return;
+    if(!horizon)horizon=plan.n;
+    const bool missing=std::find(plan.qsame.begin(),plan.qsame.end(),-1)!=plan.qsame.end();
+    int digit=1;while((UINT64_C(1)<<digit)<uint64_t(plan.nk+int(missing)))++digit;
+    // All instantiations use the same interval proof and posting order.
+    // Constant lane sizes let the compiler fold division in the inner loop.
+    if(digit==plan.d && digit==1)sweep<1>(plan,digit,horizon,base,score,cq,ck,stats);
+    else if(digit==plan.d && digit==2)sweep<2>(plan,digit,horizon,base,score,cq,ck,stats);
+    else if(digit==plan.d && digit==4)sweep<4>(plan,digit,horizon,base,score,cq,ck,stats);
+    else sweep<0>(plan,digit,horizon,base,score,cq,ck,stats);
 }
 } // namespace interval_credit
 } // namespace rosa_subq

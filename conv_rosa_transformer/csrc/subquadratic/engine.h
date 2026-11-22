@@ -187,7 +187,7 @@ inline void exact_intervals(const uint64_t* q,const uint64_t* k,int n,int b,
         interval_credit::EditAlphabet symbols(query,key,size,b,largest);
         if(symbols.births || std::any_of(routes.begin(),routes.end(),[](Route r){return r.length>0;})) {
             Features features(size,b,value,adjoint,metric,e0,e1,routes,0,0,stats);
-            interval_credit::evaluate(symbols,routes,features.scores(),qout,kout,stats);
+            interval_credit::evaluate(symbols,routes,features.scores(),qout,kout,stats,n);
             stats.peak_workspace_bytes+=features.workspace_bytes();
         }
         stats.peak_workspace_bytes+=symbols.workspace_bytes();
@@ -255,6 +255,7 @@ inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
         for(int t=0;t<n;++t) {
             const int len=known_lengths[t],end=known_routes[t];
             if(len<0||len>t||end < -1||end>=t||(len==0)!=(end<0)||len>end+1)return 1;
+            if(end>=0 && q[t]!=k[end])return 1;
             lengths[t]=len;routes[t]=end;
         }
     } else {

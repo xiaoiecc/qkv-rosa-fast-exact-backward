@@ -1,4 +1,4 @@
-"""One subquadratic CPU implementation of hard QKV-ROSA finite-bit credit.
+"""Exact CPU interval implementation of hard QKV-ROSA finite-bit credit.
 
 ``credits_numpy`` returns float64 credits and work counters. The five-result
 ``exact_stream_bit_credits`` interface preserves a PyTorch gradient's dtype.
