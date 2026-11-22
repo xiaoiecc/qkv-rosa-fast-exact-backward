@@ -48,11 +48,27 @@ def load_reference(root):
     return importlib.import_module(package.__name__ + ".native_training")
 
 
+def endpoint_count(cache, bits):
+    counts = {}
+    total = exact = 0
+    keys = cache.k.ravel()
+    for t, word in enumerate(cache.q.ravel()):
+        if t:
+            key = int(keys[t - 1])
+            counts[key] = counts.get(key, 0) + 1
+        word = int(word)
+        exact += counts.get(word, 0)
+        total += counts.get(word, 0)
+        total += sum(counts.get(word ^ (1 << j), 0) for j in range(bits))
+    return exact, total
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reference-checkout", type=Path, required=True)
     parser.add_argument("--repeats", type=int, default=7)
     parser.add_argument("--cpu", type=int)
+    parser.add_argument("--counterfactuals", action="store_true", help="use the structural scaling cases")
     parser.add_argument("--expanded", action="store_true")
     parser.add_argument("--output", type=Path, default=ROOT / "benchmarks/results/optimized_comparison.json")
     args = parser.parse_args()
@@ -78,6 +94,12 @@ def main():
                   ((1024, 1), (2048, 1), (4096, 1), (1024, 8), (4096, 8),
                    (8192, 8), (1024, 16), (4096, 16), (8192, 64))]
         cases += [("unary", 1024, 8), ("periodic", 1024, 4), ("shadow", 1024, 8)]
+    if args.counterfactuals:
+        cases = ([("lagged_copy", n, 64) for n in (512, 1024, 2048, 4096)]
+                 + [("mixed_runs", n, 8) for n in (1024, 4096, 8192)]
+                 + [("band_collision", n, 64) for n in (1024, 4096)]
+                 + [("near_fanout", n, 8) for n in (1024, 4096, 8192)]
+                 + [("skyline", 48, 8), ("shadow", 16384, 8)])
     rows = []
     for case, (family, n, d) in enumerate(cases):
         arrays, gradient = make_case(family, n, d, 2026110600 + case)
@@ -111,12 +133,19 @@ def main():
                        speedup=medians["reference"] / medians["current"],
                        errors=quality, numerical_close=numerical_close,
                        forward_bytewise_equal=forward_equal, pair_codes_equal=pair_codes_equal)
+            exact, eligible = endpoint_count(caches["current"], d)
+            row.update(exact_endpoints=exact, eligible_endpoints=eligible,
+                       sum_match_lengths=int(caches["current"].lengths.sum()),
+                       max_match_length=int(caches["current"].lengths.max()),
+                       workspace_estimate_bytes={name: out[-1]["workspace_estimate_bytes"]
+                                                 for name, out in outputs.items()})
             rows.append(row)
             print(json.dumps({key: row[key] for key in
                               ("family", "T", "D", "order", "median_ms", "speedup", "numerical_close")}), flush=True)
     unchanged = before == compiled == {name: hashes(root) for name, root in roots.items()}
     passed = unchanged and all(row["numerical_close"] and row["forward_bytewise_equal"]
-                               and row["pair_codes_equal"] for row in rows)
+                               and row["pair_codes_equal"] and row["errors"]["v_embeddings_bitwise_equal"]
+                               for row in rows)
     report = dict(status="PASS" if passed else "FAIL", source_unchanged=unchanged,
                   scope=__doc__, repeats=args.repeats, platform=platform.platform(),
                   numpy=np.__version__, affinity=sorted(os.sched_getaffinity(0))

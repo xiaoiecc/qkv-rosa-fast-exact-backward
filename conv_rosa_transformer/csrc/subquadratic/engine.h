@@ -1,16 +1,11 @@
 #pragma once
-// One structural engine for all packed alphabets: deletion, short repair,
-// anchored long repair and batched numerical correlations. No family dispatch.
+// Complete credit uses one interval reduction. Explicit row or channel
+// sampling shares its baseline, numerical projection and deletion machinery.
 #include "index.h"
 #include "delete.h"
-#include "repair.h"
-#include "short_k.h"
-#include "near_k.h"
-#include "fingerprint_k.h"
-#include "q_frontier.h"
-#include "correlation.h"
+#include "interval_credit.h"
 #include "../training.h"
-#include "../forward.h"
+#include "../causal_windows.h"
 #include <memory>
 #include "../approx_indexed_row.h"
 #include "../approx_row_certificate.h"
@@ -147,206 +142,6 @@ inline void sparse_deletion(Index&index,const Scores&score,int bits,
                  +(previous.capacity()+long_rows.capacity())*sizeof(int)));
 }
 
-inline void correlations(const Scores&score,int bits,const std::vector<Segment>&segments,
-                         std::vector<double>&credit,Stats&stats) {
-    if(segments.empty())return;
-    std::vector<CorrelationQuery> query;query.reserve(segments.size());
-    // A shift has n-|shift| legal row pairs. Count how much work is shared
-    // before allocating an FFT of the entire stream.
-    const auto almost_full=[&](const Segment& s) {
-        const int length=s.hi-s.lo+1;
-        return length>=32 && score.n-std::abs(s.beta+1)-length<=4;
-    };
-    uint64_t products=0;
-    for(const auto& s:segments)if(almost_full(s))products+=s.hi-s.lo+1;
-    const bool use_full=products>16.*score.n*std::log2(2.*score.n);
-    for(int pass=0;pass<=(use_full?1:0);++pass) {
-        const bool full=use_full && pass==0;
-        query.clear();
-        for(const auto& s:segments)if(!use_full || almost_full(s)==full)
-            query.push_back({s.lo,s.hi,s.beta+1});
-        if(query.empty())continue;
-        CorrelationStats cs;
-        const auto value=full
-            ?BlockCorrelations::almost_full(score.n,score.d,score.weights,score.payload,query,cs)
-            :BlockCorrelations::solve(score.n,score.d,score.weights,score.payload,query,
-                                     correlation_block(score.n,score.d,query),cs);
-        size_t at=0;
-        for(const auto& s:segments)if(!use_full || almost_full(s)==full)
-            credit[size_t(s.owner)*bits+s.bit]+=value[at++];
-        stats.correlation_queries+=query.size();stats.correlation_direct+=cs.tail_products;
-        stats.fft_transforms+=cs.transforms;
-        stats.peak_workspace_bytes=std::max<uint64_t>(stats.peak_workspace_bytes,
-            cs.workspace_bytes+query.capacity()*sizeof(CorrelationQuery));
-    }
-}
-
-// Removing the final symbol of a causal match gives a causal match one row
-// earlier. If the last Q run covers that upper bound, an uncapped longest K
-// run of the same word is the exact winner, including the latest-end tie.
-template<class Add>
-inline bool run_replay(const rosa_random::OnegramPlan& plan,int owner,int changed_class,
-                       std::vector<Route>& best,Add&& add) {
-    std::fill(best.begin(),best.end(),Route{});
-    int previous_class=-1,key_run=0,query_run=0,previous_length=0;
-    for(int t=1;t<plan.n;++t) {
-        const int r=t-1;
-        const int key_class=r==owner?changed_class:plan.ksame[plan.kclass[r]];
-        key_run=key_class==previous_class?key_run+1:1;
-        previous_class=key_class;
-        if(key_class>=0)best[key_class]=std::max(best[key_class],Route{key_run,r});
-        const int query_class=plan.qclass[t];
-        query_run=t>1 && plan.qclass[t-1]==query_class?query_run+1:1;
-        const Route winner=best[query_class];
-        if(winner.length && (query_run<previous_length+1 || winner.length>query_run))return false;
-        previous_length=winner.length;
-        if(t>owner)add(t,winner.end);
-    }
-    return true;
-}
-
-// A changed K word can participate in a repaired suffix only if that word
-// occurs later in Q. Count those physical (owner,bit) pairs from the shared
-// class lists before replaying any. All other flips equal their deletion.
-inline bool sparse_key_flips(Index& index,const Scores& scores,int bits,
-        const rosa_random::OnegramPlan& plan,int deletion_width,std::vector<double>& credit,
-        Stats& stats,uint64_t seed) {
-    const int n=index.n;
-    const size_t limit=std::max(1,int(std::sqrt(double(n))));
-    std::vector<std::pair<int,int>> edits;
-    for(int id=0;id<plan.nk;++id)for(const auto& edge:plan.kneighbors[id]) {
-        const int last_query=plan.qrows[plan.qo[edge.other+1]-1];
-        const auto first=plan.krows.begin()+plan.ko[id];
-        const auto stop=std::lower_bound(first,plan.krows.begin()+plan.ko[id+1],last_query);
-        if(size_t(stop-first)>limit-edits.size())return false;
-        for(auto at=first;at!=stop;++at)edits.emplace_back(*at,edge.bit);
-    }
-    const auto deleted=k_deletion(index,scores,deletion_width,stats);
-    for(int s=0;s<n;++s)std::fill_n(credit.begin()+size_t(s)*bits,bits,deleted[s]);
-    std::vector<uint64_t> key=index.k;
-    std::vector<Route> best(plan.nq);
-    const size_t workspace=index.workspace_bytes()+deleted.capacity()*sizeof(double)
-        +key.capacity()*sizeof(uint64_t)+edits.capacity()*sizeof(edits[0])+best.capacity()*sizeof(Route);
-    stats.peak_workspace_bytes=std::max<uint64_t>(stats.peak_workspace_bytes,workspace);
-    for(const auto& edit:edits) {
-        const int owner=edit.first,bit=edit.second;
-        key[owner]^=UINT64_C(1)<<bit;
-        double value=0;
-        auto add=[&](int t,int end) {
-            const int before=index.baseline()[t].end;
-            if(end==before)return;
-            const double* from=scores.value(before);
-            const double* to=scores.value(end);
-            const double* weight=scores.row(t);
-            double delta=0;
-            for(int c=0;c<scores.d;++c)delta+=weight[c]*(to[c]-from[c]);
-            value+=delta;
-        };
-        if(!run_replay(plan,owner,plan.qmap.find(key[owner]),best,add)) {
-            value=0;
-            rosa_exact::SamForward matcher(index.q.data(),key.data(),n,seed);
-            rosa_exact::SamForward::Cursor cursor;
-            for(int t=0;t<n;++t) {
-                matcher.step(t,index.q[t],cursor);
-                if(t>owner)add(t,cursor.end);
-            }
-            stats.suffix_queries+=matcher.counters.endpoint_queries;
-            stats.peak_workspace_bytes=std::max<uint64_t>(stats.peak_workspace_bytes,
-                workspace+matcher.retained_capacity_bytes());
-        }
-        credit[size_t(owner)*bits+bit]=value;
-        key[owner]^=UINT64_C(1)<<bit;
-    }
-    return true;
-}
-
-inline void complete(Index&index,const Scores&score,int bits,
-                     const rosa_random::OnegramPlan&plan,std::vector<double>&cq,
-                     std::vector<double>&ck,Stats&stats,uint64_t seed=0) {
-    const int n=index.n;
-    const int deletion_width=std::max(1,int(std::sqrt(double(n))));
-    if(!plan.births) {
-        deletion(index,score,bits,cq,ck,stats);
-        return;
-    }
-    const double ratio=std::max(1.,double(n)/bits);
-    const int threshold=std::max(1,int(std::cbrt(ratio)));
-    const int anchor=std::max(1,int(std::pow(ratio,2./3)/4));
-    // Each side of a one-mismatch match is an ordinary causal exact
-    // match somewhere in the stream. Their global maximum is a valid cap.
-    int longest=0;for(const auto&r:index.baseline())longest=std::max(longest,r.length);
-    const int cutoff=std::min({n,4*anchor,2*longest+1});
-    // The same near-winner occurrence summary supplies K deletion and K
-    // repair when its complete report fits the bounded work budget. Compare
-    // that budget with the structural short catalogue before doing the sum.
-    const uint64_t near_budget=std::min(uint64_t(4)*n*std::max(1,int(std::pow(double(n),2./3))),
-                                       uint64_t(8)*n*bits*cutoff);
-    const uint64_t window_budget=uint64_t(n)*std::max(1,int(std::pow(double(n),2./3)));
-    const bool finished_k=fingerprint_k(index,score,bits,ck,stats,window_budget,true,seed)
-        ||sparse_key_flips(index,score,bits,plan,deletion_width,ck,stats,seed)
-        ||near_k(index,score,bits,ck,stats,near_budget,true);
-    if(!finished_k) {
-        const auto kd=k_deletion(index,score,deletion_width,stats);
-        for(int t=0;t<n;++t)for(int j=0;j<bits;++j)ck[size_t(t)*bits+j]=kd[t];
-    }
-    std::vector<double> heavy(size_t(n)*bits,0.);
-    uint64_t retained_peak=heavy.capacity()*sizeof(double);
-    if(q_frontier(index,score,bits,heavy,stats,seed,true)) {
-        // The same bounded barrier frontier now owns full Q deletion and
-        // repair. Its accepted result needs no second indexed Q sweep.
-        cq.swap(heavy);
-    } else {
-        std::vector<Segment> light;
-        std::vector<BitRange> exist;
-        q_repair(index,score,bits,threshold,heavy,light,exist,stats);
-        std::vector<OwnerRange> ranges;ranges.reserve(exist.size());
-        for(const auto&r:exist)ranges.push_back({r.owner,r.lo,r.hi});
-        const int block=ranges.empty()?1:std::min(n,std::max(1,int(std::ceil(double(n)/std::sqrt(double(ranges.size()))))));
-        std::vector<double> qd;
-        const auto negative=q_deletion_and_ranges(index,score,ranges,block,stats,qd);
-        retained_peak+=light.capacity()*sizeof(Segment)+exist.capacity()*sizeof(BitRange)
-            +ranges.capacity()*sizeof(OwnerRange)+(qd.capacity()+negative.capacity())*sizeof(double);
-        for(int t=0;t<n;++t)for(int j=0;j<bits;++j)cq[size_t(t)*bits+j]=qd[t];
-        for(size_t i=0;i<cq.size();++i)cq[i]+=heavy[i];
-        correlations(score,bits,light,cq,stats);
-        for(size_t i=0;i<exist.size();++i)cq[size_t(exist[i].owner)*bits+exist[i].bit]-=negative[i];
-    }
-    if(finished_k){stats.peak_workspace_bytes+=retained_peak;return;}
-    short_k(index,score,bits,cutoff,ck,stats);
-    auto segments=4*anchor>=2*longest+1?std::vector<Segment>{}:long_k(index,anchor,stats);
-    segments.erase(std::remove_if(segments.begin(),segments.end(),
-        [bits](const Segment&s){return s.bit>=bits;}),segments.end());
-    correlations(score,bits,segments,ck,stats);
-    if(!segments.empty()) {
-        // The envelope is disjoint in time. Adjacent payload runs share one
-        // negative deletion projection, even when their payload shifts differ.
-        std::sort(segments.begin(),segments.end(),[](const Segment&a,const Segment&b){
-            if(a.owner!=b.owner)return a.owner<b.owner;
-            if(a.bit!=b.bit)return a.bit<b.bit;
-            return a.lo<b.lo;
-        });
-        std::vector<BitRange> united;
-        for(const auto&s:segments) {
-            if(!united.empty()&&united.back().owner==s.owner&&united.back().bit==s.bit&&united.back().hi+1>=s.lo)
-                united.back().hi=std::max(united.back().hi,s.hi);
-            else united.push_back({s.owner,s.bit,s.lo,s.hi});
-        }
-        std::vector<OwnerRange> ranges;ranges.reserve(united.size());
-        for(const auto&r:united)ranges.push_back({r.owner,r.lo,r.hi});
-        // Balance against the ACTUAL number of owner/time projections.
-        // Short periods are shared by overlapping terminal windows. Blocks
-        // cost O~(n^1.5 + n^2/H) in total, plus O~(M H) for the fringes.
-        const double balanced=double(n)/std::sqrt(double(ranges.size()));
-        const int block=std::max(1,int(std::ceil(std::min(double(n),balanced))));
-        const auto negative=k_delete_ranges(index,score,ranges,block,stats);
-        retained_peak=std::max(retained_peak,uint64_t(heavy.capacity()*sizeof(double)
-            +segments.capacity()*sizeof(Segment)+united.capacity()*sizeof(BitRange)
-            +ranges.capacity()*sizeof(OwnerRange)+negative.capacity()*sizeof(double)));
-        for(size_t i=0;i<united.size();++i)ck[size_t(united[i].owner)*bits+united[i].bit]-=negative[i];
-    }
-    stats.peak_workspace_bytes+=retained_peak;
-}
-
 inline int external_lcs(const void*context,int t,int r) {
     return static_cast<const Index*>(context)->lcs(t,r);
 }
@@ -372,42 +167,118 @@ inline bool sparse_residual(const rosa_random::OnegramPlan&plan,
     return true;
 }
 
-// First settle the one-symbol control. Only rows that can have a longer
-// original or edited route require a correction. Sparse correction rows use
-// the complete endpoint join; dense correction uses the shared interval
-// construction. Both are evaluations of the same delete/repair identity.
+// A training caller can consume credits on the retained coordinates directly.
+// Low-level callers still receive the full dense arrays.
+struct CreditDomain {
+    bool compact=false;
+    std::vector<int> row;
+    int position(int t)const{return compact?(row.empty()?-1:row[t]):t;}
+};
+
+inline void exact_intervals(const uint64_t* q,const uint64_t* k,int n,int b,
+        const std::vector<Route>& base,const uint8_t* v,const double* g,const double* h,
+        const double* diagonal,const double* e0,const double* e1,
+        std::vector<double>& cq,std::vector<double>& ck,Stats& stats,CreditDomain* domain) {
+    auto project=[&](const uint64_t* query,const uint64_t* key,const std::vector<Route>& routes,
+                     const uint8_t* value,const double* adjoint,const double* metric,
+                     std::vector<double>& qout,std::vector<double>& kout) {
+        int size=int(routes.size());uint64_t largest=0;
+        for(int i=0;i<size;++i)largest=std::max({largest,query[i],key[i]});
+        interval_credit::EditAlphabet symbols(query,key,size,b,largest);
+        if(symbols.births || std::any_of(routes.begin(),routes.end(),[](Route r){return r.length>0;})) {
+            Features features(size,b,value,adjoint,metric,e0,e1,routes,0,0,stats);
+            interval_credit::evaluate(symbols,routes,features.scores(),qout,kout,stats,n);
+            stats.peak_workspace_bytes+=features.workspace_bytes();
+        }
+        stats.peak_workspace_bytes+=symbols.workspace_bytes();
+    };
+    auto keep=interval_credit::live_coordinates(q,k,n,b,base,stats);
+    int m=int(keep.size());
+    if(m==1 && base[keep.front()].length==0) {
+        if(domain)domain->compact=true;
+        return;
+    }
+    if(keep.empty() || m>=n-n/4) {
+        std::vector<double> expanded;
+        if(diagonal) {
+            expanded.resize(size_t(n)*b);
+            for(int t=0;t<n;++t)std::fill_n(expanded.data()+size_t(t)*b,b,diagonal[t]);
+            h=expanded.data();
+        }
+        if(domain){cq.assign(size_t(n)*b,0.);ck.assign(cq.size(),0.);}
+        project(q,k,base,v,g,h,cq,ck);
+        stats.peak_workspace_bytes+=expanded.capacity()*sizeof(double)+keep.capacity()*sizeof(int);
+        return;
+    }
+    std::vector<int> mapped(n,-1);
+    std::vector<uint64_t> query(m),key(m);
+    std::vector<Route> routes(m);
+    const size_t cells=size_t(m)*b;
+    std::vector<uint8_t> value(cells);
+    std::vector<double> adjoint(cells),metric((h || diagonal)?cells:0);
+    for(int i=0;i<m;++i) {
+        int t=keep[i];mapped[t]=i;
+        query[i]=q[t];key[i]=k[t];
+        routes[i]=base[t];
+        if(routes[i].end>=0)routes[i].end=mapped[routes[i].end];
+        size_t row=size_t(i)*b,source=size_t(t)*b;
+        std::copy_n(g+source,b,adjoint.data()+row);
+        if(h)std::copy_n(h+source,b,metric.data()+row);
+        if(diagonal)std::fill_n(metric.data()+row,b,diagonal[t]);
+        // An endpoint returns its ORIGINAL successor's payload.
+        if(i+1<m)std::copy_n(v+source+b,b,value.data()+row+b);
+    }
+    std::vector<double> qout(cells),kout(cells);
+    project(query.data(),key.data(),routes,value.data(),adjoint.data(),metric.empty()?nullptr:metric.data(),qout,kout);
+    if(domain) {
+        domain->compact=true;domain->row.swap(mapped);cq.swap(qout);ck.swap(kout);
+    } else for(int i=0;i<m;++i) {
+        size_t dst=size_t(keep[i])*b,src=size_t(i)*b;
+        std::copy_n(qout.data()+src,b,cq.data()+dst);std::copy_n(kout.data()+src,b,ck.data()+dst);
+    }
+    stats.peak_workspace_bytes+=cells*(sizeof(uint8_t)+3*sizeof(double))
+        +metric.capacity()*sizeof(double)+size_t(m)*(2*sizeof(uint64_t)+sizeof(Route))
+        +(keep.capacity()+size_t(n))*sizeof(int);
+}
+
 inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
     const double*g,const double*h,const double*e0,const double*e1,bool randomized,
     uint64_t seed,const RosaApproximationOptions*approximation,
     std::vector<double>&cq,std::vector<double>&ck,int32_t*lengths,int32_t*routes,
     Stats&stats,uint64_t*approx_stats,const int32_t*known_lengths=nullptr,
-    const int32_t*known_routes=nullptr) {
+    const int32_t*known_routes=nullptr,CreditDomain* domain=nullptr,const double* diagonal=nullptr) {
     const size_t nd=size_t(n)*bits;
-    cq.assign(nd,0.);ck.assign(nd,0.);
+    if(!domain || approximation){cq.assign(nd,0.);ck.assign(nd,0.);}
     if(!n)return 0;
     if(bool(known_lengths)!=bool(known_routes))return 1;
     if(known_lengths) {
         for(int t=0;t<n;++t) {
             const int len=known_lengths[t],end=known_routes[t];
             if(len<0||len>t||end < -1||end>=t||(len==0)!=(end<0)||len>end+1)return 1;
+            if(end>=0 && q[t]!=k[end])return 1;
             lengths[t]=len;routes[t]=end;
         }
     } else {
-        rosa_exact::SamForward forward(q,k,n,seed);
-        forward.run(lengths,routes);
+        rosa_exact::training_routes(q,k,n,bits,lengths,routes);
     }
     std::vector<Route>base(n);
+    for(int t=0;t<n;++t)base[t]={lengths[t],routes[t]};
+    if(!approximation) {
+        exact_intervals(q,k,n,bits,base,v,g,h,diagonal,e0,e1,cq,ck,stats,domain);
+        stats.peak_workspace_bytes+=base.capacity()*sizeof(Route);
+        if(approx_stats)approx_stats[27]=1;
+        return 0;
+    }
     std::vector<int32_t>active;
     bool short_deletion=true;
     for(int t=0;t<n;++t) {
-        base[t]={lengths[t],routes[t]};
         bool nonzero=false;
         for(int j=0;j<bits;++j){const size_t at=size_t(t)*bits+j;nonzero|=g[at]!=0||(h&&h[at]!=0);}
         if(nonzero){active.push_back(t);short_deletion&=lengths[t]<=1;}
     }
     if(active.empty()){if(approx_stats)approx_stats[27]=1;return 0;}
-    const uint64_t random_seed=seed^(approximation?approximation->seed:0);
-    const int channels=approximation?approximation->sample_channels:0;
+    const uint64_t random_seed=seed^approximation->seed;
+    const int channels=approximation->sample_channels;
     const rosa_random::OnegramPlan plan(q,k,n,bits,seed);
     std::vector<int32_t>repair_active;
     for(int t:active)if(plan.birth_prefix[t+1]!=plan.birth_prefix[t-lengths[t]])repair_active.push_back(t);
@@ -432,8 +303,12 @@ inline int run(int n,int bits,const uint64_t*q,const uint64_t*k,const uint8_t*v,
     int result=0;
     if(dense) {
         const Scores score=features->scores();
-        if(std::any_of(score.weights,score.weights+size_t(n)*score.d,[](double x){return x!=0.;}))
-            complete(*index,score,bits,plan,cq,ck,stats,seed);
+        if(std::any_of(score.weights,score.weights+size_t(n)*score.d,[](double x){return x!=0.;})) {
+            uint64_t largest=0;for(int i=0;i<n;++i)largest=std::max({largest,q[i],k[i]});
+            interval_credit::EditAlphabet alphabet(q,k,n,bits,largest);
+            interval_credit::evaluate(alphabet,base,score,cq,ck,stats);
+            stats.peak_workspace_bytes+=alphabet.workspace_bytes();
+        }
         if(approx_stats) {
             approx_stats[27]=!features->sampled;
             approx_stats[33]=features->sampled;

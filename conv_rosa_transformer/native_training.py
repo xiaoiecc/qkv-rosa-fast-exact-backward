@@ -138,8 +138,7 @@ def _library():
 
 
 def _pointers(values):
-    return [ctypes.c_void_p() if value is None else value.ctypes.data_as(ctypes.c_void_p)
-            for value in values]
+    return [None if value is None else value.ctypes.data for value in values]
 
 
 @dataclass
@@ -169,6 +168,18 @@ def training_forward_numpy(q_logits, k_logits, v_logits, emb0, emb1,
     Pass it unchanged to training_backward_numpy for the same model evaluation.
     The C ABI in csrc/training.h exposes these operations directly.
     """
+    # The cache outlives the call. Casting, layout conversion and snapshotting
+    # each value in one allocation also handles views into caller storage.
+    inputs = [rosa_core._array(x, np.float64, copy=True)
+              for x in (q_logits, k_logits, v_logits, emb0, emb1)]
+    return _training_forward_owned(*inputs, options=options, backward_mode=backward_mode,
+                                   approximation_rows=approximation_rows,
+                                   approximation_channels=approximation_channels, **kwargs)
+
+
+def _training_forward_owned(qz, kz, vz, e0, e1, *, options=None, backward_mode="exact",
+                            approximation_rows=32, approximation_channels=0, **kwargs):
+    """Both adapters supply independent contiguous binary64 input buffers."""
     if options is not None and kwargs:
         raise ValueError("pass options or keyword settings, not both")
     options=make_options(**kwargs) if options is None else options
@@ -180,7 +191,6 @@ def training_forward_numpy(q_logits, k_logits, v_logits, emb0, emb1,
                                              approximation_channels=approximation_channels)
     if options.repair_budget or options.reserved:
         raise ValueError("reserved native training fields must be zero")
-    qz,kz,vz=[rosa_core._array(x,np.float64) for x in (q_logits,k_logits,v_logits)]
     if qz.ndim!=4 or kz.shape!=qz.shape or vz.shape!=qz.shape:
         raise ValueError("logits require a common [B,G,T,D] shape")
     b,groups,n,d=qz.shape
@@ -188,16 +198,12 @@ def training_forward_numpy(q_logits, k_logits, v_logits, emb0, emb1,
         raise ValueError("invalid native training shape")
     if b*groups>rosa_core._MAX_ELEMENTS:
         raise ValueError("batch/group count is outside the domain")
-    e0,e1=[rosa_core._array(x,np.float64) for x in (emb0,emb1)]
     if e0.shape!=(groups,d) or e1.shape!=(groups,d):
         raise ValueError("embeddings require [G,D]")
-    # _array may borrow contiguous float64 caller storage. Snapshot every
-    # retained floating input before forward so backward sees that same state.
-    qz,kz,vz,e0,e1=[a.copy() for a in (qz,kz,vz,e0,e1)]
-    q,k=[np.zeros((b,groups,n),dtype=np.uint64) for _ in range(2)]
-    bits=np.zeros(qz.shape,dtype=np.uint8)
-    lengths=np.zeros(q.shape,dtype=np.int32);routes=np.full(q.shape,-1,dtype=np.int32)
-    y=np.empty(qz.shape,dtype=np.float64);counts=np.zeros((b*groups,4),dtype=np.uint64)
+    q,k=[np.empty((b,groups,n),dtype=np.uint64) for _ in range(2)]
+    bits=np.empty(qz.shape,dtype=np.uint8)
+    lengths=np.empty(q.shape,dtype=np.int32);routes=np.empty(q.shape,dtype=np.int32)
+    y=np.empty(qz.shape,dtype=np.float64);counts=np.empty((b*groups,4),dtype=np.uint64)
     arrays=(qz,kz,vz,e0,e1,q,k,bits,lengths,routes,y,counts)
     code=_library().rosa_training_forward(ctypes.byref(options),b,groups,n,d,*_pointers(arrays))
     if code:
@@ -224,8 +230,8 @@ def training_backward_numpy(cache, grad_y, *, trace=False):
         raise ValueError("grad_y must match cached [B,G,T,D]")
     b,groups,n,d=g.shape;options=cache.options
     gq,gk,gv=[np.empty(g.shape,dtype=np.float64) for _ in range(3)]
-    ge0,ge1=[np.zeros((groups,d),dtype=np.float64) for _ in range(2)]
-    counts=np.zeros((b*groups,len(TRAINING_COUNTER_NAMES)),dtype=np.uint64)
+    ge0,ge1=[np.empty((groups,d),dtype=np.float64) for _ in range(2)]
+    counts=np.empty((b*groups,len(TRAINING_COUNTER_NAMES)),dtype=np.uint64)
     pairs=np.full((b*groups,options.joint_pairs,2),2**64-1,dtype=np.uint64) if trace else None
     costs=np.full((b*groups,options.joint_pairs,4),np.nan,dtype=np.float64) if trace else None
     arrays=(cache.q,cache.k,cache.v_bits,cache.q_logits,cache.k_logits,cache.v_logits,

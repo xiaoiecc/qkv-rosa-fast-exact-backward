@@ -41,6 +41,25 @@ def make_case(family,n,d,seed):
     elif family in ("unary","shadow"):
         q=np.zeros(n,np.uint64);k=q.copy()
         if family=="shadow":k[0]=1
+    elif family=="lagged_copy":
+        # Long causal exact alignments, plus ties and several genuine repairs.
+        q=rng.bit_generator.random_raw(n)
+        k=rng.bit_generator.random_raw(n)
+        k[:-5]=q[5:]
+        for t in (n//4,n//2,3*n//4):
+            k[t]^=np.uint64(1)<<np.uint64(t%d)
+            k[t+8]=k[t+7]
+    elif family=="mixed_runs":
+        q=np.zeros(n,np.uint64); q[n//3]=1; q[2*n//3]=2
+        k=rng.integers(0,4,n,dtype=np.uint64); k[::4]=3
+    elif family=="near_fanout":
+        q=rng.choice(np.array([0,3,5,6],np.uint64),n)
+        k=rng.choice(np.array([1,2,4,7],np.uint64),n)
+        k[1:4]=q[n//2:n//2+3]
+    elif family=="band_collision":
+        # All key and query words have the same upper 32 bits.
+        q=rng.integers(0,1<<32,n,dtype=np.uint64); k=np.roll(q,-3)
+        k[::251]^=np.uint64(1)<<np.uint64(31)
     elif family=="periodic":
         q=np.arange(n,dtype=np.uint64)%4;k=q.copy();k[n//2]^=np.uint64(1)
     else:

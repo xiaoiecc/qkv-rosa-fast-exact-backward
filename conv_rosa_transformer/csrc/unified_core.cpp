@@ -1,5 +1,4 @@
-// One C++17 engine: exact routing, implicit edit intervals and batched correlations.
-// No input-family dispatch and no retained quadratic backward implementation.
+// C++17 entry points for causal routing and exact single-bit credit.
 #if defined(_WIN32)
 #define ROSA_EXPORT extern "C" __declspec(dllexport)
 #else
@@ -55,7 +54,7 @@ ROSA_EXPORT int rosa_matching_stats(int n,const uint64_t*q,const uint64_t*k,
     int32_t*lengths,int32_t*routes) {
   try {
     if(n<0||n>=(1<<28)||(n&&(!q||!k||!lengths||!routes)))return 1;
-    if(n){rosa_exact::SamForward scan(q,k,n);scan.run(lengths,routes);}
+    if(n)rosa_exact::training_routes(q,k,n,1,lengths,routes);
     return 0;
   }catch(const std::bad_alloc&){return 2;}
    catch(const std::exception&){return 3;}

@@ -1,5 +1,7 @@
 # Computing every bit credit without visiting every edit–row pair
 
+> This document derives the structural algorithm in the merged baseline. The current exact reducer, its proof and its unrestricted bound are in [Causal interval credit](docs/causal-interval-credit.md).
+
 [中文](ALGORITHM.zh-CN.md) · [Full proof](docs/subquadratic-proof.md) · [Deletion proof](docs/subquadratic-deletion-proof.md) · [Training interface](docs/native-training.md)
 
 The C++ engine changes the unit of work. It represents many counterfactual routes by intervals, arithmetic progressions, and a small set of winning matches, then sums their numerical contributions in batches. It also counts a complete set of possible contributors before deciding whether that set needs compression at all. For fixed bit width and numerical dimension, its worst-case bound is $\widetilde O(n^{5/3})$ time and $\widetilde O(n^{4/3})$ space. The tilde hides logarithmic factors.
