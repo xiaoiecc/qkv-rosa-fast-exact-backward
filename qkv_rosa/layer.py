@@ -1,0 +1,169 @@
+"""Ordinary PyTorch adapter to the one batched C++ QKV-ROSA implementation.
+
+Dense projections stay on the tensor device. Packing, exact hard forward,
+trust construction, block proposals/replays and all credit/logit/embedding
+arithmetic use the standalone C++ API in csrc/training.h. CUDA tensors incur
+CPU transfers; this is not a GPU matcher or a promise of GPU throughput.
+"""
+from __future__ import annotations
+
+import math
+import operator
+import numpy as np
+import torch
+import torch.nn as nn
+from torch.autograd.function import once_differentiable
+
+if __package__:
+    from .native import make_options, make_approximation_options, _training_forward_owned, training_backward_numpy
+else:
+    from native import make_options, make_approximation_options, _training_forward_owned, training_backward_numpy
+
+
+def _native_layout(value, b, t, groups, d, *, snapshot=False):
+    return value.detach().reshape(b,t,groups,d).permute(0,2,1,3).to(
+        device="cpu", dtype=torch.float64, memory_format=torch.contiguous_format, copy=snapshot).numpy()
+
+
+def _tensor_layout(value, b, t, groups, d, *, dtype, device):
+    native = torch.from_numpy(value).permute(0,2,1,3)
+    return native.to(device=device, dtype=dtype, memory_format=torch.contiguous_format).reshape(b,t,groups*d)
+
+
+class _HardQKVRosaFn(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx,q,k,v,emb0,emb1,n_bits,config,work):
+        if q.ndim!=3 or k.shape!=q.shape or v.shape!=q.shape:
+            raise ValueError("q, k, v must share [B,T,C]")
+        if not all(z.is_floating_point() for z in (q,k,v)):
+            raise TypeError("q, k, v must be floating tensors")
+        if any(z.device!=q.device or z.dtype!=q.dtype for z in (k,v)):
+            raise ValueError("q, k, v must share device and dtype")
+        b,t,c=q.shape;d=int(n_bits)
+        if not 1<=d<=64 or c==0 or c%d:
+            raise ValueError("n_bits must divide positive channels and lie in [1,64]")
+        if emb0.shape!=(1,1,c) or emb1.shape!=(1,1,c):
+            raise ValueError("embeddings must have shape [1,1,C]")
+        if emb0.device!=q.device or emb1.device!=q.device:
+            raise ValueError("embeddings must share the logits device")
+        groups=c//d
+        # On/off exact acceleration never changes framework RNG consumption.
+        # First-order/no-MC has no draws, including when acceleration is on.
+        seeds=torch.randint(0,2**63-1,(2,),device="cpu").tolist() if (
+            config["joint_pairs"]>0 or config["backward_mode"]=="approximate") else (0,0)
+        native_config=dict(config)
+        backward_mode=native_config.pop("backward_mode")
+        approximation_rows=native_config.pop("approximation_rows")
+        approximation_channels=native_config.pop("approximation_channels")
+        options=make_options(**native_config,proposal_seed=seeds[0],repair_seed=seeds[1])
+        arrays=[_native_layout(z,b,t,groups,d,snapshot=True) for z in (q,k,v)]
+        e0,e1=[z.detach().reshape(groups,d).to(device="cpu", dtype=torch.float64,
+            memory_format=torch.contiguous_format, copy=True).numpy() for z in (emb0,emb1)]
+        y,cache,stats=_training_forward_owned(*arrays,e0,e1,options=options,
+            backward_mode=backward_mode,approximation_rows=approximation_rows,
+            approximation_channels=approximation_channels)
+        ctx.cache,ctx.work,ctx.shape=cache,work,(b,t,groups,d)
+        ctx.save_for_backward(q,k,v,emb0,emb1)
+        work.update(stats)
+        return _tensor_layout(y,b,t,groups,d,dtype=emb1.dtype,device=q.device)
+
+    @staticmethod
+    @once_differentiable
+    def backward(ctx,grad_y):
+        q,k,v,emb0,emb1=ctx.saved_tensors
+        b,t,groups,d=ctx.shape
+        gy=_native_layout(grad_y,b,t,groups,d)
+        if not np.isfinite(gy).all():
+            # Let a normal GradScaler detect overflow and skip the update.
+            return tuple(torch.full_like(z,float("nan")) for z in (q,k,v,emb0,emb1))+(None,)*3
+        gq,gk,gv,ge0,ge1,stats=training_backward_numpy(ctx.cache,gy)
+        ctx.work["backward"]=stats
+        gradients=[_tensor_layout(a,b,t,groups,d,dtype=z.dtype,device=z.device)
+                   for a,z in zip((gq,gk,gv),(q,k,v))]
+        gradients += [torch.from_numpy(a).reshape(1,1,groups*d).to(dtype=z.dtype,device=z.device)
+                      for a,z in zip((ge0,ge1),(emb0,emb1))]
+        return tuple(gradients)+(None,)*3
+
+
+class NBitQKVRosa(nn.Module):
+    """Hard n-bit QKV-ROSA layer with fast exact counterfactual backward.
+
+    Uses a single C++17 causal interval-sweep engine for all packed widths
+    ``1 <= n_bits <= 64`` (expected O~(T) on independent uniform keys,
+    worst-case O~(T^2) at fixed width and joint budget).
+
+    Options:
+    - ``credit_order="first"``: linear single-bit counterfactual credit.
+    - ``credit_order="second"`` (default): adds an output-diameter diagonal
+      trust term for Q/K and bounded joint-bit block corrections.
+    - ``randomized=True`` (default): enables verified full-key lookup caches
+      in the suffix index without altering routes or numerical outputs.
+    - ``backward_mode="approximate"``: opt-in residual-row or centered
+      numerical-channel estimation (hard forward, V, embeddings, and selected
+      joint corners remain exact).
+
+    Notes:
+    - This is a CPU C++17 matcher; CUDA tensors incur host transfers.
+    - Second-order trust and joint proposals depend on incoming ``grad_y``, so
+      separate backwards on different losses need not equal one backward on
+      their sum. Double autograd is not supported.
+    """
+    def __init__(self,channels:int,n_bits:int,init_emb1:float=1.0,bias:bool=True,
+                 tau:float=1.0,credit_to_logit:str="bernoulli",*,
+                 credit_order:str="second",randomized:bool=True,
+                 backward_mode:str="exact",approximation_rows:int=32,approximation_channels:int=0,
+                 joint_pairs:int|None=None,joint_rows:int=32,
+                 trust_diagonal:float|None=None,joint_row_selection:str="active",
+                 stochastic_values:bool=False,
+                 training_rule:str="hard_credit"):
+        super().__init__()
+        channels,n_bits=operator.index(channels),operator.index(n_bits)
+        if channels<=0 or not 1<=n_bits<=64 or channels%n_bits:
+            raise ValueError("n_bits must lie in [1,64] and divide positive channels")
+        if not isinstance(stochastic_values,bool):
+            raise TypeError("stochastic_values must be bool")
+        if stochastic_values or training_rule!="hard_credit":
+            raise ValueError("experimental stochastic V/output mixtures are not production training rules")
+        options=make_options(credit_order=credit_order,randomized=randomized,tau=tau,
+            credit_to_logit=credit_to_logit,joint_pairs=joint_pairs,joint_rows=joint_rows,
+            trust_diagonal=trust_diagonal,joint_row_selection=joint_row_selection)
+        make_approximation_options(backward_mode=backward_mode,approximation_rows=approximation_rows,
+            approximation_channels=approximation_channels)
+        self.backward_mode=backward_mode;self.approximation_rows=operator.index(approximation_rows)
+        self.approximation_channels=operator.index(approximation_channels)
+        self.channels,self.n_bits=channels,n_bits;self.groups=channels//n_bits
+        self.credit_order,self.randomized=credit_order,bool(randomized)
+        self.tau,self.credit_to_logit=float(options.tau),credit_to_logit
+        self.joint_pairs,self.joint_rows=int(options.joint_pairs),int(options.joint_rows)
+        self.trust_diagonal=float(options.trust_diagonal)
+        self.joint_row_selection=joint_row_selection
+        self.stochastic_values=False;self.training_rule="hard_credit"
+        self.last_forward_work=None
+        self.q_proj=nn.Linear(channels,channels,bias=bias)
+        self.k_proj=nn.Linear(channels,channels,bias=bias)
+        self.v_proj=nn.Linear(channels,channels,bias=bias)
+        self.o_proj=nn.Linear(channels,channels,bias=bias)
+        self.emb0=nn.Parameter(torch.zeros(1,1,channels))
+        self.emb1=nn.Parameter(torch.full((1,1,channels),float(init_emb1)))
+
+    def _hard_rosa_from_qkv(self,q,k,v):
+        config=dict(credit_order=self.credit_order if self.training else "first",
+            randomized=self.randomized,tau=self.tau,credit_to_logit=self.credit_to_logit,
+            joint_pairs=self.joint_pairs if self.training else 0,joint_rows=self.joint_rows,
+            trust_diagonal=self.trust_diagonal if self.training else 0.,
+            joint_row_selection=self.joint_row_selection,
+            backward_mode=self.backward_mode if self.training else "exact",
+            approximation_rows=self.approximation_rows,approximation_channels=self.approximation_channels)
+        self.last_forward_work={}
+        return _HardQKVRosaFn.apply(q,k,v,self.emb0,self.emb1,self.n_bits,config,self.last_forward_work)
+
+    def forward(self,x):
+        if x.ndim!=3 or x.size(-1)!=self.channels:
+            raise ValueError("x must have shape [B,T,C]")
+        return self.o_proj(self._hard_rosa_from_qkv(self.q_proj(x),self.k_proj(x),self.v_proj(x)))
+
+
+NBitQKVRosaCpp=NBitQKVRosa
+NBitQKVRosaForward=NBitQKVRosa
+NBitQKVRosaForwardCpp=NBitQKVRosa
+__all__=["NBitQKVRosa","NBitQKVRosaCpp","NBitQKVRosaForward","NBitQKVRosaForwardCpp"]

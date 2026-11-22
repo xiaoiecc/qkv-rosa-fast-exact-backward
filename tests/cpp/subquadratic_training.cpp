@@ -2,7 +2,7 @@
 // Ordinary: c++ -O2 -std=c++17 -ffp-contract=off tests/cpp/subquadratic_training.cpp -o /tmp/rosa-training
 // Sanitized: add -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer.
 // Some ptrace-based containers require ASAN_OPTIONS=detect_leaks=0.
-#include "../../conv_rosa_transformer/csrc/unified_core.cpp"
+#include "../../qkv_rosa/csrc/unified_core.cpp"
 #include <chrono>
 #include <cstdlib>
 #include <iostream>

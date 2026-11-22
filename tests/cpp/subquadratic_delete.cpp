@@ -1,4 +1,4 @@
-#include "../../conv_rosa_transformer/csrc/subquadratic/delete.h"
+#include "../../qkv_rosa/csrc/engine/delete.h"
 #include <chrono>
 #include <cmath>
 #include <cstdlib>

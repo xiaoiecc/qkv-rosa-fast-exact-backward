@@ -1,17 +1,47 @@
-# QKV-ROSA exact counterfactual backpropagation
+# QKV-ROSA Fast Exact Backward
 
-QKV-ROSA retrieves the payload after the latest causal longest-suffix match. The default C++17 backward evaluates the finite change from every Q/K/V bit flip. One interval algorithm computes Q/K credit for all packed widths from 1 to 64 bits. It contracts inactive time gaps, accumulates one-symbol contributions by class and queries longer suffixes through an exact index. For independent uniform keys and an independent query stream, the expected time is $\widetilde O(T)$ at fixed width and joint budget. The general worst-case time bound is $\widetilde O(T^2)$ at fixed width and joint budget.
+[简体中文](README.zh-CN.md) · [Algorithm](docs/algorithm.md) · [Training Guide](docs/training.md) · [C/C++ API](docs/c-api.md) · [Benchmarks](docs/benchmarks.md)
 
-[Algorithm and complexity](docs/causal-interval-credit.md) · [Random QKV, full training steps and regressions](docs/causal-interval-results.md)
+A fast, exact C++17 counterfactual backpropagation engine for hard $n$-bit **QKV-ROSA** (Rapid Online Suffix Automaton), with plug-and-play **PyTorch**, **NumPy**, and standalone **C/C++** interfaces.
 
-The layer fits an ordinary PyTorch model and optimizer:
+## Why this repository exists
+
+In hard QKV-ROSA, each query step $t$ searches strictly earlier keys ($r < t$) for the **longest matching suffix** (breaking ties by the latest position $r$), and outputs the value stored right after that match ($V_{r+1}$), or a learned fallback embedding $e_0$ if no match exists.
+
+Because routing is discrete and non-differentiable, standard autograd cannot pass gradients through `Q` and `K`. Instead, we compute the **exact one-bit counterfactual credit**:
+
+> *If we flip a single bit in $Q$, $K$, or $V$ and re-run the exact hard routing, how much does the output change when projected onto the upstream gradient $g = \partial L / \partial Y$?*
+
+A literal brute-force implementation flips every bit and replays the forward pass, costing $O(b\,T^4)$ time for sequence length $T$ and bit width $b$. This library replaces that with a **single causal interval sweep** in C++17:
+
+- **Exact routing and complete credit:** Every single-bit flip in `Q`, `K`, and `V` is accounted for under the exact longest/latest causal matching rule, for all packed bit widths $1 \le b \le 64$.
+- **Near-linear expected speed:** Contracts inactive time gaps, accumulates one-symbol edits by symbol class, and queries longer matches via an exact packed suffix index — achieving **$\widetilde{O}(T)$ expected time** on independent uniform keys (and **$\widetilde{O}(T^2)$ worst-case** at fixed width and joint budget).
+- **Drop-in PyTorch training:** Works inside any normal `model(x)` → `loss.backward()` → `optimizer.step()` loop. Includes both first-order linear credit and second-order local trust + joint two-bit corrections.
+- **Zero-dependency C++17 core:** Compiles automatically on first import (no PyTorch C++ headers or CUDA toolkit required), or links directly into standalone C/C++ programs.
+
+## Installation
+
+Requires Python 3.10+, a C++17 compiler (`g++`, `clang++`, or MSVC `cl`), NumPy, and PyTorch (for the `nn.Module` layer).
+
+```bash
+git clone https://github.com/xiaoiecc/qkv-rosa-fast-exact-backward.git
+cd qkv-rosa-fast-exact-backward
+python -m pip install -e .
+```
+
+The C++17 core is compiled lazily on first use and cached by source hash.
+
+## Quick Start
+
+### PyTorch layer
 
 ```python
 import torch
-from conv_rosa_transformer.rosa_layer import NBitQKVRosa
+from qkv_rosa import NBitQKVRosa
 
 layer = NBitQKVRosa(channels=128, n_bits=8)
 optimizer = torch.optim.AdamW(layer.parameters(), lr=1e-3)
+
 x = torch.randn(2, 32, 128)
 target = torch.randn_like(x)
 
@@ -21,82 +51,80 @@ loss.backward()
 optimizer.step()
 ```
 
-[从四次方朴素做法开始的中文教程](ALGORITHM.zh-CN.md) · [English derivation](ALGORITHM.md) · [Formal proof](docs/subquadratic-proof.md)
+### Key options
 
-## One engine, three independent choices
+| Argument | Default | What it controls |
+|---|---|---|
+| `credit_order` | `"second"` | `"first"` for pure linear counterfactual credit; `"second"` adds a local diagonal trust penalty on Q/K plus bounded joint two-bit block corrections. |
+| `backward_mode` | `"exact"` | `"exact"` evaluates every single-bit credit term; `"approximate"` opts into stratified residual-row or numerical-channel estimation (`approximation_rows`, `approximation_channels`). |
+| `randomized` | `True` | Enables a verified full-key lookup cache inside the suffix index. Never changes routes or numerical results. |
 
 ```python
-layer = NBitQKVRosa(
-    channels=128, n_bits=8,
-    credit_order="second",      # diagonal trust + selected joint-bit blocks
-    randomized=True,            # compatible deterministic exact result
-    backward_mode="exact",      # complete credit evaluation, no sampling
-)
-
+# Pure first-order exact credit
 first_order = NBitQKVRosa(128, 8, credit_order="first")
 
-approximate = NBitQKVRosa(
-    128, 8, credit_order="second", backward_mode="approximate",
-    approximation_rows=32, approximation_channels=0,
+# Opt-in approximate backward (samples 32 residual rows per stream)
+approx = NBitQKVRosa(
+    128, 8,
+    credit_order="second",
+    backward_mode="approximate",
+    approximation_rows=32,
 )
 ```
 
-| Choice | Default | Meaning |
-|---|---|---|
-| `credit_order` | `"second"` | Original first-order finite credit, or a diagonal local model with selected joint-bit cooperation |
-| `randomized` | `True` | Compatibility option for the complete engine and verified lookup caches in the sampled estimator |
-| `backward_mode` | `"exact"` | All credit contributions, or an explicit residual-row/channel estimator |
+### Standalone C++17 (no Python or PyTorch)
 
-Both credit orders use the same exact interval sweep. Explicit approximation samples residual rows or numerical channels. Joint-corner evaluation replays the causal forward on the two edited words.
+```bash
+c++ -O3 -std=c++17 -ffp-contract=off \
+    examples/native_training.cpp qkv_rosa/csrc/unified_core.cpp \
+    -o build/rosa-native
+./build/rosa-native
+```
 
-**Migration:** remove the old Python `credit_engine` and `repair_samples` keyword arguments. Select the credit rule with `credit_order`; request statistical sampling through `backward_mode="approximate"` and `approximation_rows` / `approximation_channels`. In the C options struct, `repair_budget` is reserved and must be zero.
+## Important notes on scope
 
-**Complete evaluation includes every term, but does not prescribe the old floating-point reduction order.** String comparisons, causality, and longest/latest ties are exact. Binary64 grouping and FFT introduce rounding. Switching the verified cache on and off within this engine leaves numerical outputs bitwise identical; explicitly approximate mode adds sampling error. The [numerical contract](docs/algorithm-reference.md) distinguishes these cases.
+- **CPU implementation:** The C++17 matcher runs on CPU. Passing CUDA tensors to `NBitQKVRosa` works transparently via host transfers, but this is not a GPU kernel.
+- **Surrogate properties:** The `"second"` diagonal trust term is a chosen local quadratic penalty (not the true Hessian of an arbitrary downstream network). Because trust weights and joint-pair proposals depend on the incoming gradient `grad_y`, combine loss terms before calling `.backward()` if you want their combined update. Double autograd is not supported.
+- **Floating-point precision:** Routing decisions (string comparisons, causal boundaries, tie-breaking) are 100% exact. Numeric reductions use IEEE `float64`; reassociated interval sums may differ from naive elementwise summation by ordinary floating-point rounding ($\sim 10^{-14}$ relative L2).
 
-## Backward speed and memory
+## Repository layout
 
-Across 96 independent Gaussian backward cases, the geometric mean speedup was **2.91× over merged main** and **0.82× against the former PR #12**. Across 24 full PyTorch mixer updates it was **2.01× over main** and **0.85× against #12**. The [paired report](docs/causal-interval-results.md) covers both references. It includes independent QKV, skewed bits, repeated inputs and complete CPU PyTorch optimizer steps. The raw samples include memory estimates and numerical differences for every native comparison.
+```text
+qkv_rosa/               Core Python package + C++17 engine
+├── layer.py            PyTorch NBitQKVRosa layer and autograd bridge
+├── transformer.py      Conv ∥ ROSA Transformer blocks (ConvRosaBlock, RosaTransformer)
+├── native.py           Batched NumPy bindings to the C ABI
+├── core.py             JIT builder + single-stream low-level API
+├── reference.py        Literal O(T^3) forward & O(b*T^4) backward oracles for auditing
+└── csrc/               Standalone C++17 implementation
+    ├── training.h      Versioned C ABI header
+    ├── forward.h       Exact causal suffix-automaton matcher
+    └── engine/         Causal interval sweep (edit_alphabet.h, interval_credit.h, index.h, delete.h)
+docs/                   Bilingual algorithm, training, C API, and benchmark guides
+examples/               Quickstart, standalone C++17 example, and multiplication demo
+tests/                  Python unit tests + standalone C++ physical-flip oracles
+benchmarks/             CPU throughput, layer step, and coordinate-contraction benchmarks
+```
 
 ## Documentation
 
-| Document | Contents |
-|---|---|
-| [Algorithm](ALGORITHM.md) / [中文](ALGORITHM.zh-CN.md) | Finite-credit derivation and the earlier subquadratic construction |
-| [Reference map](docs/algorithm-reference.md) / [中文](docs/algorithm-reference.zh-CN.md) | Invariants, boundaries, source files, tests, and proof references |
-| [Native training](docs/native-training.md) / [中文](docs/native-training.zh-CN.md) | First order, diagonal trust, joint bits, and ordinary autograd integration |
-| [Exact randomization](docs/exact-randomized.md) / [中文](docs/exact-randomized.zh-CN.md) | Full-key cache, collision handling, adaptive probing, and reproducibility |
-| [Approximate backward](docs/randomized-backward.md) / [中文](docs/randomized-backward.zh-CN.md) | Complete residual rows, zero certificates, fixed-size channel sampling, and error |
-| [Earlier structural-engine results](docs/subquadratic-results.md) / [中文](docs/subquadratic-results.zh-CN.md) | Timings, memory, approximation error, and measured historical comparisons |
-| [Forward](docs/forward.md) / [中文](docs/forward.zh-CN.md) | Suffix-automaton reference and causal routing background |
-| [C API](docs/native-api.md) · [Tests](tests/README.md) · [Benchmarks](benchmarks/README.md) | Interfaces and reproduction |
+| Topic | English | 简体中文 |
+|---|---|---|
+| Core algorithm & complexity | [docs/algorithm.md](docs/algorithm.md) | [docs/algorithm.zh-CN.md](docs/algorithm.zh-CN.md) |
+| Training rules & PyTorch guide | [docs/training.md](docs/training.md) | [docs/training.zh-CN.md](docs/training.zh-CN.md) |
+| Standalone C/C++ API & ABI | [docs/c-api.md](docs/c-api.md) | [docs/c-api.zh-CN.md](docs/c-api.zh-CN.md) |
+| Benchmarks & accuracy | [docs/benchmarks.md](docs/benchmarks.md) | [docs/benchmarks.zh-CN.md](docs/benchmarks.zh-CN.md) |
+| Tests & benchmarks usage | [tests/README.md](tests/README.md) · [benchmarks/README.md](benchmarks/README.md) | — |
 
-## Training and numerical scope
-
-The default second-order option is a chosen local diagonal model, not the true Hessian of an arbitrary downstream network. Selected joint-bit corners are evaluated inside the component; the outer model and loss still run once. V and embedding gradients retain their complete baseline-route evaluation. Details and the joint budget are in the [training guide](docs/native-training.md).
-
-The trust coefficients and joint proposer depend on the incoming gradient. Combine loss terms before a single backward when you want their combined rule; separate backwards need not produce the same update. Hard-credit double autograd is unsupported. These are properties of the training surrogate, separate from the speed of its credit engine.
-
-This is a CPU implementation. CUDA tensors require transfers, and the reported environment is Linux/GCC. No fast-math, unsafe aliasing, or probabilistic route equality is needed.
-
-## Install and verify
+## Testing
 
 ```bash
-python -m pip install -r requirements.txt
-python tests/run.py --exhaustive
+python tests/run.py               # Fast Python unit tests
+python tests/run.py --exhaustive  # Full CI gate including standalone C++ oracles
 ```
 
-The C++17 core compiles on first use from a source-hashed cache with `-ffp-contract=off`. A framework-free example uses the same native implementation:
+## Attribution & License
 
-```bash
-c++ -O3 -std=c++17 -ffp-contract=off examples/native_training.cpp \
-    conv_rosa_transformer/csrc/unified_core.cpp -o /tmp/rosa-native
-/tmp/rosa-native
-```
+The QKV-ROSA forward retrieval architecture originates from **Bo Peng (BlinkDL)** and the [RWKV-LM RWKV-v8 examples](https://github.com/BlinkDL/RWKV-LM/tree/main/RWKV-v8) (`ROSA_QKV_B_1bit` in `251024_rosaQKV_run.py`). This repository is an independent C++17 implementation adding $n$-bit packed symbols, learned fallback embeddings, and fast exact counterfactual backpropagation.
 
-Packed symbols support `1 ≤ D ≤ 64`; empty streams are supported. The detailed shape and allocation limits are specified by [training.h](conv_rosa_transformer/csrc/training.h) and the [C API guide](docs/native-api.md).
-
-## Attribution and license
-
-The QKV-ROSA forward architecture comes from **Bo Peng (BlinkDL)** and the [RWKV-LM RWKV-v8 examples](https://github.com/BlinkDL/RWKV-LM/tree/main/RWKV-v8), including `samx_qkv_slow` / `ROSA_QKV_B_1bit` in [251024_rosaQKV_run.py](https://github.com/BlinkDL/RWKV-LM/blob/main/RWKV-v8/251024_rosaQKV_run.py). This independent implementation supports n-bit hard symbols, a learned empty payload, and complete single-bit counterfactual credits.
-
-Copyright 2026 xiaoiecc. Licensed under the [MIT License](LICENSE).
+Copyright 2026 xiaoiecc. Released under the [MIT License](LICENSE).

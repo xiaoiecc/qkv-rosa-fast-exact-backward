@@ -1,8 +1,8 @@
 // Build from the repository root:
 // c++ -O3 -std=c++17 -ffp-contract=off examples/native_training.cpp \
-//     conv_rosa_transformer/csrc/unified_core.cpp -o /tmp/rosa-native
+//     qkv_rosa/csrc/unified_core.cpp -o /tmp/rosa-native
 // No Python, NumPy, Torch, or framework C++ headers are required.
-#include "../conv_rosa_transformer/csrc/training.h"
+#include "../qkv_rosa/csrc/training.h"
 #include <array>
 #include <cmath>
 #include <iostream>

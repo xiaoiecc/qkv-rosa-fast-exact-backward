@@ -1,5 +1,5 @@
-#include "../../conv_rosa_transformer/csrc/subquadratic/engine.h"
-#include "../../conv_rosa_transformer/csrc/causal_windows.h"
+#include "../../qkv_rosa/csrc/engine/engine.h"
+#include "../../qkv_rosa/csrc/causal_windows.h"
 #include <iostream>
 #include <random>
 

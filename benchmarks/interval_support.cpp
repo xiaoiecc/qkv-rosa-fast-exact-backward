@@ -1,6 +1,6 @@
 // Standalone count of coordinates retained by the complete-credit kernel.
 // c++ -O3 -std=c++17 benchmarks/interval_support.cpp -o /tmp/interval-support
-#include "../conv_rosa_transformer/csrc/subquadratic/edit_alphabet.h"
+#include "../qkv_rosa/csrc/engine/edit_alphabet.h"
 #include <iostream>
 #include <random>
 

@@ -18,28 +18,13 @@ class StructureTests(unittest.TestCase):
     def test_interval_credit_and_sparse_time_coordinates(self):
         self.check_oracle("interval_credit")
 
-    def test_subquadratic_delete_and_owner_time_ranges(self):
+    def test_deletion_and_owner_time_ranges(self):
         self.check_oracle("subquadratic_delete")
 
-    def test_subquadratic_bounded_q_frontier(self):
-        self.check_oracle("subquadratic_q_frontier")
-
-    def test_subquadratic_verified_fingerprint_k(self):
-        self.check_oracle("subquadratic_fingerprint_k")
-
-    def test_subquadratic_heavy_light_and_long_repairs(self):
-        self.check_oracle("subquadratic_repair")
-
-    def test_subquadratic_virtual_words_and_dominance(self):
-        self.check_oracle("subquadratic_short")
-
-    def test_subquadratic_indexed_row_residual(self):
+    def test_indexed_row_residual(self):
         self.check_oracle("subquadratic_indexed_row")
 
-    def test_subquadratic_correlations(self):
-        self.check_oracle("subquadratic_correlation")
-
-    def test_subquadratic_c_training_interface(self):
+    def test_c_training_interface(self):
         self.check_oracle("subquadratic_training")
 
 

@@ -2,8 +2,8 @@
 import unittest
 import numpy as np
 import torch
-from conv_rosa_transformer.native_training import training_forward_numpy,training_backward_numpy,make_options
-from conv_rosa_transformer.rosa_layer import NBitQKVRosa
+from qkv_rosa.native import training_forward_numpy,training_backward_numpy,make_options
+from qkv_rosa.layer import NBitQKVRosa
 
 class NativeApproximationTests(unittest.TestCase):
     def test_complete_residual_reconstructs_exact_with_same_joint_choices(self):

@@ -35,9 +35,9 @@ def main():
     roots = {"reference": reference, "current": ROOT}
     before = {name: hashes(root) for name, root in roots.items()}
     load_reference(reference)
-    modules = {name: importlib.import_module(package + ".rosa_layer")
+    modules = {name: importlib.import_module(package + ".layer")
                for name, package in (("reference", "rosa_benchmark_reference"),
-                                     ("current", "conv_rosa_transformer"))}
+                                     ("current", "qkv_rosa"))}
     rows = []
     shapes = ((2048, 8, 1), (4096, 32, 8), (4096, 32, 16), (2048, 64, 64))
     for (n, channels, bits), offset in itertools.product(shapes, args.seed_offsets):

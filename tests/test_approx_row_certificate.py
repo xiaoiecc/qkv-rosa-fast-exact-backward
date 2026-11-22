@@ -9,15 +9,18 @@ def uncertified(q,k,d,active=None,lengths=None,seed=20261101):
  global _library
  if _library is None:
   BUILD.mkdir(parents=True,exist_ok=True)
-  source=BUILD/'row_certificate_probe.cpp';binary=BUILD/'row_certificate_probe.so'
-  source.write_text('''#include "approx_row_certificate.h"
-extern "C" int row_certificate_probe(const uint64_t*q,const uint64_t*k,int n,int d,
- const int32_t*active,int count,const int32_t*lengths,uint64_t seed,int32_t*out,uint64_t*stats) {
- try {auto rows=rosa_random::uncertified_rows(q,k,n,d,active,count,lengths,seed,stats);
- std::copy(rows.begin(),rows.end(),out);return int(rows.size());}catch(...){return -1;}}
+  source=BUILD/'row_certificate_probe.cpp'
+  binary=BUILD/('row_certificate_probe.dll' if os.name=='nt' else 'row_certificate_probe.so')
+  export='__declspec(dllexport) ' if os.name=='nt' else ''
+  source.write_text(f'''#include "approx_row_certificate.h"
+extern "C" {export}int row_certificate_probe(const uint64_t*q,const uint64_t*k,int n,int d,
+ const int32_t*active,int count,const int32_t*lengths,uint64_t seed,int32_t*out,uint64_t*stats) {{
+ try {{auto rows=rosa_random::uncertified_rows(q,k,n,d,active,count,lengths,seed,stats);
+ std::copy(rows.begin(),rows.end(),out);return int(rows.size());}}catch(...){{return -1;}}}}
 ''')
-  subprocess.run(shlex.split(os.environ.get('CXX','c++'))+['-O3','-std=c++17','-ffp-contract=off',
-   '-fPIC','-shared','-I',str(CSRC),str(source),'-o',str(binary)],check=True)
+  extra=['-static'] if os.name=='nt' else []
+  subprocess.run(shlex.split(os.environ.get('CXX','c++'),posix=os.name!='nt')+['-O3','-std=c++17','-ffp-contract=off',
+   '-fPIC','-shared','-I',str(CSRC),str(source),'-o',str(binary)]+extra,check=True)
   _library=ctypes.CDLL(str(binary));function=_library.row_certificate_probe
   function.argtypes=[ctypes.c_void_p,ctypes.c_void_p,ctypes.c_int,ctypes.c_int,
    ctypes.c_void_p,ctypes.c_int,ctypes.c_void_p,ctypes.c_uint64,ctypes.c_void_p,ctypes.c_void_p]
@@ -62,7 +65,7 @@ class ApproxRowCertificateTests(unittest.TestCase):
       got,_=uncertified(q,k,d,lengths=ls,seed=seed)
       self.assertEqual(got.tolist(),expected)
  def test_certified_control_is_complete(self):
-  from conv_rosa_transformer.native_training import training_forward_numpy,training_backward_numpy
+  from qkv_rosa.native import training_forward_numpy,training_backward_numpy
   rng=np.random.default_rng(2026110102)
   for d in [1,4,8,64]:
    for trial in range(12):

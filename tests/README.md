@@ -1,75 +1,31 @@
-# Correctness gates
+# Tests
 
-Run the sole production engine against independent mathematical definitions:
+Run the correctness suite from the repository root:
 
 ```bash
-python tests/run.py
-python tests/run.py --exhaustive --output build/validation.json
+python tests/run.py               # Fast Python unit tests
+python tests/run.py --exhaustive  # Full CI gate (adds standalone C++ oracles)
 ```
 
-The exhaustive command is the CI gate. It adds standalone C++ structural
-oracles and longer binary enumeration. The JSON receipt records test results,
-coverage counters, elapsed time and production source hashes; changing sources
-during the run makes the gate fail. NumPy, a C++17 compiler and CPU PyTorch are
-sufficient. The optional CUDA transfer check is skipped when CUDA is absent.
+For AddressSanitizer and UndefinedBehaviorSanitizer checks (Linux/macOS with GCC/Clang):
 
-## What the tests establish
+```bash
+python tests/sanitize.py --jobs 2 --no-leaks
+```
 
-| Test | Independent check |
+## Coverage overview
+
+| File | What it verifies |
 |---|---|
-| `test_core` | All-bit finite credits against literal hard rerouting, exhaustive short binary strings, floating cases and bit 63 |
-| `test_curvature` | A supplied diagonal row cost on Q/K, with the native linear V convention; direct edited-output loss differences |
-| `test_subquadratic_engine` | Literal native training gradients, selected joint corners, every bit width 1–64, long structured inputs, exact-cache bitwise parity, approximate coverage and estimator means |
-| `test_forward_lean` | Every causal endpoint against direct suffix comparisons; longest/latest ties and full-width words |
-| `test_layer` | Grouped/noncontiguous tensor layouts, literal gradients, embedding scatters, state dictionaries, bfloat16 and transformer use |
-| `test_native_training` | One ordinary forward/backward, owned forward caches, checkpointing, saved configuration, RNG, CPU autocast and nonfinite adjoints |
-| `test_native_approximation` | Preserved hard forward, V/embedding gradients, joint corners and ordinary autograd in sampled modes |
-| `test_approx_row_certificate` | Exhaustive exact-zero certificates against independent edited routes; no research backend is imported |
-| `test_expansion` | Exact dyadic expansion and rounding against Python rational arithmetic |
-| `test_validation` | Input conversion boundaries and rejected complex/integer adjoints |
-| `test_bounded_hash` | Deliberately colliding full words, adjacent pairs and SAM transitions force the bounded-probe ordered fallback |
-| `test_structures` | C++ deletion, bounded Q frontier, Q/long-K repair, compact short/near K repair, complete residual rows and C ABI oracles |
-
-The C++ structural oracles include `subquadratic_delete.cpp`,
-`subquadratic_repair.cpp`, `subquadratic_short.cpp` and
-`subquadratic_training.cpp`. `subquadratic_correlation.cpp` independently tests
-shifted interval contractions, dimension 65, multiple FFT block sizes and severe
-cancellation. Its result is also checked by `test_subquadratic_engine`.
-
-`subquadratic_q_frontier.cpp` compares both repair-only and full-Q results with
-literal edited routes; separate fixtures force the live-count and transition
-budgets to reject without changing credit or statistics. The short-K oracle
-also checks the two exact half witnesses and shared deletion summaries in
-`near_k.h`. `subquadratic_indexed_row.cpp` checks full row repair and its
-one-symbol residual separately, including adjacent/gapped rows, noninteger
-weights, curvature-only scores and bit 63.
-
-`subquadratic_fingerprint_k.cpp` forces window-fingerprint collisions as well
-as ordinary full-width hashes, verifies complete and repair-only K credit,
-checks budget rejection without writes, and compares long binary fixtures
-with literal selected bit edits. Fingerprints select candidates; exact
-matching establishes every winning route.
-
-For address and undefined-behavior checks, run `python tests/sanitize.py
---jobs 2 --output build/sanitizers.json`. In environments that cannot run
-LeakSanitizer, add `--no-leaks`; the receipt records this choice explicitly.
-
-## Numerical and randomization contracts
-
-Routes require exact equality. Turning the verified query cache on or off
-requires byte-for-byte identical numeric outputs. Complete mode includes all
-finite-credit terms, but regrouping and FFT do not preserve an older sequence
-of rounded binary64 operations. Numeric oracle checks therefore state their
-absolute/relative tolerances. Ill-conditioned sums are also checked against the
-sum of product magnitudes and their absolute errors are reported explicitly.
-
-Approximate mode samples complete row residuals or selected numeric channels;
-it never samples candidates before taking their route maximum. The tests check
-full coverage, fixed-seed repeatability, positive-probability estimator means,
-constant-output invariance and exact restoration of selected joint corners.
-These are implementation contracts, not a promise that every noisy gradient
-lowers a model's loss.
-
-There is one production engine. Obsolete optimized implementations and their
-private-kernel tests are removed. Earlier comparison JSON files are retained as
-historical measurements; they are never loaded as executable test backends.
+| `test_core.py` | Single-stream exact credits against brute-force flips, exhaustive short binary strings, bit 63 |
+| `test_curvature.py` | Diagonal quadratic trust scores on Q/K with linear V convention |
+| `test_engine.py` | Batched native training gradients, joint corners, all bit widths 1–64, structured inputs, cache parity, approximate modes |
+| `test_forward_lean.py` | Causal SAM forward against naive suffix scans, tie-breaking, fallback bounds |
+| `test_layer.py` | PyTorch `NBitQKVRosa` layouts, autograd, embeddings, `bfloat16`, `RosaTransformer`, demo checkpointing |
+| `test_native_training.py` | Forward cache ownership, gradient checkpointing, RNG isolation, CPU autocast, non-finite adjoint propagation |
+| `test_native_approximation.py` | Residual-row and channel PPS estimators, exact V/embedding/joint corner preservation |
+| `test_approx_row_certificate.py` | Exhaustive zero-residual row certificates against naive routes |
+| `test_bounded_hash.py` | Adversarial hash collisions forcing bounded-probe ordered fallback |
+| `test_expansion.py` | Exact dyadic floating-point expansion against Python `Fraction` |
+| `test_validation.py` | Input shape/dtype validation and rejection of complex/integer adjoints |
+| `test_structures.py` | Standalone C++ oracles (`interval_credit.cpp`, `subquadratic_delete.cpp`, `subquadratic_indexed_row.cpp`, `subquadratic_training.cpp`) |
