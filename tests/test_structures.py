@@ -15,6 +15,9 @@ class StructureTests(unittest.TestCase):
         self.assertEqual(result["status"], "PASS")
         COVERAGE[stem] = result
 
+    def test_interval_credit_and_sparse_time_coordinates(self):
+        self.check_oracle("interval_credit")
+
     def test_subquadratic_delete_and_owner_time_ranges(self):
         self.check_oracle("subquadratic_delete")
 

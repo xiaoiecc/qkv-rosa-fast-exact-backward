@@ -15,19 +15,19 @@ import torch.nn as nn
 from torch.autograd.function import once_differentiable
 
 if __package__:
-    from .native_training import make_options, make_approximation_options, training_forward_numpy, training_backward_numpy
+    from .native_training import make_options, make_approximation_options, _training_forward_owned, training_backward_numpy
 else:
-    from native_training import make_options, make_approximation_options, training_forward_numpy, training_backward_numpy
+    from native_training import make_options, make_approximation_options, _training_forward_owned, training_backward_numpy
 
 
-def _native_layout(value, b, t, groups, d):
+def _native_layout(value, b, t, groups, d, *, snapshot=False):
     return value.detach().reshape(b,t,groups,d).permute(0,2,1,3).to(
-        device="cpu",dtype=torch.float64).contiguous().numpy()
+        device="cpu", dtype=torch.float64, memory_format=torch.contiguous_format, copy=snapshot).numpy()
 
 
 def _tensor_layout(value, b, t, groups, d, *, dtype, device):
-    return torch.from_numpy(value).permute(0,2,1,3).reshape(b,t,groups*d).to(
-        device=device,dtype=dtype)
+    native = torch.from_numpy(value).permute(0,2,1,3)
+    return native.to(device=device, dtype=dtype, memory_format=torch.contiguous_format).reshape(b,t,groups*d)
 
 
 class _HardQKVRosaFn(torch.autograd.Function):
@@ -56,10 +56,10 @@ class _HardQKVRosaFn(torch.autograd.Function):
         approximation_rows=native_config.pop("approximation_rows")
         approximation_channels=native_config.pop("approximation_channels")
         options=make_options(**native_config,proposal_seed=seeds[0],repair_seed=seeds[1])
-        arrays=[_native_layout(z,b,t,groups,d) for z in (q,k,v)]
-        e0=emb0.detach().to(device="cpu",dtype=torch.float64).reshape(groups,d).contiguous().numpy()
-        e1=emb1.detach().to(device="cpu",dtype=torch.float64).reshape(groups,d).contiguous().numpy()
-        y,cache,stats=training_forward_numpy(*arrays,e0,e1,options=options,
+        arrays=[_native_layout(z,b,t,groups,d,snapshot=True) for z in (q,k,v)]
+        e0,e1=[z.detach().reshape(groups,d).to(device="cpu", dtype=torch.float64,
+            memory_format=torch.contiguous_format, copy=True).numpy() for z in (emb0,emb1)]
+        y,cache,stats=_training_forward_owned(*arrays,e0,e1,options=options,
             backward_mode=backward_mode,approximation_rows=approximation_rows,
             approximation_channels=approximation_channels)
         ctx.cache,ctx.work,ctx.shape=cache,work,(b,t,groups,d)

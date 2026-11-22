@@ -1,7 +1,7 @@
 #pragma once
 // The batched API and low-level credit wrappers share this one engine.
 #include "training.h"
-#include "forward.h"
+#include "causal_windows.h"
 #include "pair_candidates.h"
 #include "subquadratic/engine.h"
 #include <cstring>
@@ -47,8 +47,14 @@ inline bool approximation_options(const RosaApproximationOptions*o) {
 }
 inline bool finite_values(const double* p,size_t count) {
     if(count && !p)return false;
-    for(size_t i=0;i<count;++i)if(!std::isfinite(p[i]))return false;
-    return true;
+    // The exponent of a finite binary64 is strictly below the all-ones
+    // exponent. A maximum reduction lets the compiler check adjacent lanes.
+    uint64_t maximum=0;
+    for(size_t i=0;i<count;++i) {
+        uint64_t word;std::memcpy(&word,p+i,sizeof(word));
+        maximum=std::max(maximum,word&UINT64_C(0x7fffffffffffffff));
+    }
+    return maximum<UINT64_C(0x7ff0000000000000);
 }
 inline double train_sigmoid(double z,double tau) {
     const double scaled=z/tau;
@@ -66,22 +72,75 @@ inline double train_chain(double z,int bit,double credit,const RosaTrainingOptio
     return (p*(1-p)/o.tau)*oriented;
 }
 // The derivative factor depends on the exact logit and the stream's fixed
-// temperature. One cached value per Q/K/V stream avoids repeated exp calls
+// temperature. One cached value per sign and Q/K/V stream avoids repeated exp calls
 // without a dictionary, approximate exponential, or changed multiplication.
 struct TrainFactorCache {
-    uint64_t key=0;double factor=0;bool valid=false;
+    uint64_t key[2]={};double factor[2]={};bool valid[2]={};
     double apply(double z,int bit,double credit,const RosaTrainingOptions&o) {
         const double oriented=(bit?-1.:1.)*credit;
         if(o.logit_mode)return oriented;
         if(credit==0. && o.tau>=std::numeric_limits<double>::min())return oriented;
         uint64_t bits;std::memcpy(&bits,&z,sizeof(bits));
-        if(!valid||bits!=key) {
-            const double p=train_sigmoid(z,o.tau);factor=p*(1-p)/o.tau;
-            key=bits;valid=true;
+        const size_t slot=size_t(bits>>63);
+        if(!valid[slot]||bits!=key[slot]) {
+            const double p=train_sigmoid(z,o.tau);factor[slot]=p*(1-p)/o.tau;
+            key[slot]=bits;valid[slot]=true;
         }
-        return factor*oriented;
+        return factor[slot]*oriented;
     }
 };
+
+// Multiplying by these signs also preserves the orientation of zero credit.
+inline const auto& byte_signs() {
+    static const auto signs=[] {
+        std::array<std::array<double,8>,256> result{};
+        for(int byte=0;byte<256;++byte)for(int j=0;j<8;++j)
+            result[byte][j]=(byte>>j)&1?-1.:1.;
+        return result;
+    }();
+    return signs;
+}
+
+inline void write_word_zero(int d,uint64_t word,double* out) {
+    static const auto zeros=[] {
+        std::array<std::array<double,8>,256> table{};
+        for(int byte=0;byte<256;++byte)for(int j=0;j<8;++j)table[byte][j]=(byte>>j)&1?-0.:0.;
+        return table;
+    }();
+    int j=0;
+    for(;j+8<=d;j+=8,word>>=8)std::copy_n(zeros[word&255].data(),8,out+j);
+    for(;j<d;++j,word>>=1)out[j]=(word&1)?-0.:0.;
+}
+
+inline bool zero_eight(const double* credit) {
+    uint64_t combined=0;
+    for(int j=0;j<8;++j) {
+        uint64_t word;std::memcpy(&word,credit+j,sizeof(word));combined|=word;
+    }
+    return !(combined&UINT64_C(0x7fffffffffffffff));
+}
+
+inline void map_word_credit(int d,uint64_t word,const double* z,const double* credit,double* out,
+                            TrainFactorCache& cache,const RosaTrainingOptions& options) {
+    int j=0;
+    for(;j+8<=d;j+=8,word>>=8) {
+        if(options.logit_mode || (options.tau>=std::numeric_limits<double>::min() && zero_eight(credit+j))) {
+            const auto& sign=byte_signs()[word&255];
+            for(int b=0;b<8;++b)out[j+b]=sign[b]*credit[j+b];
+        } else for(int b=0;b<8;++b)out[j+b]=cache.apply(z[j+b],(word>>b)&1,credit[j+b],options);
+    }
+    for(int b=0;j+b<d;++b)out[j+b]=cache.apply(z[j+b],(word>>b)&1,credit[j+b],options);
+}
+inline void map_value_credit(int d,const uint8_t* v,const double* z,double* credit,
+                             TrainFactorCache& cache,const RosaTrainingOptions& options) {
+    int j=0;
+    for(;j+8<=d;j+=8) {
+        if(options.logit_mode || (options.tau>=std::numeric_limits<double>::min() && zero_eight(credit+j))) {
+            for(int b=0;b<8;++b)credit[j+b]*=v[j+b]?-1.:1.;
+        } else for(int b=0;b<8;++b)credit[j+b]=cache.apply(z[j+b],v[j+b],credit[j+b],options);
+    }
+    for(;j<d;++j)credit[j]=cache.apply(z[j],v[j],credit[j],options);
+}
 
 inline double train_radius(const double*e0,const double*e1,int d) {
     double a=0,b=0;
@@ -125,6 +184,22 @@ inline std::vector<int32_t> train_rows(const double*g,int n,int d,
     std::sort(rows.begin(),rows.end());return rows;
 }
 
+// Every admitted proposal starts at a causal endpoint whose last word has
+// at most two differing bits. For a bounded number of selected rows, an
+// exact negative census avoids building the three full sorted band indexes.
+inline bool pair_search_needed(const uint64_t* q,const uint64_t* k,int n,int d,
+                               const std::vector<int32_t>& rows) {
+    if(d<24 || rows.size()>std::max<size_t>(16,3*size_t(std::log2(double(n))+1)))return true;
+    for(int t:rows) {
+        const uint64_t word=q[t];
+        for(int r=0;r<t;++r) {
+            uint64_t diff=word^k[r];diff&=diff-1;diff&=diff-1;
+            if(!diff)return true;
+        }
+    }
+    return false;
+}
+
 inline int train_stream(const RosaTrainingOptions&o,int n,int d,
     const uint64_t*q,const uint64_t*k,const uint8_t*v,
     const double*qz,const double*kz,const double*vz,const double*g,
@@ -146,35 +221,45 @@ inline int train_stream(const RosaTrainingOptions&o,int n,int d,
         if(approximation_stats)approximation_stats[27]=1;
         return 0;
     }
-    std::vector<double> cq(nd),ck(nd),cv(nd),h;
-    std::vector<int32_t> lengths(n),routes(n);
     std::vector<uint64_t> pairs(size_t(o.joint_pairs)*2);
     std::vector<int32_t> rows;
     int pair_count=0;
     if(o.joint_pairs && n) {
         rows=train_rows(g,n,d,o.joint_rows,o.active_rows!=0,proposal_seed);
-        std::vector<uint8_t> allowed(n,uint8_t(1));
-        uint64_t pc[12]={};double timings[2]={};
-        const int capacity=std::max(1,8*o.joint_pairs);
-        const int code=propose_pair_candidates(n,d,q,k,rows.data(),int(rows.size()),
-            allowed.data(),allowed.data(),o.joint_pairs,proposal_seed,
-            8,2,8,capacity,pairs.data(),nullptr,pc,timings);
-        if(code)return code;
-        pair_count=int(pc[5]);stats[25]=rows.size();stats[26]=pc[3];
+        stats[25]=rows.size();
+        if(pair_search_needed(q,k,n,d,rows)) {
+            std::vector<uint8_t> allowed(n,uint8_t(1));
+            uint64_t pc[12]={};double timings[2]={};
+            const int capacity=std::max(1,8*o.joint_pairs);
+            const int code=propose_pair_candidates(n,d,q,k,rows.data(),int(rows.size()),
+                allowed.data(),allowed.data(),o.joint_pairs,proposal_seed,
+                8,2,8,capacity,pairs.data(),nullptr,pc,timings);
+            if(code)return code;
+            pair_count=int(pc[5]);stats[26]=pc[3];
+        }
     }
+    rosa_subq::Stats work;
+    std::vector<double> cq,ck,h,row_diagonal;
+    rosa_subq::CreditDomain domain;
+    double* cv=gv;
+    std::vector<int32_t> lengths(n),routes(n);
     if(o.trust_diagonal) {
-        h.resize(nd);const double radius=train_radius(e0,e1,d);
+        const bool compact=!pair_count && !approximation;
+        if(compact)row_diagonal.resize(n);else h.resize(nd);
+        const double radius=train_radius(e0,e1,d);
         for(int t=0;t<n;++t) {
             double norm=0;for(int j=0;j<d;++j){double x=g[size_t(t)*d+j];norm+=x*x;}
             const double diagonal=o.trust_diagonal*std::sqrt(norm)/radius;
-            std::fill(h.begin()+size_t(t)*d,h.begin()+size_t(t+1)*d,diagonal);
+            if(compact)row_diagonal[t]=diagonal;
+            else std::fill_n(h.data()+size_t(t)*d,d,diagonal);
         }
     }
-    const bool quadratic=!h.empty() && std::any_of(h.begin(),h.end(),[](double x){return x!=0;});
-    rosa_subq::Stats work;
-    const int code=rosa_subq::run(n,d,q,k,v,g,quadratic?h.data():nullptr,e0,e1,
+    const auto& metric=row_diagonal.empty()?h:row_diagonal;
+    const bool quadratic=std::any_of(metric.begin(),metric.end(),[](double x){return x!=0;});
+    const int code=rosa_subq::run(n,d,q,k,v,g,quadratic && !h.empty()?h.data():nullptr,e0,e1,
         o.randomized!=0,repair_seed,approximation,cq,ck,lengths.data(),routes.data(),
-        work,approximation_stats,saved_lengths,saved_routes);
+        work,approximation_stats,saved_lengths,saved_routes,&domain,
+        quadratic && !row_diagonal.empty()?row_diagonal.data():nullptr);
     if(code)return code;
     store_subquadratic_counters(work,stats);
     if(subquadratic_stats)std::copy(stats,stats+ROSA_SUBQUADRATIC_COUNTERS,subquadratic_stats);
@@ -182,23 +267,36 @@ inline int train_stream(const RosaTrainingOptions&o,int n,int d,
     stats[27]=stats[28]=d;
     stats[29]=uint64_t(!approximation || (approximation_stats[27] && !approximation_stats[33]));
     stats[30]=nd;stats[31]=o.randomized!=0;stats[32]=rows.size();
+    const bool zero_chain=o.logit_mode || o.tau>=std::numeric_limits<double>::min();
+    const bool empty_v=zero_chain && std::none_of(routes.begin(),routes.end(),[](int r){return r>=0;});
+    if(!empty_v)std::fill_n(cv,nd,0.);
     // The route penalty protects Q/K. V and embeddings remain linear.
-    for(int t=0;t<n;++t)for(int j=0;j<d;++j) {
-        const size_t x=size_t(t)*d+j;const double gy=g[x];
-        if(routes[t]<0)ge0[j]+=gy;
-        else {
-            const size_t source=size_t(routes[t]+1)*d+j;
-            const int sign=2*int(v[source])-1;ge1[j]+=gy*sign;
-            if(quadratic)cv[source]+=gy*(-2*sign*e1[j]);
-            else cv[source]+=-2*gy*(sign*e1[j]);
+    for(int t=0;t<n;++t) {
+        const double* gy=g+size_t(t)*d;
+        if(routes[t]<0) {
+            for(int j=0;j<d;++j)ge0[j]+=gy[j];
+        } else {
+            const size_t source=size_t(routes[t]+1)*d;
+            for(int j=0;j<d;++j) {
+                const int sign=2*int(v[source+j])-1;ge1[j]+=gy[j]*sign;
+                if(quadratic)cv[source+j]+=gy[j]*(-2*sign*e1[j]);
+                else cv[source+j]+=-2*gy[j]*(sign*e1[j]);
+            }
         }
     }
     TrainFactorCache qfactor,kfactor,vfactor;
-    for(int t=0;t<n;++t)for(int j=0;j<d;++j) {
-        const size_t x=size_t(t)*d+j;
-        gq[x]=qfactor.apply(qz[x],int((q[t]>>j)&1),cq[x],o);
-        gk[x]=kfactor.apply(kz[x],int((k[t]>>j)&1),ck[x],o);
-        gv[x]=vfactor.apply(vz[x],int(v[x]),cv[x],o);
+    const std::array<double,64> zeros{};
+    for(int t=0;t<n;++t) {
+        const size_t x=size_t(t)*d;
+        const int u=domain.position(t);
+        if(u<0 && zero_chain) {
+            write_word_zero(d,q[t],gq+x);write_word_zero(d,k[t],gk+x);
+        } else {
+            map_word_credit(d,q[t],qz+x,u<0?zeros.data():cq.data()+size_t(u)*d,gq+x,qfactor,o);
+            map_word_credit(d,k[t],kz+x,u<0?zeros.data():ck.data()+size_t(u)*d,gk+x,kfactor,o);
+        }
+        if(empty_v)for(int j=0;j<d;++j)cv[x+j]=v[x+j]?-0.:0.;
+        else map_value_credit(d,v+x,vz+x,cv+x,vfactor,o);
     }
     std::vector<uint64_t> qe,ke;
     std::vector<int32_t> edited_lengths,edited_routes;
@@ -212,8 +310,7 @@ inline int train_stream(const RosaTrainingOptions&o,int n,int d,
         auto replay_cost=[&]() {
             // Joint corners need only the ordinary forward trajectory.
             // Building deletion/repair suffix indexes here has no consumer.
-            SamForward scan(qe.data(),ke.data(),n,repair_seed);
-            scan.run(edited_lengths.data(),edited_routes.data());
+            training_routes(qe.data(),ke.data(),n,d,edited_lengths.data(),edited_routes.data());
         ExactExpansion joint;
         for(int t=0;t<n;++t) {
             if(edited_routes[t]==routes[t])continue;
@@ -229,7 +326,10 @@ inline int train_stream(const RosaTrainingOptions&o,int n,int d,
         }
             return joint.to_double();
         };
-        auto singleton=[&](uint64_t code){return code>=nd?cq[size_t(code-nd)]:ck[size_t(code)];};
+        auto singleton=[&](uint64_t code){
+            size_t i=size_t(code%nd);int u=domain.position(int(i/d));
+            return u<0?0.:(code>=nd?cq:ck)[size_t(u)*d+i%d];
+        };
         double ca=singleton(a),cb=singleton(b);
         if(approximation && (!approximation_stats[27] || approximation_stats[33])) {
             // Restore both chosen singleton corners exactly. Sampling cannot
@@ -291,14 +391,13 @@ ROSA_EXPORT int rosa_training_forward(const RosaTrainingOptions*o,int b,int grou
                 a|=uint64_t(qz[x]>0)<<j;c|=uint64_t(kz[x]>0)<<j;v[x]=uint8_t(vz[x]>0);}
             q[word+t]=a;k[word+t]=c;
         }
-        rosa_exact::SamForward scan(q+word,k+word,n,o->repair_seed+uint64_t(s));
-        scan.run(lengths+word,routes+word);
+        const auto work=rosa_exact::training_routes(q+word,k+word,n,d,lengths+word,routes+word);
         for(int t=0;t<n;++t)for(int j=0;j<d;++j) {
             const int r=routes[word+t];
             y[base+size_t(t)*d+j]=r<0?e0[embedding+j]:(2*int(v[base+size_t(r+1)*d+j])-1)*e1[embedding+j];
         }
-        uint64_t*c=counts+s*ROSA_FORWARD_COUNTERS;c[0]=1;c[1]=scan.counters.transition_probes;
-        c[2]=scan.counters.hash_probe_steps;c[3]=scan.counters.endpoint_queries;
+        uint64_t*c=counts+s*ROSA_FORWARD_COUNTERS;c[0]=1;c[1]=work.transition_probes;
+        c[2]=work.hash_probe_steps;c[3]=work.endpoint_queries;
     }
     return 0;
   }catch(const std::bad_alloc&){return 2;}catch(const std::exception&){return 3;}catch(...){return 3;}

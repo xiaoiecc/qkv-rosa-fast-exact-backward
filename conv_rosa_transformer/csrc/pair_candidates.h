@@ -1,6 +1,7 @@
 #pragma once
 // One static causal-band proposal algorithm. Randomness selects candidates;
 // full words are checked before a candidate is admitted. No payload/loss input.
+#include "full_word_map.h"
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -45,7 +46,7 @@ struct PairCandidate {
         return std::tie(priority,flat_a,flat_b)<std::tie(other.priority,other.flat_a,other.flat_b);
     }
 };
-struct PairBandEntry {uint64_t key;int first,id;};
+
 
 inline int propose_pair_candidates(
     int n,int d,const uint64_t*q,const uint64_t*k,const int32_t*rows,int row_count,
@@ -80,13 +81,25 @@ inline int propose_pair_candidates(
     }
     offsets.push_back(n);
     const int unique=int(words.size());
-    std::array<std::vector<PairBandEntry>,3> bands;
+    // Only selected query projections consume a band. Build their member
+    // lists in first-occurrence order, the exact order used by sampling.
+    // Numeric word IDs remain lexicographic for the later per-row merge.
+    std::vector<int> first_at(n,-1);
+    for(int id=0;id<unique;++id)first_at[first[id]]=id;
+    std::array<std::vector<std::vector<int>>,3> bands;
+    std::array<std::vector<int>,3> row_group;
     for(int band=0;band<3;++band) {
-        auto&entries=bands[band];entries.reserve(unique);
-        for(int id=0;id<unique;++id)entries.push_back({words[id]&masks[band],first[id],id});
-        std::sort(entries.begin(),entries.end(),[](const auto&a,const auto&b){
-            return std::tie(a.key,a.first)<std::tie(b.key,b.first);
-        });
+        FullWordMap selected(size_t(row_count),seed+uint64_t(band));
+        row_group[band].resize(row_count);
+        for(int row=0;row<row_count;++row) {
+            const auto group=selected.insert(q[rows[row]]&masks[band],int(bands[band].size()));
+            if(group.second)bands[band].emplace_back();
+            row_group[band][row]=group.first;
+        }
+        for(int r=0;r<n;++r)if(first_at[r]>=0) {
+            const int group=selected.find(k[r]&masks[band]);
+            if(group>=0)bands[band][group].push_back(first_at[r]);
+        }
     }
     counts[6]=n-1;counts[8]=unique;
     timings[0]=std::chrono::duration<double>(Clock::now()-started).count();
@@ -130,15 +143,15 @@ inline int propose_pair_candidates(
     for(int row=0;row<row_count;++row) {
         const int t=rows[row];inspected.clear();
         for(int band=0;band<3;++band) {
-            ++counts[0];const auto&entries=bands[band];const uint64_t key=q[t]&masks[band];
-            const auto begin=std::lower_bound(entries.begin(),entries.end(),key,
-                [](const PairBandEntry&a,uint64_t b){return a.key<b;});
-            const auto end=std::lower_bound(begin,entries.end(),std::pair<uint64_t,int>{key,t},
-                [](const PairBandEntry&a,const std::pair<uint64_t,int>&b){return std::tie(a.key,a.first)<std::tie(b.first,b.second);});
+            ++counts[0];
+            const auto& entries=bands[band][row_group[band][row]];
+            const auto begin=entries.begin();
+            const auto end=std::lower_bound(begin,entries.end(),t,
+                [&](int id,int cutoff){return first[id]<cutoff;});
             const int population=int(end-begin);sample(population,bucket_cap);
             if(population>bucket_cap)++counts[10];
             counts[9]+=picks.size();
-            for(const int pick:picks)inspected.push_back(begin[pick].id);
+            for(const int pick:picks)inspected.push_back(begin[pick]);
         }
         std::sort(inspected.begin(),inspected.end());
         inspected.erase(std::unique(inspected.begin(),inspected.end()),inspected.end());
