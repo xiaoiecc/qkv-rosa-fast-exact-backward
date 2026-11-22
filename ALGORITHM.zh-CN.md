@@ -1,5 +1,7 @@
 # 不再逐个枚举「修改位置 × 输出行」
 
+> 本文保留了合并基线的次二次算法推导。当前默认算法先把不可能参与匹配的连续位置缩成一个分隔符，再分别累加幸存匹配、单符号修复和长匹配修复的贡献。任意输入的保守时间上界为 $\widetilde O(T^2)$。见[新算法和证明](docs/causal-interval-credit.md)与[随机 QKV、完整训练步和退化样例实测](docs/causal-interval-results.md)。
+
 [English](ALGORITHM.md) · [完整证明](docs/subquadratic-proof.md) · [删除部分的证明](docs/subquadratic-deletion-proof.md) · [训练接口](docs/native-training.zh-CN.md)
 
 C++ 引擎把许多反事实路由合并成区间、等差数列和少量胜出的匹配，再批量计算它们的数值贡献。真正展开候选前，先数清完整集合的大小；工作本来就少时，也就不必为它建立重型结构。固定 bit 数和数值维数时，最坏时间为 $\widetilde O(n^{5/3})$，空间为 $\widetilde O(n^{4/3})$；波浪号只省略对数因子。

@@ -1,5 +1,7 @@
 # A complete subquadratic algorithm for the mathematical QKV-ROSA counterfactual VJP
 
+> This proof describes the earlier structural algorithm on main at `881ab23`. The default exact interval reducer has a separate [analysis](causal-interval-credit.md).
+
 Structural proof. The bound implemented by the native subquadratic engine is
 
 $$
