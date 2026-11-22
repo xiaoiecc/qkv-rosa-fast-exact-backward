@@ -5,7 +5,7 @@ import unittest
 
 import numpy as np
 
-from conv_rosa_transformer import rosa_core
+from qkv_rosa import core as rosa_core
 from tests._support import COVERAGE, EXHAUSTIVE
 from tests.oracle import brute_credits
 

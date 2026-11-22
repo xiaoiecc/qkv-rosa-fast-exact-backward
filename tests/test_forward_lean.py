@@ -15,21 +15,23 @@ from tests._support import BUILD, COVERAGE, CSRC, EXHAUSTIVE
 def build_forward_probe():
     BUILD.mkdir(parents=True, exist_ok=True)
     source = BUILD / "forward_probe.cpp"
-    source.write_text('''#include "forward.h"
-extern "C" int forward_probe(int n,const uint64_t*q,const uint64_t*k,
- int32_t*l,int32_t*r,uint64_t seed,uint64_t*c) {
- try {rosa_exact::SamForward f(q,k,n,seed);f.run(l,r);
+    export = "__declspec(dllexport) " if os.name == "nt" else ""
+    source.write_text(f'''#include "forward.h"
+extern "C" {export}int forward_probe(int n,const uint64_t*q,const uint64_t*k,
+ int32_t*l,int32_t*r,uint64_t seed,uint64_t*c) {{
+ try {{rosa_exact::SamForward f(q,k,n,seed);f.run(l,r);
  c[0]=f.counters.transition_probes;c[1]=f.counters.suffix_fallbacks;
  c[2]=f.counters.endpoint_queries;c[3]=f.counters.endpoint_updates;
  c[4]=f.counters.hash_probe_steps;c[5]=f.retained_capacity_bytes();
  c[6]=f.state_count();c[7]=f.edge_count();c[8]=f.hash_slots();
  c[9]=f.endpoint_index_materialized();return 0;
- }catch(...){return 1;}}
+ }}catch(...){{return 1;}}}}
 ''')
-    library = BUILD / "forward_probe.so"
-    subprocess.run(shlex.split(os.environ.get("CXX", "c++")) +
+    library = BUILD / ("forward_probe.dll" if os.name == "nt" else "forward_probe.so")
+    extra = ["-static"] if os.name == "nt" else []
+    subprocess.run(shlex.split(os.environ.get("CXX", "c++"), posix=os.name != "nt") +
                    ["-O3", "-std=c++17", "-shared", "-fPIC", "-I", str(CSRC),
-                    str(source), "-o", str(library)], check=True)
+                    str(source), "-o", str(library)] + extra, check=True)
     loaded = ctypes.CDLL(str(library))
     function = loaded.forward_probe
     function.argtypes = ([ctypes.c_int] + [ctypes.c_void_p] * 4 +

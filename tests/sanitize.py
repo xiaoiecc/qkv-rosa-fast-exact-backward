@@ -23,9 +23,9 @@ def digest(paths):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--tests", nargs="+", default=["subquadratic_training",
-                        "subquadratic_q_frontier", "subquadratic_short", "subquadratic_indexed_row",
-                        "subquadratic_fingerprint_k"])
+    parser.add_argument("--tests", nargs="+", default=[
+                        "interval_credit", "subquadratic_training",
+                        "subquadratic_delete", "subquadratic_indexed_row", "bounded_hash"])
     parser.add_argument("--jobs", type=int, default=1)
     parser.add_argument("--no-leaks", action="store_true")
     parser.add_argument("--append", action="store_true")

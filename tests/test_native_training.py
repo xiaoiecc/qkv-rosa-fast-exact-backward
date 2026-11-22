@@ -11,8 +11,8 @@ import numpy as np
 import torch
 from torch.utils.checkpoint import checkpoint
 
-from conv_rosa_transformer.rosa_layer import NBitQKVRosa
-from conv_rosa_transformer.native_training import (
+from qkv_rosa.layer import NBitQKVRosa
+from qkv_rosa.native import (
     make_options, training_forward_numpy, training_backward_numpy,
 )
 

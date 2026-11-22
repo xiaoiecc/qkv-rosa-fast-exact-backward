@@ -6,8 +6,8 @@ venv/
 .pytest_cache/
 .mypy_cache/
 
-# C++ extension JIT build artifacts
-conv_rosa_transformer/build/
+# C++ extension JIT build cache
+qkv_rosa/build/
 *.pyd
 *.so
 *.dylib
@@ -20,7 +20,7 @@ conv_rosa_transformer/build/
 .ninja_log
 build.ninja
 
-# Reproducible test/benchmark build caches (recorded JSON is kept separately).
+# Test and benchmark build outputs
 /build/
 tests/build/
 benchmarks/build/

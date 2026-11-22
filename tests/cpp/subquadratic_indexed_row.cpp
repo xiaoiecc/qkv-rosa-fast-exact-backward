@@ -1,7 +1,7 @@
 // Independent literal oracle for full selected-row repairs and their exact
 // one-symbol residual, including quadratic scores around the full baseline.
 // Build: c++ -O2 -std=c++17 -ffp-contract=off tests/cpp/subquadratic_indexed_row.cpp -o /tmp/rosa-indexed-row
-#include "../../conv_rosa_transformer/csrc/approx_indexed_row.h"
+#include "../../qkv_rosa/csrc/approx_indexed_row.h"
 #include <chrono>
 #include <cstdlib>
 #include <iostream>

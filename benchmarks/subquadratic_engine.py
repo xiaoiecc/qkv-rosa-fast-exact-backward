@@ -22,13 +22,13 @@ import numpy as np
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from conv_rosa_transformer import native_training as native
+from qkv_rosa import native as native
 
 
 def source_hashes():
-    paths=sorted((ROOT/"conv_rosa_transformer").glob("*.py"))
-    paths+=sorted((ROOT/"conv_rosa_transformer/csrc").rglob("*.h"))
-    paths+=sorted((ROOT/"conv_rosa_transformer/csrc").glob("*.cpp"))
+    paths=sorted((ROOT/"qkv_rosa").glob("*.py"))
+    paths+=sorted((ROOT/"qkv_rosa/csrc").rglob("*.h"))
+    paths+=sorted((ROOT/"qkv_rosa/csrc").glob("*.cpp"))
     return {str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
 
 

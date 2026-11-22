@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import torch
 
-from conv_rosa_transformer import rosa_core
+from qkv_rosa import core as rosa_core
 
 
 class ValidationTests(unittest.TestCase):

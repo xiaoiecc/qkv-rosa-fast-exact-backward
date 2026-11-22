@@ -23,12 +23,12 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from conv_rosa_transformer import native_training as current
+from qkv_rosa import native as current
 from benchmarks.subquadratic_engine import errors, make_case
 
 
 def hashes(root):
-    package = root / "conv_rosa_transformer"
+    package = root / "qkv_rosa"
     paths = sorted(package.glob("*.py"))
     paths += sorted((package / "csrc").rglob("*.h"))
     paths += sorted((package / "csrc").glob("*.cpp"))
@@ -43,9 +43,9 @@ def revision(root):
 
 def load_reference(root):
     package = types.ModuleType("rosa_benchmark_reference")
-    package.__path__ = [str(root / "conv_rosa_transformer")]
+    package.__path__ = [str(root / "qkv_rosa")]
     sys.modules[package.__name__] = package
-    return importlib.import_module(package.__name__ + ".native_training")
+    return importlib.import_module(package.__name__ + ".native")
 
 
 def endpoint_count(cache, bits):

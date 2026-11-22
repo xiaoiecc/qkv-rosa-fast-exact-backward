@@ -10,11 +10,11 @@ from unittest.mock import patch
 
 import torch
 
-from conv_rosa_transformer.rosa_layer import (
+from qkv_rosa.layer import (
     NBitQKVRosa, NBitQKVRosaCpp, NBitQKVRosaForward, NBitQKVRosaForwardCpp,
 )
-from conv_rosa_transformer.rosa_reference import backward_bruteforce, forward_naive
-from conv_rosa_transformer.rosa_transformer import RosaTransformer
+from qkv_rosa.reference import backward_bruteforce, forward_naive
+from qkv_rosa.transformer import RosaTransformer
 
 
 # Numerical singleton-oracle checks retain their exact original rule even if
@@ -106,13 +106,13 @@ class LayerTest(unittest.TestCase):
     def test_empty_batch(self):
         self.audit_layer("identity", batch=0)
 
-    def test_compatibility_aliases_and_state_dict(self):
-        import hard_qkv_rosa_explained as explained
-        from conv_rosa_transformer import rosa_reference
+    def test_public_exports_and_state_dict(self):
+        import qkv_rosa
+        from qkv_rosa import reference as rosa_reference
         for alias in (NBitQKVRosaCpp, NBitQKVRosaForward, NBitQKVRosaForwardCpp,
-                      explained.NBitQKVRosa, rosa_reference.NBitQKVRosa):
+                      qkv_rosa.NBitQKVRosa, rosa_reference.NBitQKVRosa):
             self.assertIs(alias, NBitQKVRosa)
-        a, b = NBitQKVRosa(6, 3), NBitQKVRosaCpp(6, 3)
+        a, b = NBitQKVRosa(6, 3), qkv_rosa.NBitQKVRosa(6, 3)
         expected_keys = {"emb0", "emb1"}
         for name in ("q_proj", "k_proj", "v_proj", "o_proj"):
             expected_keys.update((f"{name}.weight", f"{name}.bias"))
@@ -149,7 +149,11 @@ class LayerTest(unittest.TestCase):
     def test_demo_checkpoint_reconstructs_configured_kernel(self):
         # Exercise the export path without training or evaluating a model.
         # A configuration/weight mismatch fails strict state-dict loading.
-        from conv_rosa_transformer import multiply_demo
+        import importlib.util
+        demo_path = Path(__file__).resolve().parents[1] / "examples" / "multiply_demo.py"
+        spec = importlib.util.spec_from_file_location("multiply_demo", demo_path)
+        multiply_demo = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(multiply_demo)
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "checkpoint.pt"
             argv = ["multiply_demo.py", "--steps", "0", "--channels", "8",

@@ -24,11 +24,11 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tests.test_forward_lean import build_forward_probe
-from conv_rosa_transformer import rosa_core as current_module
+from qkv_rosa import core as rosa_core as current_module
 
 
 def load_baseline(root):
-    source = root / "conv_rosa_transformer" / "rosa_core.py"
+    source = root / "qkv_rosa" / "rosa_core.py"
     spec = importlib.util.spec_from_file_location("_external_forward_baseline", source)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -87,14 +87,14 @@ def main():
     _, probe = build_forward_probe()
     baseline_module, older = load_baseline(args.baseline_dir.resolve())
     newer = current_module._library().rosa_matching_stats
-    header = ROOT / "conv_rosa_transformer/csrc/forward.h"
+    header = ROOT / "qkv_rosa/csrc/forward.h"
     source_hash = hashlib.sha256(header.read_bytes()).hexdigest()
     report = dict(status="RUNNING", started_utc=datetime.now(timezone.utc).isoformat(),
                   scope="native full route matcher, includes construction; excludes Python validation/list conversion and neural projections",
                   baseline_directory=str(args.baseline_dir.resolve()),
                   baseline_library_sha256=hashlib.sha256(baseline_module.build().read_bytes()).hexdigest(),
                   current_library_sha256=hashlib.sha256(Path(current_module._library()._name).read_bytes()).hexdigest(),
-                  measured_unified_core_sha256=hashlib.sha256((ROOT/"conv_rosa_transformer/csrc/unified_core.cpp").read_bytes()).hexdigest(),
+                  measured_unified_core_sha256=hashlib.sha256((ROOT/"qkv_rosa/csrc/unified_core.cpp").read_bytes()).hexdigest(),
                   forward_header_sha256=source_hash,
                   machine=platform.machine(), cpu_affinity=sorted(os.sched_getaffinity(0)),
                   platform=platform.platform(),python=platform.python_version(),numpy=np.__version__,

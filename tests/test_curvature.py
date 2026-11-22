@@ -10,7 +10,7 @@ import unittest
 
 import numpy as np
 
-from conv_rosa_transformer import rosa_core
+from qkv_rosa import core as rosa_core
 from tests._support import COVERAGE
 from tests.oracle import hard_outputs
 
